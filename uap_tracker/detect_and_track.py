@@ -20,9 +20,7 @@ class VideoTracker():
         self.total_trackers_finished=0
         self.total_trackers_started=0
         self.live_trackers=[]
-
         self.listeners=[]
-        
 
     def listen(self,listener):
         self.listeners.append(listener)
@@ -32,8 +30,17 @@ class VideoTracker():
         for kp in keypoints:
             bbox=kp_to_bbox(kp)
             print(bbox)
+
+            # simple check to see if the new bbox intersects with an existing tracked bbox
+            tracked = False
+            for tracker in self.live_trackers:
+                if tracker.does_bbx_overlap(bbox):
+                    tracked = True
+                    break
+
             # Initialize tracker with first frame and bounding box
-            self.create_and_add_tracker(tracker_type,frame,bbox)
+            if not tracked:
+                self.create_and_add_tracker(tracker_type,frame,bbox)
         
         print(self.live_trackers)
 
@@ -55,9 +62,8 @@ class VideoTracker():
         for kp in keypoints:
             bbox=kp_to_bbox(kp)
             kp_bbox_map[kp]=bbox
-
         
-        failed_trackers=[]        
+        failed_trackers=[]
         for idx,tracker in enumerate(self.live_trackers):
             # Update tracker
             ok, bbox = tracker.cv2_tracker.update(masked)
@@ -69,7 +75,6 @@ class VideoTracker():
             else:
                 # Tracking failure
                 failed_trackers.append(tracker)
-                next
 
             #Try to match the new detections with this tracker
             for idx,kp in enumerate(keypoints):
@@ -89,8 +94,16 @@ class VideoTracker():
         for kp,new_bbox in kp_bbox_map.items():
             #Hit max trackers?
             if len(self.live_trackers) < max_trackers:
-                self.create_and_add_tracker(tracker_type,masked,new_bbox)
 
+                # simple check to see if the new bbox intersects with an existing tracked bbox
+                tracked = False
+                for tracker in self.live_trackers:
+                    if tracker.does_bbx_overlap(new_bbox):
+                        tracked = True
+                        break
+
+                if not tracked:
+                    self.create_and_add_tracker(tracker_type,masked,new_bbox)
 
     def detect_and_track(self, trackers_updated_callback=None, record=True, demo_mode=False, two_by_two=False):
 
@@ -109,7 +122,6 @@ class VideoTracker():
         if not ok:
             print('Cannot read video file')
             sys.exit()
-        
 
         backSub=createBackgroundSubtractorKNN()
         output_image=fisheye_mask(frame)
@@ -125,30 +137,27 @@ class VideoTracker():
             ok, frame = self.video.read()
             output_image, bgMasked = bg_subtract(frame,backSub)   
 
-        keypoints=detectSBD(bgMasked)
+        keypoints=detectSBD(bgMasked, source_width)
 
         print(keypoints)
         im_with_keypoints = cv2.drawKeypoints(output_image, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         msg=f"Detected {len(keypoints)} keypoints: "
         #print(msg)
-        cv2.putText(im_with_keypoints, msg, (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
+        cv2.putText(im_with_keypoints, msg, (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
         #cv2.imshow('mask', im_with_keypoints)
         #cv2.waitKey()
 
         if demo_mode:
             for i in range(150):
-                cv2.putText(frame, "First frame, look for BLOB's: ", (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
+                cv2.putText(frame, "First frame, look for BLOB's: ", (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
                 writer.write(frame)
 
-
             for i in range(150):
-                cv2.putText(im_with_keypoints, "Identified here with in red: ", (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
+                cv2.putText(im_with_keypoints, "Identified here with in red: ", (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
                 writer.write(im_with_keypoints)
-
 
         #Create Trackers
         self.create_trackers_from_keypoints(tracker_type,keypoints,output_image)
-        
         
         frame_count=0
         while True:
@@ -156,7 +165,6 @@ class VideoTracker():
             ok, frame = self.video.read()
             if not ok:
                 break
-
             
             # Start timer
             timer = cv2.getTickCount()
@@ -164,17 +172,17 @@ class VideoTracker():
             output_image, bgMasked = bg_subtract(frame,backSub)
 
             # Detect new objects of interest to pass to tracker
-            keypoints=detectSBD(bgMasked)
+            keypoints=detectSBD(bgMasked, source_width)
             
             im_with_keypoints = cv2.drawKeypoints(bgMasked, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             msg=f"Detected {len(keypoints)} keypoints: "
             #print(msg)
-            cv2.putText(im_with_keypoints, msg, (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
+            cv2.putText(im_with_keypoints, msg, (100,50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
 
             self.update_trackers(tracker_type,keypoints,output_image)
 
             # Calculate Frames per second (FPS)
-            fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer);
+            fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
                           
             for listener in self.listeners:
                 listener.trackers_updated_callback(output_image,self.live_trackers,fps)
@@ -184,8 +192,8 @@ class VideoTracker():
 
             msg=f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}"
             print(msg)
-            cv2.putText(output_image, msg, (100,200), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
-            cv2.putText(output_image, "FPS : " + str(int(fps)), (100,300), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2);
+            cv2.putText(output_image, msg, (100,200), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
+            cv2.putText(output_image, "FPS : " + str(int(fps)), (100,300), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50,170,50), 2)
 
             if two_by_two:
                 im_h1 = cv2.hconcat([frame, output_image])
@@ -205,7 +213,8 @@ class VideoTracker():
             
             # Exit if ESC pressed
             k = cv2.waitKey(1) & 0xff
-            if k == 27 : break
+            if k == 27:
+                break
 
             frame_count+=1
 
@@ -252,7 +261,6 @@ class Tracker():
                 #fs = cv2.FileStorage("csrt_defaults.json", cv2.FileStorage_WRITE)
                 #param_handler.write(fs)
                 #fs.release()
-
             
                 #param_handler.use_gray=True
 
@@ -260,7 +268,6 @@ class Tracker():
             
             if tracker_type == 'DASIAMRPN':
                 tracker = cv2.TrackerDaSiamRPN_create()
-
             
         return tracker
 
@@ -276,6 +283,11 @@ class Tracker():
         p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
         cv2.rectangle(frame, p1, p2, color, 2, 1)
         cv2.putText(frame, str(self.id), (p1[0],p1[1]-4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+
+    def does_bbx_overlap(self, bbox):
+        overlap = bbox_overlap(self.get_bbox(), bbox)
+        # print(f'checking tracking overlap {overlap} for {self.id}')
+        return overlap > 0
 
 def get_writer(output_filename,width,height):
     print(f'source w,h:{(width,height)}')
@@ -367,12 +379,15 @@ def bbox_overlap(bbox1,bbox2):
     return iou
 
 
-def detectSBD(frame):
+def detectSBD(frame, image_width):
     
     params = cv2.SimpleBlobDetector_Params()
     #print(f"original sbd params:{params}")
 
-    params.minThreshold = 3;
+    params.minRepeatability = 2
+    params.minDistBetweenBlobs = int(image_width * 0.05)  # 5% of the width of the image
+
+    params.minThreshold = 3
 
     params.filterByArea = 1
     params.minArea = 5
@@ -417,9 +432,9 @@ if __name__ == '__main__' :
 #    video = cv2.VideoCapture("videos/pelican.mp4")
 #    video = cv2.VideoCapture("videos/cloud_plane.mp4")
 # '03b53a8a-b5a0-4192-834e-48f2f56c007a.mkv' #insect
-    input_file = "videos/unknown_long.mp4"
+    input_file = "../videos/unknown_long.mp4"
 
-    video =  cv2.VideoCapture(input_file)
+    video = cv2.VideoCapture(input_file)
         
     # Exit if video not opened.
     if not video.isOpened():
