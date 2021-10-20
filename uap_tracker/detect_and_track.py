@@ -40,5 +40,3 @@ if __name__ == '__main__':
     
     video_tracker = vt.VideoTracker(video)
     video_tracker.detect_and_track()
-
-
