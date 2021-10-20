@@ -97,6 +97,7 @@ class VideoTracker():
         writer = u.get_writer("outputvideo.mp4", source_width, source_height)
 
         font_size = source_height / 1000.0
+        max_display_dim = u.get_image_max_display_size_h_or_w()
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -197,16 +198,10 @@ class VideoTracker():
                 final_image = output_image
 
             # Display result, resize it to a standard size
-            if source_width > 1280 or source_height > 1280:
 
+            if final_image.shape[0] > max_display_dim or final_image.shape[1] > max_display_dim:
                 #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
-                w = int((1280 / source_width) * 100)
-                h = int((1280 / source_height) * 100)
-                scale_percent = min(w, h)  # percent of original size
-                width = int(source_width * scale_percent / 100)
-                height = int(source_height * scale_percent / 100)
-
-                scaled_image = cv2.resize(final_image, (width, height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+                scaled_image = u.scaleImage(final_image, max_display_dim)
                 cv2.imshow("Tracking", scaled_image)
             else:
                 cv2.imshow("Tracking", final_image)

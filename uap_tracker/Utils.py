@@ -7,6 +7,9 @@ def get_cv_version():
 def get_font_size():
     return 1
 
+def get_image_max_display_size_h_or_w():
+    return 1280
+
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
@@ -124,3 +127,15 @@ def detectSBD(frame, image_width):
     keypoints = detector.detect(frame)
     # print("ran detect")
     return keypoints
+
+def scaleImage(img, dim):
+    # calculate the width and height percent of original size
+    width = int((dim / img.shape[1]) * 100)
+    height = int((dim / img.shape[0]) * 100)
+    # pick the smallest of the two
+    scale_percent = min(width, height)
+    # calc the scaled width and height
+    scaled_width = int(img.shape[1] * scale_percent / 100)
+    scaled_height = int(img.shape[0] * scale_percent / 100)
+    #resize the image
+    return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
