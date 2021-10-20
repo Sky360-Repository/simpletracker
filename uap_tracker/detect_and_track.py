@@ -29,7 +29,7 @@ if __name__ == '__main__':
 #    video = cv2.VideoCapture("videos/pelican.mp4")
 #    video = cv2.VideoCapture("videos/cloud_plane.mp4")
 # '03b53a8a-b5a0-4192-834e-48f2f56c007a.mkv' #insect
-    input_file = "../videos/unknown_long.mp4"
+    input_file = "../vids/Test_Trimmed.mp4"
 
     video = cv2.VideoCapture(input_file)
         

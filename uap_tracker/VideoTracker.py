@@ -187,9 +187,23 @@ class VideoTracker():
                 final_image = cv2.vconcat([im_h1, im_h2])
             else:
                 final_image = output_image
+
             # final_image=im_v2
-            # Display result
-            cv2.imshow("Tracking", final_image)
+
+            # Display result, resize it to a standard size
+            if source_width > 1280 or source_height > 1280:
+
+                #  scale to a reasonable viewing size
+                w = int((1280 / source_width) * 100)
+                h = int((1280 / source_height) * 100)
+                scale_percent = min(w, h)  # percent of original size
+                width = int(source_width * scale_percent / 100)
+                height = int(source_height * scale_percent / 100)
+
+                final_resized_image = cv2.resize(final_image, (width, height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+                cv2.imshow("Tracking", final_resized_image)
+            else:
+                cv2.imshow("Tracking", final_image)
 
             if record or demo_mode:
                 writer.write(final_image)
