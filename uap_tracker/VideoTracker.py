@@ -20,17 +20,18 @@ class VideoTracker():
     def listen(self, listener):
         self.listeners.append(listener)
 
+    @property
+    def is_tracking(self):
+        return len(self.live_trackers) > 0
+
     def create_trackers_from_keypoints(self, tracker_type, keypoints, frame):
-        trackers = []
         for kp in keypoints:
             bbox = u.kp_to_bbox(kp)
-            print(bbox)
+            # print(bbox)
 
             # Initialize tracker with first frame and bounding box
             if not u.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, bbox)
-
-        print(self.live_trackers)
 
     def create_and_add_tracker(self, tracker_type, frame, bbox):
         if not bbox:
@@ -96,6 +97,7 @@ class VideoTracker():
         writer = u.get_writer("outputvideo.mp4", source_width, source_height)
 
         font_size = source_height / 1000.0
+        max_display_dim = u.get_image_max_display_size_h_or_w()
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -103,32 +105,36 @@ class VideoTracker():
             print('Cannot read video file')
             sys.exit()
 
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
         backSub = u.createBackgroundSubtractorKNN()
-        output_image = u.fisheye_mask(frame)
+        # output_image = u.fisheye_mask(frame_gray)  # MG: I have commented this out as it does nothing
 
-        def bg_subtract(frame, background_subtractor):
-            a_masked = u.fisheye_mask(frame)
+        def bg_subtract(frame_gray, background_subtractor):
+            a_masked = u.fisheye_mask(frame_gray)
             a_fgMask = background_subtractor.apply(a_masked)
-            return (a_masked, cv2.bitwise_and(a_masked, a_masked, mask=a_fgMask))
+            return a_masked, cv2.bitwise_and(a_masked, a_masked, mask=a_fgMask)
 
-        output_image, bgMasked = bg_subtract(frame, backSub)
+        output_image, bgMasked = bg_subtract(frame_gray, backSub)
 
         for i in range(5):
             ok, frame = self.video.read()
-            output_image, bgMasked = bg_subtract(frame, backSub)
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            output_image, bgMasked = bg_subtract(frame_gray, backSub)
 
         keypoints = u.detectSBD(bgMasked, source_width)
+        # print(keypoints)
 
-        print(keypoints)
-        im_with_keypoints = cv2.drawKeypoints(output_image, keypoints, np.array([]), (0, 0, 255),
-                                              cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        msg = f"Detected {len(keypoints)} keypoints: "
-        # print(msg)
-        cv2.putText(im_with_keypoints, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
-        # cv2.imshow('mask', im_with_keypoints)
-        # cv2.waitKey()
+        if demo_mode:  # MG: Moved this into the if block so that it only runs when needed. Paul --> DELETE THIS COMMENT IF YOU OKAY WITH THIS CHANGE
 
-        if demo_mode:
+            im_with_keypoints = cv2.drawKeypoints(output_image, keypoints, np.array([]), (0, 0, 255),
+                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            msg = f"Detected {len(keypoints)} keypoints: "
+            # print(msg)
+            cv2.putText(im_with_keypoints, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
+            # cv2.imshow('mask', im_with_keypoints)
+            # cv2.waitKey()
+
             for i in range(150):
                 cv2.putText(frame, "First frame, look for BLOB's: ", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size,
                             (50, 170, 50), 2)
@@ -152,16 +158,14 @@ class VideoTracker():
             # Start timer
             timer = cv2.getTickCount()
 
-            output_image, bgMasked = bg_subtract(frame, backSub)
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
+            output_image, bgMasked = bg_subtract(frame_gray, backSub)
+            output_image = frame  # MG I have set the output image to be that of the original frame so that we preserve colour i.e. 24 bit image
 
             # Detect new objects of interest to pass to tracker
             keypoints = u.detectSBD(bgMasked, source_width)
-
-            im_with_keypoints = cv2.drawKeypoints(bgMasked, keypoints, np.array([]), (0, 0, 255),
-                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            msg = f"Detected {len(keypoints)} keypoints: "
-            # print(msg)
-            cv2.putText(im_with_keypoints, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
 
             self.update_trackers(tracker_type, keypoints, output_image)
 
@@ -177,24 +181,33 @@ class VideoTracker():
             msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}"
             print(msg)
             cv2.putText(output_image, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
-            cv2.putText(output_image, "FPS : " + str(int(fps)), (100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size,
-                        (50, 170, 50), 2)
+            cv2.putText(output_image, "FPS : " + str(int(fps)), (100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
 
             if two_by_two:
+                # MG: trying to speed up the loop so moved this code here as im_with_keypoints appears to only be used here within the loop
+                im_with_keypoints = cv2.drawKeypoints(bgMasked, keypoints, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                msg = f"Detected {len(keypoints)} keypoints: "
+                # print(msg)
+                cv2.putText(im_with_keypoints, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
+
                 im_h1 = cv2.hconcat([frame, output_image])
                 im_h2 = cv2.hconcat([bgMasked, im_with_keypoints])
 
                 final_image = cv2.vconcat([im_h1, im_h2])
             else:
                 final_image = output_image
-            # final_image=im_v2
-            # Display result
-            cv2.imshow("Tracking", final_image)
+
+            # Display result, resize it to a standard size
+
+            if final_image.shape[0] > max_display_dim or final_image.shape[1] > max_display_dim:
+                #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
+                scaled_image = u.scaleImage(final_image, max_display_dim)
+                cv2.imshow("Tracking", scaled_image)
+            else:
+                cv2.imshow("Tracking", final_image)
 
             if record or demo_mode:
                 writer.write(final_image)
-
-            # keyboard = cv2.waitKey()
 
             # Exit if ESC pressed
             k = cv2.waitKey(1) & 0xff
