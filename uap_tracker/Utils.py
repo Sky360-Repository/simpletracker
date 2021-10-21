@@ -8,30 +8,28 @@ def get_font_size():
     return 1
 
 def get_image_max_display_size_h_or_w():
-    return 1280
+    return 1080
 
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
-def fisheye_mask(frame):
-    shape = frame.shape[:2]
-    # print(f'shape: {shape}')
-    mask = np.zeros(shape, dtype="uint8")
-    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)), int(min(shape[0], shape[1]) * 0.46), 255, -1)
-    return cv2.bitwise_and(frame, frame, mask=mask)
+def create_background_subtractor(type, sensitivity=2):
+    if type == 'KNN':
+        # defaults: samples:2, dist2Threshold:400.0, history: 500
+        background_subtractor = cv2.createBackgroundSubtractorKNN()
+        # samples = background_subtractor.getkNNSamples()
+        # dist_2_threshold = background_subtractor.getDist2Threshold()
+        # history = background_subtractor.getHistory()
+        # print(f'samples:{samples}, dist2Threshold:{dist_2_threshold}, history, {history}')
+        # MG TODO If clause here to handle the sensitivity parameter e.g. how aggressive do we want the subtraction to be
+        background_subtractor.setHistory(1)  # large gets many detections
+        background_subtractor.setkNNSamples(2)  # 1 doesn't detect small object
+        background_subtractor.setDist2Threshold(5000)  # small gets many detections, large misses small movements
+    else:
+        raise Exception('Only the KNN Background Subtractor is currently supported')
 
-def createBackgroundSubtractorKNN():
-    # defaults: samples:2, dist2Threshold:400.0, history: 500
-    backSub = cv2.createBackgroundSubtractorKNN()
-    samples = backSub.getkNNSamples()
-    dist2Threshold = backSub.getDist2Threshold()
-    history = backSub.getHistory()
-    print(f'samples:{samples}, dist2Threshold:{dist2Threshold}, history, {history}')
-    backSub.setHistory(1)  # large gets many detections
-    backSub.setkNNSamples(2)  # 1 doesn't detect small object
-    backSub.setDist2Threshold(5000)  # small gets many detections, large misses small movements
-    return backSub
+    return background_subtractor
 
 def kp_to_bbox(kp):
     (x, y) = kp.pt
@@ -104,12 +102,12 @@ def is_bbox_being_tracked(live_trackers, bbox):
 
     return tracked
 
-def detectSBD(frame, image_width):
+def perform_blob_detection(frame):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
 
     params.minRepeatability = 2
-    params.minDistBetweenBlobs = int(image_width * 0.05)  # 5% of the width of the image
+    params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)  # 5% of the width of the image
 
     params.minThreshold = 3
 
@@ -128,7 +126,7 @@ def detectSBD(frame, image_width):
     # print("ran detect")
     return keypoints
 
-def scaleImage(img, dim):
+def scale_image(img, dim):
     # calculate the width and height percent of original size
     width = int((dim / img.shape[1]) * 100)
     height = int((dim / img.shape[0]) * 100)
@@ -139,3 +137,15 @@ def scaleImage(img, dim):
     scaled_height = int(img.shape[0] * scale_percent / 100)
     #resize the image
     return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+
+def apply_fisheye_mask(frame):
+    shape = frame.shape[:2]
+    # print(f'shape: {shape}')
+    mask = np.zeros(shape, dtype="uint8")
+    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)), int(min(shape[0], shape[1]) * 0.46), 255, -1)
+    return cv2.bitwise_and(frame, frame, mask=mask)
+
+def apply_background_subtraction(frame_gray, background_subtractor):
+    masked_frame = apply_fisheye_mask(frame_gray)
+    foreground_mask = background_subtractor.apply(masked_frame)
+    return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)

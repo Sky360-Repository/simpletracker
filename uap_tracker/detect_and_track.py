@@ -36,7 +36,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         input_file = sys.argv[1]
     else:
-       input_file = "vids/Test_Trimmed.mp4"
+       input_file = "../vids/Test_Trimmed.mp4"
 
     video = cv2.VideoCapture(input_file)
         
