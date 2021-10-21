@@ -53,12 +53,12 @@ class Tracker():
     def get_bbox(self):
         return self.bboxes[-1]
 
-    def add_bbox_to_image(self, frame, color):
+    def add_bbox_to_image(self, image, font_size, color):
         bbox = self.get_bbox()
         p1 = (int(bbox[0]), int(bbox[1]))
         p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-        cv2.rectangle(frame, p1, p2, color, 2, 1)
-        cv2.putText(frame, str(self.id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, u.get_font_size(), color, 2)
+        cv2.rectangle(image, p1, p2, color, 2, 1)
+        cv2.putText(image, str(self.id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
 
     def does_bbx_overlap(self, bbox):
         overlap = u.bbox_overlap(self.get_bbox(), bbox)

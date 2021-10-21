@@ -86,7 +86,7 @@ class VideoTracker():
                 if not u.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def detect_and_track(self, trackers_updated_callback=None, record=True, demo_mode=False, two_by_two=False):
+    def detect_and_track(self, record=False, two_by_two=True):
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
@@ -94,13 +94,17 @@ class VideoTracker():
         tracker_type = tracker_types[7]
         background_subtractor_type = background_subtractor_types[0]
 
-        # Open output video
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        writer = u.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
 
-        font_size = source_height / 1000.0
-        max_display_dim = u.get_image_max_display_size_h_or_w()
+        # Open output video
+        writer = None
+        if record:
+            writer = u.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
+
+        font_size = int(source_height / 1000.0)
+        font_colour = (50, 170, 50)
+        max_display_dim = 1080
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -120,27 +124,6 @@ class VideoTracker():
             output_image, masked_background = u.apply_background_subtraction(frame_gray, background_subtractor)
 
         key_points = u.perform_blob_detection(masked_background)
-        # print(key_points)
-
-        if demo_mode:  # MG: Moved this into the if block so that it only runs when needed. Paul --> DELETE THIS COMMENT IF YOU OKAY WITH THIS CHANGE
-
-            key_points_image = cv2.drawKeypoints(output_image, key_points, np.array([]), (0, 0, 255),
-                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            msg = f"Detected {len(key_points)} keypoints: "
-            # print(msg)
-            cv2.putText(key_points_image, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
-            # cv2.imshow('mask', im_with_key_points)
-            # cv2.waitKey()
-
-            for i in range(150):
-                cv2.putText(frame, "First frame, look for BLOB's: ", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size,
-                            (50, 170, 50), 2)
-                writer.write(frame)
-
-            for i in range(150):
-                cv2.putText(key_points_image, "Identified here with in red: ", (100, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                            font_size, (50, 170, 50), 2)
-                writer.write(key_points_image)
 
         # Create Trackers
         self.create_trackers_from_keypoints(tracker_type, key_points, output_image)
@@ -155,11 +138,15 @@ class VideoTracker():
             # Start timer
             timer = cv2.getTickCount()
 
+            # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
+            image_frame = frame.copy()
             image_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
 
             # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
             output_image, masked_background = u.apply_background_subtraction(image_gray, background_subtractor)
-            output_image = frame  # MG I have set the output image to be that of the original frame so that we preserve colour i.e. 24 bit image
+            output_image = image_frame
 
             # Detect new objects of interest to pass to tracker
             key_points = u.perform_blob_detection(masked_background)
@@ -173,29 +160,32 @@ class VideoTracker():
                 listener.trackers_updated_callback(output_image, self.live_trackers, fps)
 
             for tracker in self.live_trackers:
-                tracker.add_bbox_to_image(output_image, (0, 255, 0))
+                tracker.add_bbox_to_image(output_image, int(font_size/2), font_colour)
 
-            msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}"
+            msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}  (Sky360)"
             print(msg)
-            cv2.putText(output_image, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
-            cv2.putText(output_image, "FPS : " + str(int(fps)), (100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
+            cv2.putText(output_image, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
+            cv2.putText(output_image, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
 
             if two_by_two:
-                # MG: trying to speed up the loop so moved this code here as im_with_keypoints appears to only be used here within the loop
-                image_with_key_points = cv2.drawKeypoints(masked_background, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                msg = f"Detected {len(key_points)} keypoints: "
-                # print(msg)
-                cv2.putText(image_with_key_points, msg, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, (50, 170, 50), 2)
+                # Create a copy as we need to put text on it and also turn it into a 24 bit image
+                masked_background_copy = cv2.cvtColor(masked_background.copy(), cv2.COLOR_GRAY2BGR)
+
+                masked_background_with_key_points = cv2.drawKeypoints(masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                msg = f"Detected {len(key_points)} Key Points (Sky360)"
+                cv2.putText(masked_background_with_key_points, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
+
+                cv2.putText(masked_background_copy, "Masked Background (Sky360)", (100, 200), cv2.FONT_HERSHEY_SIMPLEX,
+                            font_size, font_colour, 2)
 
                 im_h1 = cv2.hconcat([frame, output_image])
-                im_h2 = cv2.hconcat([masked_background, image_with_key_points])
+                im_h2 = cv2.hconcat([masked_background_copy, masked_background_with_key_points])
 
                 final_image = cv2.vconcat([im_h1, im_h2])
             else:
                 final_image = output_image
 
             # Display result, resize it to a standard size
-
             if final_image.shape[0] > max_display_dim or final_image.shape[1] > max_display_dim:
                 #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
                 scaled_image = u.scale_image(final_image, max_display_dim)
@@ -203,7 +193,7 @@ class VideoTracker():
             else:
                 cv2.imshow("Tracking", final_image)
 
-            if record or demo_mode:
+            if writer is not None:
                 writer.write(final_image)
 
             # Exit if ESC pressed
@@ -213,7 +203,8 @@ class VideoTracker():
 
             frame_count += 1
 
-        writer.release()
+        if writer is not None:
+            writer.release()
 
         for listener in self.listeners:
             listener.finish(self.total_trackers_started, self.total_trackers_finished)
