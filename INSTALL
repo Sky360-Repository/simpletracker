@@ -1,1 +1,0 @@
-conda create --name simpletracker --file requirements.txt
