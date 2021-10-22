@@ -143,3 +143,10 @@ def apply_background_subtraction(frame_gray, background_subtractor):
     masked_frame = apply_fisheye_mask(frame_gray)
     foreground_mask = background_subtractor.apply(masked_frame)
     return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)
+
+
+def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
+    p1 = (int(bbox[0]), int(bbox[1]))
+    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+    cv2.rectangle(frame, p1, p2, color, 2, 1)
+    cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)

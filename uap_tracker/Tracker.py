@@ -83,16 +83,16 @@ class Tracker():
 
         return tracker
 
+    def get_bbox(self):
+        return self.bboxes[-1]
+
     def update(self, frame, frame_hsv):
         ok, bbox = self.cv2_tracker.update(frame)
         if ok:
             self.bboxes.append(bbox)
             self.track_window = bbox
 
-            p1 = (int(bbox[0]), int(bbox[1]))
-            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            cv2.rectangle(frame, p1, p2, self.font_color, 2, 1)
-            cv2.putText(frame, str(self.id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_color, 2)
+            u.add_bbox_to_image(bbox, self.id, frame, self.font_size, self.font_color)
 
             # MG: The meanShift option of tracking does not work very well for us, but I am keeping the kalman stuff for now.
             # back_proj = cv2.calcBackProject([frame_hsv], [0], self.roi_hist, [0, 180], 1)
