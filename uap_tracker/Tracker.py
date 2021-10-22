@@ -7,11 +7,14 @@ import Utils as u
 #
 class Tracker():
 
-    def __init__(self, id, tracker_type, frame, frame_hsv, bbox):
+    def __init__(self, id, tracker_type, frame, frame_hsv, bbox, font_size, font_color):
+
         self.id = id
         self.cv2_tracker = Tracker.create_cv2_tracker(tracker_type)
         self.cv2_tracker.init(frame, bbox)
         self.bboxes = [bbox]
+        self.font_size = font_size
+        self.font_color = font_color
 
         self.track_window = bbox
         self.term_crit = (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, 10, 1)
@@ -80,15 +83,16 @@ class Tracker():
 
         return tracker
 
-    @property
-    def get_bbox(self):
-        return self.bboxes[-1]
-
     def update(self, frame, frame_hsv):
         ok, bbox = self.cv2_tracker.update(frame)
         if ok:
             self.bboxes.append(bbox)
             self.track_window = bbox
+
+            p1 = (int(bbox[0]), int(bbox[1]))
+            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+            cv2.rectangle(frame, p1, p2, self.font_color, 2, 1)
+            cv2.putText(frame, str(self.id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_color, 2)
 
             # MG: The meanShift option of tracking does not work very well for us, but I am keeping the kalman stuff for now.
             # back_proj = cv2.calcBackProject([frame_hsv], [0], self.roi_hist, [0, 180], 1)
@@ -114,14 +118,7 @@ class Tracker():
 
         return ok, bbox
 
-    def add_bbox_to_image(self, frame, font_size, color):
-        bbox = self.get_bbox
-        p1 = (int(bbox[0]), int(bbox[1]))
-        p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-        cv2.rectangle(frame, p1, p2, color, 2, 1)
-        cv2.putText(frame, str(self.id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
-
     def does_bbx_overlap(self, bbox):
-        overlap = u.bbox_overlap(self.get_bbox, bbox)
+        overlap = u.bbox_overlap(self.bboxes[-1], bbox)
         # print(f'checking tracking overlap {overlap} for {self.id}')
         return overlap > 0

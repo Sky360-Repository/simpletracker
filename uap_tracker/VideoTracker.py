@@ -16,6 +16,9 @@ class VideoTracker():
         self.total_trackers_started = 0
         self.live_trackers = []
         self.listeners = []
+        self.font_size = 8
+        self.font_colour = (50, 170, 50)
+        self.max_display_dim = 1080
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -39,7 +42,7 @@ class VideoTracker():
 
         self.total_trackers_started += 1
 
-        tracker = t.Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox)
+        tracker = t.Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox, self.font_size, self.font_colour)
         tracker.update(frame, frame_hsv)
         self.live_trackers.append(tracker)
 
@@ -97,9 +100,7 @@ class VideoTracker():
         if record:
             writer = u.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
 
-        font_size = int(source_height / 1000.0)
-        font_colour = (50, 170, 50)
-        max_display_dim = 1080
+        self.font_size = int(source_height / 1000.0)
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -139,7 +140,7 @@ class VideoTracker():
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
+            cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
             # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
             _, frame_masked_background = u.apply_background_subtraction(frame_gray, background_subtractor)
@@ -155,13 +156,10 @@ class VideoTracker():
             for listener in self.listeners:
                 listener.trackers_updated_callback(frame_output, self.live_trackers, fps)
 
-            for tracker in self.live_trackers:
-                tracker.add_bbox_to_image(frame_output, int(font_size / 2), font_colour)
-
             msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}  (Sky360)"
             print(msg)
-            cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
-            cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
+            cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
+            cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
             if two_by_two:
                 # Create a copy as we need to put text on it and also turn it into a 24 bit image
@@ -169,10 +167,10 @@ class VideoTracker():
 
                 frame_masked_background_with_key_points = cv2.drawKeypoints(frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
                 msg = f"Detected {len(key_points)} Key Points (Sky360)"
-                cv2.putText(frame_masked_background_with_key_points, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_colour, 2)
+                cv2.putText(frame_masked_background_with_key_points, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
                 cv2.putText(frame_masked_background_copy, "Masked Background (Sky360)", (100, 200), cv2.FONT_HERSHEY_SIMPLEX,
-                            font_size, font_colour, 2)
+                            self.font_size, self.font_colour, 2)
 
                 im_h1 = cv2.hconcat([frame, frame_output])
                 im_h2 = cv2.hconcat([frame_masked_background_copy, frame_masked_background_with_key_points])
@@ -182,9 +180,9 @@ class VideoTracker():
                 frame_final = frame_output
 
             # Display result, resize it to a standard size
-            if frame_final.shape[0] > max_display_dim or frame_final.shape[1] > max_display_dim:
+            if frame_final.shape[0] > self.max_display_dim or frame_final.shape[1] > self.max_display_dim:
                 #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
-                frame_scaled = u.scale_image(frame_final, max_display_dim)
+                frame_scaled = u.scale_image(frame_final, self.max_display_dim)
                 cv2.imshow("Tracking", frame_scaled)
             else:
                 cv2.imshow("Tracking", frame_final)
