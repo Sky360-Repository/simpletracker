@@ -7,9 +7,9 @@ import sys
 import cv2
 import VideoTracker as vt
 import TrackerListener as tl
-import TrackerListenerSly
+import TrackerListenerStf
 
-USAGE = 'python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory> [-f [simpletracker|supervisely]]'
+USAGE = 'python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory> [-f [original|stf]]'
 
 def main(argv):
     try:
@@ -19,7 +19,7 @@ def main(argv):
         sys.exit(2)
 
     #default output format to simpletracker
-    format = 'simpletracker'
+    format = 'original'
 
     for opt, arg in opts:
         if opt == '-h':
@@ -56,10 +56,10 @@ def main(argv):
 
         video_tracker = vt.VideoTracker(video)
 
-        if format=='simpletracker':
+        if format=='original':
             clz=tl.TrackerListener
-        elif format=='supervisely':
-            clz=TrackerListenerSly.TrackerListenerSly
+        elif format=='stf':
+            clz=TrackerListenerStf.TrackerListenerStf
         
         listener = clz(video, full_path, root_name, output_dir)
 

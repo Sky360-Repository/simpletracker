@@ -6,7 +6,7 @@ import json
 #
 # Listener to create supervise.ly video format output
 #
-class TrackerListenerSly():
+class TrackerListenerStf():
 
     def __init__(self, video, full_path, file_name, output_dir):
         self.video = video
@@ -82,7 +82,7 @@ class TrackerListenerSly():
         self.images_dir = self.video_dir + '/images/'
         os.mkdir(self.images_dir)     
 
-        self.video_filename = self.video_dir + '/' + self.file_name + '.mp4'
+        self.video_filename = self.video_dir + '/' + 'video.mp4'
 
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -95,7 +95,7 @@ class TrackerListenerSly():
         self.writer=None
 
     def _close_annotations(self):
-        filename=self.video_dir + '/'+self.file_name + ".json"
+        filename=self.video_dir + '/annotations.json'
         with open(filename, 'w') as outfile:
             json.dump(self.frame_annotations, outfile, indent=2)
         self.frame_annotations=[]
