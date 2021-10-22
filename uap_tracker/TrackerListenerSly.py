@@ -15,22 +15,17 @@ class TrackerListenerSly():
         self.output_dir = output_dir
         self.recording = False
         self._create_output_dir('/stf')
-        self.ann_dir = self._create_output_dir('/stf/ann/')
-        self.video_dir = self._create_output_dir('/stf/video/')
+        self.stf_dir = self._create_output_dir('/stf/')
         self.processed_dir = self._create_output_dir('/processed/')
 
         self.video_id=0
         self.writer = None
+        self.video_dir=None
         self.video_filename=None
 
         self.frame_annotations=[]
 
         print(f"TrackerListenerSly processing {full_path}")
-
-    def _get_writer_filename_and_increment_id(self):
-        filename=f"{self.video_dir}/{self.file_name}_{self.video_id:06}.mp4"
-        self.video_id += 1
-        return filename
 
     def _create_output_dir(self, dir_ext):
         dir_to_create = self.output_dir + dir_ext
@@ -44,11 +39,11 @@ class TrackerListenerSly():
                 self._init_writer()
             
             for tracker in alive_trackers:
-                #tracker.add_bbox_to_image(frame, (0, 255, 0))
                 self.frame_annotations.append({
                     'frame':frame_id,
                     'annotations': self._create_stf_annotation(frame_id, tracker)
                 })
+                self._write_image(frame,frame_id)
 
             
             self.writer.write(frame)
@@ -57,6 +52,11 @@ class TrackerListenerSly():
                 # No more live trackers, so close out this video
                 self._close_writer()
                 self._close_annotations()
+
+    def _write_image(self,frame,frame_id):
+        filename = self.images_dir + f"{frame_id:06}.jpg"
+        cv2.imwrite(filename,frame)
+
 
     def _create_stf_annotation(self,frame_id, tracker):
         print(f"{tracker.id}, {tracker.get_bbox()}")
@@ -75,9 +75,18 @@ class TrackerListenerSly():
 
 
     def _init_writer(self):
-        self.video_filename = self._get_writer_filename_and_increment_id()
+        self.video_dir=f"{self.stf_dir}/{self.file_name}_{self.video_id:06}"
+        os.mkdir(self.video_dir)
+        self.video_id += 1
+
+        self.images_dir = self.video_dir + '/images/'
+        os.mkdir(self.images_dir)     
+
+        self.video_filename = self.video_dir + '/' + self.file_name + '.mp4'
+
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         self.writer = u.get_writer(self.video_filename, source_width, source_height)
 
 
@@ -86,7 +95,7 @@ class TrackerListenerSly():
         self.writer=None
 
     def _close_annotations(self):
-        filename=self.ann_dir + os.path.basename(self.video_filename) + ".json"
+        filename=self.video_dir + '/'+self.file_name + ".json"
         with open(filename, 'w') as outfile:
             json.dump(self.frame_annotations, outfile, indent=2)
         self.frame_annotations=[]
