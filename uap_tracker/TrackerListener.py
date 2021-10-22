@@ -21,7 +21,7 @@ class TrackerListener():
         print(f"TrackerListener processing {full_path}")
 
     def _create_output_dir(self, dir_ext):
-        dir_to_create = self.output_dir + dir_ext
+        dir_to_create = self.output_dir + '/' + dir_ext
         if not os.path.isdir(dir_to_create):
             os.mkdir(dir_to_create)
         return dir_to_create
@@ -32,7 +32,7 @@ class TrackerListener():
             if self.writer is None:
                 self._init_writer()
             for tracker in alive_trackers:
-                tracker.add_bbox_to_image(frame, (0, 255, 0))
+                u.add_bbox_to_image(tracker.get_bbox(), tracker.id, frame, 1, (0, 255, 0))
             self.writer.write(frame)
 
     def finish(self, total_trackers_started, total_trackers_finished):
