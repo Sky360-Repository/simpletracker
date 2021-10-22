@@ -46,6 +46,7 @@ def main(argv):
 
         full_path = input_dir + filename
 
+        print(f"Opening {full_path}")
         video = cv2.VideoCapture(full_path)
 
         # Exit if video not opened.
