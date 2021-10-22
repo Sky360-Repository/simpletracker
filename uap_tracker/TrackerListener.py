@@ -26,7 +26,7 @@ class TrackerListener():
             os.mkdir(dir_to_create)
         return dir_to_create
 
-    def trackers_updated_callback(self, frame, alive_trackers, fps):
+    def trackers_updated_callback(self, frame, frame_id, alive_trackers, fps):
         if self.recording or len(alive_trackers) > 0:
             self.recording = True
             if self.writer is None:

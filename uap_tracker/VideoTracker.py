@@ -173,7 +173,7 @@ class VideoTracker():
             fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
 
             for listener in self.listeners:
-                listener.trackers_updated_callback(output_image, self.live_trackers, fps)
+                listener.trackers_updated_callback(output_image, frame_count+1, self.live_trackers, fps)
 
             for tracker in self.live_trackers:
                 tracker.add_bbox_to_image(output_image, (0, 255, 0))
