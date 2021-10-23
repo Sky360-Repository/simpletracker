@@ -5,7 +5,7 @@
 #from typing_extensions import ParamSpecArgs
 import cv2
 import sys
-import VideoTracker as vt
+import uap_tracker.video_tracker as vt
 
 #from object_detection.utils import config_util
 

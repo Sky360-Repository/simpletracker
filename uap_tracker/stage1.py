@@ -5,9 +5,9 @@ import os
 import getopt
 import sys
 import cv2
-import VideoTracker as vt
-import TrackerListener as tl
-import TrackerListenerStf
+import uap_tracker.video_tracker as vt
+import uap_tracker.tracker_listener as tl
+import uap_tracker.tracker_listener_stf as tracker_listener_stf
 
 USAGE = 'python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory> [-f [original|stf]]'
 
@@ -59,7 +59,7 @@ def main(argv):
         if format=='original':
             clz=tl.TrackerListener
         elif format=='stf':
-            clz=TrackerListenerStf.TrackerListenerStf
+            clz=tracker_listener_stf.TrackerListenerStf
         
         listener = clz(video, full_path, root_name, output_dir)
 

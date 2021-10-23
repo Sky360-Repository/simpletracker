@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import Utils as u
+import uap_tracker.utils as u
 
 #
 # Tracks a single object
