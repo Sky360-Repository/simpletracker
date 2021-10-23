@@ -4,7 +4,15 @@ import uap_tracker.utils as utils
 import json
 
 #
-# Listener to create supervise.ly video format output
+# Listener to create output suitable for input to stage2
+# in SimpleTrackerFormat (stf) format:
+#
+# ./processed/
+# ./stf/<video_name>_<section_id>/
+#   annotations.json
+#   video.mp4
+#   images/
+#     <frame_id:06>.jpg
 #
 class TrackerListenerStf():
 
