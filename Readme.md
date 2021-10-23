@@ -14,9 +14,9 @@ You can also install with pip:
 
 ## Running
 
-You can run a test which will create an annotated outputvideo.mp4 in the root directory of the given file (or a default one)
+You can run a test which will create an outputvideo.mp4 with bounding boxes rendered into the video.
 
-```PYTHONPATH=. python uap_tracker/detect_and_track.py```
+```PYTHONPATH=. python uap_tracker/detect_and_track.py [filename.mkv|filename.mp4]```
 
 The full stage 1 can be run using the following command:
 
