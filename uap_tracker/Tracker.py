@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import uap_tracker.utils as u
+import uap_tracker.utils as utils
 
 #
 # Tracks a single object
@@ -50,7 +50,7 @@ class Tracker():
     @staticmethod
     def create_cv2_tracker(tracker_type):
         tracker = None
-        (major_ver, minor_ver, subminor_ver) = u.get_cv_version()
+        (major_ver, minor_ver, subminor_ver) = utils.get_cv_version()
         if int(minor_ver) < 3:
             tracker = cv2.Tracker_create(tracker_type)
         else:
@@ -92,7 +92,7 @@ class Tracker():
             self.bboxes.append(bbox)
             self.track_window = bbox
 
-            u.add_bbox_to_image(bbox, self.id, frame, self.font_size, self.font_color)
+            utils.add_bbox_to_image(bbox, self.id, frame, self.font_size, self.font_color)
 
             # MG: The meanShift option of tracking does not work very well for us, but I am keeping the kalman stuff for now.
             # back_proj = cv2.calcBackProject([frame_hsv], [0], self.roi_hist, [0, 180], 1)
@@ -119,6 +119,6 @@ class Tracker():
         return ok, bbox
 
     def does_bbx_overlap(self, bbox):
-        overlap = u.bbox_overlap(self.bboxes[-1], bbox)
+        overlap = utils.bbox_overlap(self.bboxes[-1], bbox)
         # print(f'checking tracking overlap {overlap} for {self.id}')
         return overlap > 0
