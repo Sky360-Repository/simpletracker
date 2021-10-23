@@ -5,9 +5,9 @@ import os
 import getopt
 import sys
 import cv2
-import uap_tracker.video_tracker as vt
-import uap_tracker.tracker_listener as tl
-import uap_tracker.tracker_listener_stf as tracker_listener_stf
+from uap_tracker.video_tracker import VideoTracker
+from uap_tracker.tracker_listener import TrackerListener
+from uap_tracker.tracker_listener_stf import TrackerListenerStf
 
 USAGE = 'python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory> [-f [original|stf]]'
 
@@ -54,12 +54,12 @@ def main(argv):
             print("Could not open video")
             sys.exit()
 
-        video_tracker = vt.VideoTracker(video)
+        video_tracker = VideoTracker(video)
 
         if format=='original':
-            clz=tl.TrackerListener
+            clz=TrackerListener
         elif format=='stf':
-            clz=tracker_listener_stf.TrackerListenerStf
+            clz=TrackerListenerStf
         
         listener = clz(video, full_path, root_name, output_dir)
 

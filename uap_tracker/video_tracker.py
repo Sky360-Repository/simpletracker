@@ -1,8 +1,8 @@
 import cv2
 import sys
 import numpy as np
-import uap_tracker.utils as u
-import uap_tracker.tracker as t
+import uap_tracker.utils as utils
+from uap_tracker.tracker import Tracker
 
 #
 # Tracks multiple objects in a video
@@ -29,11 +29,11 @@ class VideoTracker():
 
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame, frame_hsv):
         for kp in key_points:
-            bbox = u.kp_to_bbox(kp)
+            bbox = utils.kp_to_bbox(kp)
             # print(bbox)
 
             # Initialize tracker with first frame and bounding box
-            if not u.is_bbox_being_tracked(self.live_trackers, bbox):
+            if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, frame_hsv, bbox)
 
     def create_and_add_tracker(self, tracker_type, frame, frame_hsv, bbox):
@@ -42,7 +42,7 @@ class VideoTracker():
 
         self.total_trackers_started += 1
 
-        tracker = t.Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox, self.font_size, self.font_colour)
+        tracker = Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox, self.font_size, self.font_colour)
         tracker.update(frame, frame_hsv)
         self.live_trackers.append(tracker)
 
@@ -51,7 +51,7 @@ class VideoTracker():
         # cache kp -> bbox mapping for removing failed trackers
         kp_bbox_map = {}
         for kp in key_points:
-            bbox = u.kp_to_bbox(kp)
+            bbox = utils.kp_to_bbox(kp)
             kp_bbox_map[kp] = bbox
 
         failed_trackers = []
@@ -66,7 +66,7 @@ class VideoTracker():
             # Try to match the new detections with this tracker
             for idx, kp in enumerate(key_points):
                 if kp in kp_bbox_map:
-                    overlap = u.bbox_overlap(bbox, kp_bbox_map[kp])
+                    overlap = utils.bbox_overlap(bbox, kp_bbox_map[kp])
                     # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
                     if overlap > 0.2:
                         del (kp_bbox_map[kp])
@@ -81,7 +81,7 @@ class VideoTracker():
         for kp, new_bbox in kp_bbox_map.items():
             # Hit max trackers?
             if len(self.live_trackers) < max_trackers:
-                if not u.is_bbox_being_tracked(self.live_trackers, new_bbox):
+                if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, frame_hsv, new_bbox)
 
     def detect_and_track(self, record=False, two_by_two=True):
@@ -98,7 +98,7 @@ class VideoTracker():
         # Open output video
         writer = None
         if record:
-            writer = u.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
+            writer = utils.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
 
         self.font_size = int(source_height / 1000.0)
 
@@ -111,16 +111,16 @@ class VideoTracker():
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        background_subtractor = u.create_background_subtractor(background_subtractor_type)
+        background_subtractor = utils.create_background_subtractor(background_subtractor_type)
 
-        frame_output, frame_masked_background = u.apply_background_subtraction(frame_gray, background_subtractor)
+        frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
         for i in range(5):
             ok, frame = self.video.read()
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            frame_output, frame_masked_background = u.apply_background_subtraction(frame_gray, background_subtractor)
+            frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
-        key_points = u.perform_blob_detection(frame_masked_background)
+        key_points = utils.perform_blob_detection(frame_masked_background)
 
         # Create Trackers
         self.create_trackers_from_keypoints(tracker_type, key_points, frame_output, frame_hsv)
@@ -143,10 +143,10 @@ class VideoTracker():
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
             # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-            _, frame_masked_background = u.apply_background_subtraction(frame_gray, background_subtractor)
+            _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
             # Detect new objects of interest to pass to tracker
-            key_points = u.perform_blob_detection(frame_masked_background)
+            key_points = utils.perform_blob_detection(frame_masked_background)
 
             self.update_trackers(tracker_type, key_points, frame_output, frame_hsv)
 
@@ -182,7 +182,7 @@ class VideoTracker():
             # Display result, resize it to a standard size
             if frame_final.shape[0] > self.max_display_dim or frame_final.shape[1] > self.max_display_dim:
                 #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
-                frame_scaled = u.scale_image(frame_final, self.max_display_dim)
+                frame_scaled = utils.scale_image(frame_final, self.max_display_dim)
                 cv2.imshow("Tracking", frame_scaled)
             else:
                 cv2.imshow("Tracking", frame_final)

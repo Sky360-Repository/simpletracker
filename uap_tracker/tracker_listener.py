@@ -1,6 +1,6 @@
 import os
 import cv2
-import uap_tracker.utils as u
+import uap_tracker.utils as utils
 
 class TrackerListener():
 
@@ -32,7 +32,7 @@ class TrackerListener():
             if self.writer is None:
                 self._init_writer()
             for tracker in alive_trackers:
-                u.add_bbox_to_image(tracker.get_bbox(), tracker.id, frame, 1, (0, 255, 0))
+                utils.add_bbox_to_image(tracker.get_bbox(), tracker.id, frame, 1, (0, 255, 0))
             self.writer.write(frame)
 
     def finish(self, total_trackers_started, total_trackers_finished):
@@ -47,4 +47,4 @@ class TrackerListener():
     def _init_writer(self):
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.writer = u.get_writer(self.writer_filename, source_width, source_height)
+        self.writer = utils.get_writer(self.writer_filename, source_width, source_height)

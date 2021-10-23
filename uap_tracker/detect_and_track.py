@@ -5,7 +5,7 @@
 #from typing_extensions import ParamSpecArgs
 import cv2
 import sys
-import uap_tracker.video_tracker as vt
+from uap_tracker.video_tracker import VideoTracker
 
 #from object_detection.utils import config_util
 
@@ -45,5 +45,5 @@ if __name__ == '__main__':
         print("Could not open video")
         sys.exit()
     
-    video_tracker = vt.VideoTracker(video)
+    video_tracker = VideoTracker(video)
     video_tracker.detect_and_track()

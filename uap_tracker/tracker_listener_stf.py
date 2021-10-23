@@ -1,6 +1,6 @@
 import os
 import cv2
-import uap_tracker.utils as u
+import uap_tracker.utils as utils
 import json
 
 #
@@ -87,7 +87,7 @@ class TrackerListenerStf():
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
-        self.writer = u.get_writer(self.video_filename, source_width, source_height)
+        self.writer = utils.get_writer(self.video_filename, source_width, source_height)
 
 
     def _close_writer(self):
