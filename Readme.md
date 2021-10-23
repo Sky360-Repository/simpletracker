@@ -20,11 +20,11 @@ You can run a test which will create an outputvideo.mp4 with bounding boxes rend
 
 The full stage 1 can be run using the following command:
 
-```PYTHONPATH=. python uap_tracker/stage1.py -i videos/samples/ -o videos/sp14 -f stf```
+```PYTHONPATH=. python uap_tracker/stage1.py -i videos/samples/ -o videos/output/ -f stf```
 
 Where:
 
 * -i is the directory containing the videos to be processed
 * -o is the directory where you want the output to go
-* -f is the output format
+* -f is the output format [dev|stf]
 
