@@ -11,3 +11,20 @@ We recommend installing a conda environment and then running:
 You can also install with pip:
 
 ```pip install -r requirements.txt```
+
+## Running
+
+You can run a test which will create an annotated outputvideo.mp4 in the root directory of the given file (or a default one)
+
+```PYTHONPATH=. python uap_tracker/detect_and_track.py```
+
+The full stage 1 can be run using the following command:
+
+```PYTHONPATH=. python uap_tracker/stage1.py -i videos/samples/ -o videos/sp14 -f stf```
+
+Where:
+
+* -i is the directory containing the videos to be processed
+* -o is the directory where you want the output to go
+* -f is the output format
+
