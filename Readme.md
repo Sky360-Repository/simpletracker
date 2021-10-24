@@ -1,6 +1,13 @@
-# Historical Processing Stage 1 (SimpleTracker)
+# Historical Overview
+
+* Stage 1: Process videos looking for moving objects and generate annotation files with boundingboxes (tracks)
+* Stage 2: Human associates tracks with labels
+* Stage 3: Train NN
+
+## Processing Stage 1 (SimpleTracker)
 
 The purpose of this program is to take historical videos created with the Skyhub/Sky360 program and process them for input into Stage 2.
+
 
 ## Install
 

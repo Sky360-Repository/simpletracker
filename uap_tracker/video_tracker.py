@@ -154,7 +154,7 @@ class VideoTracker():
             fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
 
             for listener in self.listeners:
-                listener.trackers_updated_callback(frame_output, frame_count+1, self.live_trackers, fps)
+                listener.trackers_updated_callback(frame, frame_count+1, self.live_trackers, fps)
 
             msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}  (Sky360)"
             print(msg)
