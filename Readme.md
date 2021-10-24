@@ -43,7 +43,7 @@ The output for the STF formatter is in this directory structure
 
 ```
 {
-  "labels": {
+  "track_labels": {
     "1": "unknown"                     # track_id 1 has the label 'unknown'
   },
   "frames": [

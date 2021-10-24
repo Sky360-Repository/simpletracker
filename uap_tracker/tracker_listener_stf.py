@@ -120,7 +120,7 @@ class TrackerListenerStf():
         filename=self.video_dir + '/annotations.json'
 
         annotations={
-            'labels':self.labels,
+            'track_labels':self.labels,
             'frames':self.frame_annotations
         }
 
