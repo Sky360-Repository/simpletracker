@@ -28,8 +28,11 @@ class TrackerListenerStf():
 
         self.video_id=0
         self.writer = None
+        self.annotated_writer = None
+
         self.video_dir=None
         self.video_filename=None
+        self.annotated_video_filename = None
 
         self.frame_annotations=[]
 
@@ -53,8 +56,11 @@ class TrackerListenerStf():
                 })
                 self._write_image(frame,frame_id)
 
-            
             self.writer.write(frame)
+
+            annotated_frame = frame.copy()
+            utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
+            self.annotated_writer.write(annotated_frame)
         else:
             if self.writer:
                 # No more live trackers, so close out this video
@@ -81,7 +87,6 @@ class TrackerListenerStf():
             self._close_annotations()
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
 
-
     def _init_writer(self):
         self.video_dir=f"{self.stf_dir}/{self.file_name}_{self.video_id:06}"
         os.mkdir(self.video_dir)
@@ -91,16 +96,19 @@ class TrackerListenerStf():
         os.mkdir(self.images_dir)     
 
         self.video_filename = self.video_dir + '/' + 'video.mp4'
+        self.annotated_video_filename = self.video_dir + '/' + 'annotated_video.mp4'
 
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
         self.writer = utils.get_writer(self.video_filename, source_width, source_height)
-
+        self.annotated_writer = utils.get_writer(self.annotated_video_filename, source_width, source_height)
 
     def _close_writer(self):
         self.writer.release()
         self.writer=None
+        self.annotated_writer.release()
+        self.annotated_writer = None
 
     def _close_annotations(self):
         filename=self.video_dir + '/annotations.json'
