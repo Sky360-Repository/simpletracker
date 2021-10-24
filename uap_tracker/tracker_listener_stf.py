@@ -2,6 +2,7 @@ import os
 import cv2
 import uap_tracker.utils as utils
 import json
+import numpy as np
 
 #
 # Listener to create output suitable for input to stage2
@@ -44,7 +45,7 @@ class TrackerListenerStf():
             os.mkdir(dir_to_create)
         return dir_to_create
 
-    def trackers_updated_callback(self, frame, frame_id, alive_trackers, fps):
+    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         if len(alive_trackers) > 0:
             if self.writer is None:
                 self._init_writer()
@@ -54,7 +55,7 @@ class TrackerListenerStf():
                     'frame':frame_id,
                     'annotations': self._create_stf_annotation(frame_id, tracker)
                 })
-                self._write_image(frame,frame_id)
+                self._write_image(frame_gray, frame_masked_background, frame_id)
 
             self.writer.write(frame)
 
@@ -67,9 +68,11 @@ class TrackerListenerStf():
                 self._close_writer()
                 self._close_annotations()
 
-    def _write_image(self,frame,frame_id):
+    def _write_image(self,frame_gray, frame_masked_background,frame_id):
         filename = self.images_dir + f"{frame_id:06}.jpg"
-        cv2.imwrite(filename,frame)
+        zero_channel = np.zeros(frame_gray.shape, dtype="uint8")
+        image=cv2.merge([frame_gray, zero_channel, frame_masked_background])
+        cv2.imwrite(filename,image)
 
 
     def _create_stf_annotation(self,frame_id, tracker):
