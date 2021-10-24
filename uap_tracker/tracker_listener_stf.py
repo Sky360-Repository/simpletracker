@@ -37,6 +37,8 @@ class TrackerListenerStf():
 
         self.frame_annotations=[]
 
+        self.labels={}
+
         print(f"TrackerListenerSly processing {full_path}")
 
     def _create_output_dir(self, dir_ext):
@@ -74,14 +76,18 @@ class TrackerListenerStf():
         image=cv2.merge([frame_gray, zero_channel, frame_masked_background])
         cv2.imwrite(filename,image)
 
+    def _add_trackid_label(self, track_id, label):
+        if track_id not in self.labels:
+            self.labels[track_id]=label
 
     def _create_stf_annotation(self,frame_id, tracker):
         print(f"{tracker.id}, {tracker.get_bbox()}")
 
+        self._add_trackid_label(tracker.id, 'unknown')
+
         return {
             'bbox':tracker.get_bbox(),
-            'track_id':tracker.id,
-            'class':'unknown'
+            'track_id':tracker.id
         }
 
     def finish(self, total_trackers_started, total_trackers_finished):
@@ -115,6 +121,12 @@ class TrackerListenerStf():
 
     def _close_annotations(self):
         filename=self.video_dir + '/annotations.json'
+
+        annotations={
+            'track_labels':self.labels,
+            'frames':self.frame_annotations
+        }
+
         with open(filename, 'w') as outfile:
-            json.dump(self.frame_annotations, outfile, indent=2)
+            json.dump(annotations, outfile, indent=2)
         self.frame_annotations=[]
