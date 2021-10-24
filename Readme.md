@@ -28,3 +28,35 @@ Where:
 * -o is the directory where you want the output to go
 * -f is the output format [dev|stf]
 
+## Output
+
+The output for the STF formatter is in this directory structure
+
+```
+ ./processed/                          # Processed videos
+ ./stf/<video_name>_<section_id>/
+   annotations.json                    # Annotations file
+   video.mp4                           # Original video transcoded to mp4 and split for this section
+   images/       
+     <frame_id:06>.jpg                 # Image with the following channels: [greyscale,zeros,background subtraction]
+```
+
+```
+{
+  "labels": {
+    "1": "unknown"
+  },
+  "frames": [
+    {
+      "frame": 6,
+      "annotations": {
+        "bbox": [
+          873,
+          1222,
+          49,
+          49
+        ],
+        "track_id": 1
+      }
+    }...
+```
