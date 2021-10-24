@@ -92,7 +92,7 @@ class Tracker():
             self.bboxes.append(bbox)
             self.track_window = bbox
 
-            utils.add_bbox_to_image(bbox, self.id, frame, self.font_size, self.font_color)
+            utils.add_bbox_to_image(bbox, frame, self.id, self.font_size, self.font_color)
 
             # MG: The meanShift option of tracking does not work very well for us, but I am keeping the kalman stuff for now.
             # back_proj = cv2.calcBackProject([frame_hsv], [0], self.roi_hist, [0, 180], 1)

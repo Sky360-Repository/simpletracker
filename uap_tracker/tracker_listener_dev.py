@@ -32,7 +32,7 @@ class TrackerListenerDev():
             if self.writer is None:
                 self._init_writer()
             for tracker in alive_trackers:
-                utils.add_bbox_to_image(tracker.get_bbox(), tracker.id, frame, 1, (0, 255, 0))
+                utils.add_bbox_to_image(tracker.get_bbox(), frame, tracker.id, 1, (0, 255, 0))
             self.writer.write(frame)
 
     def finish(self, total_trackers_started, total_trackers_finished):
