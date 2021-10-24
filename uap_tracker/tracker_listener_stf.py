@@ -57,7 +57,7 @@ class TrackerListenerStf():
                     'frame':frame_id,
                     'annotations': self._create_stf_annotation(frame_id, tracker)
                 })
-                self._write_image(frame_gray, frame_masked_background, frame_id)
+            self._write_image(frame_gray, frame_masked_background, frame_id)
 
             self.writer.write(frame)
 
