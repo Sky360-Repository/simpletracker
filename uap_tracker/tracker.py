@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
+from uap_tracker.tracker_factory import TrackerFactory
 
 #
 # Tracks a single object
@@ -10,7 +11,7 @@ class Tracker():
     def __init__(self, id, tracker_type, frame, frame_hsv, bbox, font_size, font_color):
 
         self.id = id
-        self.cv2_tracker = Tracker.create_cv2_tracker(tracker_type)
+        self.cv2_tracker = TrackerFactory.create(tracker_type)
         self.cv2_tracker.init(frame, bbox)
         self.bboxes = [bbox]
         self.font_size = font_size
@@ -51,42 +52,6 @@ class Tracker():
                 [[cx], [cy], [0], [0]], np.float32)
             self.kalman.statePost = np.array(
                 [[cx], [cy], [0], [0]], np.float32)
-
-    @staticmethod
-    def create_cv2_tracker(tracker_type):
-        tracker = None
-        (major_ver, minor_ver, subminor_ver) = utils.get_cv_version()
-        if int(minor_ver) < 3:
-            tracker = cv2.Tracker_create(tracker_type)
-        else:
-            if tracker_type == 'BOOSTING':
-                tracker = cv2.TrackerBoosting_create()
-            if tracker_type == 'MIL':
-                tracker = cv2.TrackerMIL_create()
-            if tracker_type == 'KCF':
-                tracker = cv2.TrackerKCF_create()
-            if tracker_type == 'TLD':
-                tracker = cv2.TrackerTLD_create()
-            if tracker_type == 'MEDIANFLOW':
-                tracker = cv2.TrackerMedianFlow_create()
-            if tracker_type == 'GOTURN':
-                tracker = cv2.TrackerGOTURN_create()
-            if tracker_type == 'MOSSE':
-                tracker = cv2.TrackerMOSSE_create()
-            if tracker_type == "CSRT":
-                param_handler = cv2.TrackerCSRT_Params()
-                param_handler.use_gray = True
-                # print(f"psr_threshold: {param_handler.psr_threshold}")
-                param_handler.psr_threshold = 0.06
-                # fs = cv2.FileStorage("csrt_defaults.json", cv2.FileStorage_WRITE)
-                # param_handler.write(fs)
-                # fs.release()
-                # param_handler.use_gray=True
-                tracker = cv2.TrackerCSRT_create(param_handler)
-            if tracker_type == 'DASIAMRPN':
-                tracker = cv2.TrackerDaSiamRPN_create()
-
-        return tracker
 
     def get_bbox(self):
         return self.bboxes[-1]

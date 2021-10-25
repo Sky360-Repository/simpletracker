@@ -8,23 +8,6 @@ def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
-def create_background_subtractor(type, sensitivity=2):
-    if type == 'KNN':
-        # defaults: samples:2, dist2Threshold:400.0, history: 500
-        background_subtractor = cv2.createBackgroundSubtractorKNN()
-        # samples = background_subtractor.getkNNSamples()
-        # dist_2_threshold = background_subtractor.getDist2Threshold()
-        # history = background_subtractor.getHistory()
-        # print(f'samples:{samples}, dist2Threshold:{dist_2_threshold}, history, {history}')
-        # MG TODO If clause here to handle the sensitivity parameter e.g. how aggressive do we want the subtraction to be
-        background_subtractor.setHistory(1)  # large gets many detections
-        background_subtractor.setkNNSamples(2)  # 1 doesn't detect small object
-        background_subtractor.setDist2Threshold(5000)  # small gets many detections, large misses small movements
-    else:
-        raise Exception('Only the KNN Background Subtractor is currently supported')
-
-    return background_subtractor
-
 def kp_to_bbox(kp):
     (x, y) = kp.pt
     size = kp.size
@@ -143,7 +126,6 @@ def apply_background_subtraction(frame_gray, background_subtractor):
     masked_frame = apply_fisheye_mask(frame_gray)
     foreground_mask = background_subtractor.apply(masked_frame)
     return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)
-
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
