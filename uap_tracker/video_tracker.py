@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
+from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 
 #
 # Tracks multiple objects in a video
@@ -111,7 +112,7 @@ class VideoTracker():
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        background_subtractor = utils.create_background_subtractor(background_subtractor_type)
+        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type)
 
         frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
