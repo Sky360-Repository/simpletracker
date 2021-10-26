@@ -52,11 +52,13 @@ class TrackerListenerStf():
             if self.writer is None:
                 self._init_writer()
             
-            for tracker in alive_trackers:
-                self.frame_annotations.append({
+            frame_annotations={
                     'frame':frame_id,
-                    'annotations': self._create_stf_annotation(frame_id, tracker)
-                })
+                    'annotations': []
+            }
+            for tracker in alive_trackers:
+                frame_annotations['annotations'].append(self._create_stf_annotation(frame_id, tracker))
+            self.frame_annotations.append(frame_annotations)
             self._write_image(frame_gray, frame_masked_background, frame_id)
 
             self.writer.write(frame)
@@ -120,13 +122,16 @@ class TrackerListenerStf():
         self.annotated_writer = None
 
     def _close_annotations(self):
-        filename=self.video_dir + '/annotations.json'
+        #only write annotations if >= 5 frames
+        if len(self.frame_annotations) >= 5:
+            filename=self.video_dir + '/annotations.json'
 
-        annotations={
-            'track_labels':self.labels,
-            'frames':self.frame_annotations
-        }
+            annotations={
+                'track_labels':self.labels,
+                'frames':self.frame_annotations
+            }
 
-        with open(filename, 'w') as outfile:
-            json.dump(annotations, outfile, indent=2)
+            with open(filename, 'w') as outfile:
+                json.dump(annotations, outfile, indent=2)
+        
         self.frame_annotations=[]
