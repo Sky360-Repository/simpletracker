@@ -30,5 +30,5 @@ if __name__ == '__main__':
         print("Could not open video")
         sys.exit()
     
-    video_tracker = VideoTracker(video, 1)
+    video_tracker = VideoTracker(video, VideoTracker.DETECTION_SENSITIVITY_HIGH)
     video_tracker.detect_and_track()

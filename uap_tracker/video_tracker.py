@@ -10,10 +10,18 @@ from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactor
 #
 class VideoTracker():
 
+    DETECTION_SENSITIVITY_HIGH = 1
+    DETECTION_SENSITIVITY_NORMAL = 2
+    DETECTION_SENSITIVITY_LOW = 3
+
     def __init__(self, video, detection_sensitivity=2):
         # print(f'VideoTracker called {video}')
+
+        if detection_sensitivity < 1 or detection_sensitivity > 3:
+            raise Exception(f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
+
         self.video = video
-        self.detection_sensitivity = detection_sensitivity #Options are 1, 2, 3 TODO: Create enum for this
+        self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
