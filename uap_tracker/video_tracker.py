@@ -10,9 +10,10 @@ from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactor
 #
 class VideoTracker():
 
-    def __init__(self, video):
+    def __init__(self, video, detection_sensitivity=2):
         # print(f'VideoTracker called {video}')
         self.video = video
+        self.detection_sensitivity = detection_sensitivity #Options are 1, 2, 3 TODO: Create enum for this
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
@@ -109,19 +110,19 @@ class VideoTracker():
             print('Cannot read video file')
             sys.exit()
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type)
+        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
         frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
         for i in range(5):
             ok, frame = self.video.read()
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_gray = utils.convert_to_gray(frame)
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
-        key_points = utils.perform_blob_detection(frame_masked_background)
+        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
         # Create Trackers
         self.create_trackers_from_keypoints(tracker_type, key_points, frame_output, frame_hsv)
@@ -147,7 +148,7 @@ class VideoTracker():
             _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
             # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(frame_masked_background)
+            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
             self.update_trackers(tracker_type, key_points, frame_output, frame_hsv)
 

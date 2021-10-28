@@ -79,7 +79,7 @@ def is_bbox_being_tracked(live_trackers, bbox):
 
     return tracked
 
-def perform_blob_detection(frame):
+def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
 
@@ -132,3 +132,8 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+
+def convert_to_gray(src, dst=None):
+    weight = 1.0 / 3.0
+    m = np.array([[weight, weight, weight]], np.float32)
+    return cv2.transform(src, m, dst)

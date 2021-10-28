@@ -6,7 +6,7 @@ import cv2
 class BackgroundSubtractorFactory():
 
     @staticmethod
-    def create(type, sensitivity=2):
+    def create(type, sensitivity):
         if type == 'KNN':
             # defaults: samples:2, dist2Threshold:400.0, history: 500
             background_subtractor = cv2.createBackgroundSubtractorKNN()
