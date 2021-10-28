@@ -3,6 +3,7 @@ import cv2
 import uap_tracker.utils as utils
 import json
 import numpy as np
+import shutil
 
 #
 # Listener to create output suitable for input to stage2
@@ -39,6 +40,8 @@ class TrackerListenerStf():
 
         self.labels={}
 
+        self.final_dir=None
+
         print(f"TrackerListenerSly processing {full_path}")
 
     def _create_output_dir(self, dir_ext):
@@ -68,9 +71,7 @@ class TrackerListenerStf():
             self.annotated_writer.write(annotated_frame)
         else:
             if self.writer:
-                # No more live trackers, so close out this video
-                self._close_writer()
-                self._close_annotations()
+                self._close_segment()
 
     def _write_image(self,frame_gray, frame_masked_background,frame_id):
         filename = self.images_dir + f"{frame_id:06}.jpg"
@@ -92,22 +93,33 @@ class TrackerListenerStf():
             'track_id':tracker.id
         }
 
-    def finish(self, total_trackers_started, total_trackers_finished):
+    def _close_segment(self):
         if self.writer:
             self._close_writer()
-            self._close_annotations()
+            #only save if >= 5 frames
+            if len(self.frame_annotations) >= 5:
+                self._close_annotations()
+                final_video_dir=f"{self.stf_dir}/{self.file_name}_{self.video_id:06}"
+                self.video_id += 1
+                print(f"Renaming {self.tmp_video_dir} to {final_video_dir}")
+                os.rename(self.tmp_video_dir,final_video_dir)
+            else:
+                shutil.rmtree(self.tmp_video_dir)
+
+    def finish(self, total_trackers_started, total_trackers_finished):
+        self._close_segment()
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
 
     def _init_writer(self):
-        self.video_dir=f"{self.stf_dir}/{self.file_name}_{self.video_id:06}"
-        os.mkdir(self.video_dir)
-        self.video_id += 1
-
-        self.images_dir = self.video_dir + '/images/'
+        self.tmp_video_dir=f"{self.stf_dir}/tmp"
+        os.mkdir(self.tmp_video_dir)
+        
+        
+        self.images_dir = self.tmp_video_dir + '/images/'
         os.mkdir(self.images_dir)     
 
-        self.video_filename = self.video_dir + '/' + 'video.mp4'
-        self.annotated_video_filename = self.video_dir + '/' + 'annotated_video.mp4'
+        self.video_filename = self.tmp_video_dir + '/' + 'video.mp4'
+        self.annotated_video_filename = self.tmp_video_dir + '/' + 'annotated_video.mp4'
 
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -122,16 +134,15 @@ class TrackerListenerStf():
         self.annotated_writer = None
 
     def _close_annotations(self):
-        #only write annotations if >= 5 frames
-        if len(self.frame_annotations) >= 5:
-            filename=self.video_dir + '/annotations.json'
+        
+        filename=self.tmp_video_dir + '/annotations.json'
 
-            annotations={
-                'track_labels':self.labels,
-                'frames':self.frame_annotations
-            }
+        annotations={
+            'track_labels':self.labels,
+            'frames':self.frame_annotations
+        }
 
-            with open(filename, 'w') as outfile:
-                json.dump(annotations, outfile, indent=2)
+        with open(filename, 'w') as outfile:
+            json.dump(annotations, outfile, indent=2)
         
         self.frame_annotations=[]
