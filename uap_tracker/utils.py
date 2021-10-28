@@ -85,14 +85,19 @@ def perform_blob_detection(frame, sensitivity):
 
     params.minRepeatability = 2
     params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)  # 5% of the width of the image
-
     params.minThreshold = 3
-
     params.filterByArea = 1
-    params.minArea = 5
-
     params.filterByColor = 0
-    #    params.blobColor=255
+    # params.blobColor=255
+
+    if sensitivity == 1:  # Detects small, medium and large objects
+        params.minArea = 3
+    elif sensitivity == 2:  # Detects medium and large objects
+        params.minArea = 5
+    elif sensitivity == 3:  # Detects large objects
+        params.minArea = 25
+    else:
+        raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 
     detector = cv2.SimpleBlobDetector_create(params)
     # params.write('params.json')

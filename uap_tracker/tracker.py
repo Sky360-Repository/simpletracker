@@ -16,7 +16,6 @@ class Tracker():
         self.bboxes = [bbox]
         self.font_size = font_size
         self.font_color = font_color
-        self.track_window = bbox
 
     def get_bbox(self):
         return self.bboxes[-1]
@@ -25,7 +24,6 @@ class Tracker():
         ok, bbox = self.cv2_tracker.update(frame)
         if ok:
             self.bboxes.append(bbox)
-            self.track_window = bbox
             utils.add_bbox_to_image(bbox, frame, self.id, self.font_size, self.font_color)
 
         return ok, bbox
