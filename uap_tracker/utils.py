@@ -69,6 +69,11 @@ def bbox_overlap(bbox1, bbox2):
     assert iou <= 1.0
     return iou
 
+def bbox_contained(bbox1, bbox2):
+    x1, y1, w1, h1 = bbox1
+    x2, y2, w2, h2 = bbox2
+    return (x1 > x2) and (y1 > y2) and (x1+w1 < x2+w2) and (y1+h1 < y2+h2)
+
 def is_bbox_being_tracked(live_trackers, bbox):
     # simple check to see if the new bbox intersects with an existing tracked bbox
     tracked = False

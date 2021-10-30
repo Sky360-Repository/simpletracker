@@ -20,8 +20,8 @@ if __name__ == '__main__':
         #input_file = "vids/multiple_birds_f6aed5f0-c446-42d7-96e8-c5a37ef0e936.mkv"
         #input_file = "vids/rain_b29448a1-d491-4ba1-8e06-31a0699d9417.mkv"
         #input_file = "vids/uap_b253fd01-f670-4467-b200-6bbeac6649f0.mkv4"
-        input_file = "vids/uap_texas_skyhub.mp4"
-        #input_file = "vids/Test_Trimmed.mp4"
+        #input_file = "vids/uap_texas_skyhub.mp4"
+        input_file = "vids/Test_Trimmed.mp4"
 
     video = cv2.VideoCapture(input_file)
         
