@@ -29,6 +29,8 @@ class VideoTracker():
         self.font_size = 8
         self.font_colour = (50, 170, 50)
         self.max_display_dim = 1080
+        self.normalised_width = 1920
+        self.normalised_height = 1080
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -94,7 +96,7 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, frame_hsv, new_bbox)
 
-    def detect_and_track(self, record=False, two_by_two=True):
+    def detect_and_track(self, record=False, two_by_two=True, normalise_video=False):
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
@@ -105,18 +107,27 @@ class VideoTracker():
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+        print(f'Video size w:{source_width} x h:{source_height}')
+        if normalise_video:
+            print(f'Video frames wil be normalised to w: {self.normalised_width} x h:{self.normalised_height}')
+
         # Open output video
         writer = None
         if record:
             writer = utils.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
 
         self.font_size = int(source_height / 1000.0)
+        if normalise_video:
+            self.font_size = int(self.normalised_height / 1000.0)
 
         # Read first frame.
         ok, frame = self.video.read()
         if not ok:
             print('Cannot read video file')
             sys.exit()
+
+        if normalise_video:
+            frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
 
         frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -127,6 +138,10 @@ class VideoTracker():
 
         for i in range(5):
             ok, frame = self.video.read()
+
+            if normalise_video:
+                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+
             frame_gray = utils.convert_to_gray(frame)
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
@@ -144,6 +159,9 @@ class VideoTracker():
 
             # Start timer
             timer = cv2.getTickCount()
+
+            if normalise_video:
+                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
 
             # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
             frame_output = frame.copy()

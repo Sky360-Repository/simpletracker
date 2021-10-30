@@ -4,6 +4,9 @@ import numpy as np
 def get_cv_version():
     return (cv2.__version__).split('.')
 
+def normalize_frame(frame, w, h):
+    return scale_image_to(frame, w, h)
+
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
@@ -69,20 +72,21 @@ def bbox_overlap(bbox1, bbox2):
     assert iou <= 1.0
     return iou
 
-def bbox_contained(bbox1, bbox2):
+def bbox1_contain_bbox2(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
-    return (x1 > x2) and (y1 > y2) and (x1+w1 < x2+w2) and (y1+h1 < y2+h2)
+    return (x2 > x1) and (y2 > y1) and (x2+w2 < x1+w1) and (y2+h2 < y1+h1)
 
 def is_bbox_being_tracked(live_trackers, bbox):
-    # simple check to see if the new bbox intersects with an existing tracked bbox
-    tracked = False
+    # MG: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
     for tracker in live_trackers:
-        if tracker.does_bbx_overlap(bbox):
-            tracked = True
-            break
+        if tracker.is_bbx_contained(bbox):
+            return True
+        else:
+            if tracker.does_bbx_overlap(bbox):
+                return True
 
-    return tracked
+    return False
 
 def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
@@ -114,16 +118,22 @@ def perform_blob_detection(frame, sensitivity):
     return keypoints
 
 def scale_image(img, max_size_h_or_w):
-    # calculate the width and height percent of original size
-    width = int((max_size_h_or_w / img.shape[1]) * 100)
-    height = int((max_size_h_or_w / img.shape[0]) * 100)
-    # pick the smallest of the two
-    scale_percent = max(width, height)
-    # calc the scaled width and height
-    scaled_width = int(img.shape[1] * scale_percent / 100)
-    scaled_height = int(img.shape[0] * scale_percent / 100)
-    #resize the image
-    return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+    return scale_image_to(img, max_size_h_or_w, max_size_h_or_w)
+
+def scale_image_to(img, w, h):
+    if img.shape[0] > h or img.shape[1] > w:
+        # calculate the width and height percent of original size
+        width = int((w / img.shape[1]) * 100)
+        height = int((h / img.shape[0]) * 100)
+        # pick the largest of the two
+        scale_percent = max(width, height)
+        # calc the scaled width and height
+        scaled_width = int(img.shape[1] * scale_percent / 100)
+        scaled_height = int(img.shape[0] * scale_percent / 100)
+        #resize the image
+        return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+    else:
+        return img
 
 def apply_fisheye_mask(frame):
     shape = frame.shape[:2]

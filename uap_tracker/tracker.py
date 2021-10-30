@@ -32,3 +32,6 @@ class Tracker():
         overlap = utils.bbox_overlap(self.bboxes[-1], bbox)
         # print(f'checking tracking overlap {overlap} for {self.id}')
         return overlap > 0
+
+    def is_bbx_contained(self, bbox):
+        return utils.bbox1_contain_bbox2(self.bboxes[-1], bbox)
