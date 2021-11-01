@@ -21,7 +21,8 @@ if __name__ == '__main__':
         #input_file = "vids/rain_b29448a1-d491-4ba1-8e06-31a0699d9417.mkv"
         #input_file = "vids/uap_b253fd01-f670-4467-b200-6bbeac6649f0.mkv4"
         #input_file = "vids/uap_texas_skyhub.mp4"
-        input_file = "vids/Test_Trimmed.mp4"
+        #input_file = "vids/Test_Trimmed.mp4"
+        input_file = "vids/birds_and_plane.mp4"
 
     video = cv2.VideoCapture(input_file)
         
@@ -30,5 +31,5 @@ if __name__ == '__main__':
         print("Could not open video")
         sys.exit()
     
-    video_tracker = VideoTracker(video, VideoTracker.DETECTION_SENSITIVITY_NORMAL)
-    video_tracker.detect_and_track()
+    video_tracker = VideoTracker(video, VideoTracker.DETECTION_SENSITIVITY_HIGH)
+    video_tracker.detect_and_track(two_by_two=False, normalise_video=True)
