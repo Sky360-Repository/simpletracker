@@ -10,9 +10,18 @@ from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactor
 #
 class VideoTracker():
 
-    def __init__(self, video):
+    DETECTION_SENSITIVITY_HIGH = 1
+    DETECTION_SENSITIVITY_NORMAL = 2
+    DETECTION_SENSITIVITY_LOW = 3
+
+    def __init__(self, video, detection_sensitivity=2):
         # print(f'VideoTracker called {video}')
+
+        if detection_sensitivity < 1 or detection_sensitivity > 3:
+            raise Exception(f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
+
         self.video = video
+        self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
@@ -20,6 +29,10 @@ class VideoTracker():
         self.font_size = 8
         self.font_colour = (50, 170, 50)
         self.max_display_dim = 1080
+        self.normalised_width = 1920
+        self.normalised_height = 1080
+        self.blur_radius = 3
+        self.max_active_trackers = 10
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -44,7 +57,7 @@ class VideoTracker():
         self.total_trackers_started += 1
 
         tracker = Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox, self.font_size, self.font_colour)
-        tracker.update(frame, frame_hsv)
+        tracker.update(frame, frame_hsv, self.detection_sensitivity)
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, key_points, frame, frame_hsv):
@@ -59,7 +72,7 @@ class VideoTracker():
         for idx, tracker in enumerate(self.live_trackers):
 
             # Update tracker
-            ok, bbox = tracker.update(frame, frame_hsv)
+            ok, bbox = tracker.update(frame, frame_hsv, self.detection_sensitivity)
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
@@ -78,14 +91,13 @@ class VideoTracker():
             self.total_trackers_finished += 1
 
         # Add new detections to live tracker
-        max_trackers = 10
         for kp, new_bbox in kp_bbox_map.items():
             # Hit max trackers?
-            if len(self.live_trackers) < max_trackers:
+            if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, frame_hsv, new_bbox)
 
-    def detect_and_track(self, record=False, two_by_two=True):
+    def detect_and_track(self, record=False, two_by_two=True, blur=False, normalise_video=False):
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
@@ -96,12 +108,18 @@ class VideoTracker():
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+        print(f'Video size w:{source_width} x h:{source_height}')
+        if normalise_video:
+            print(f'Video frames wil be normalised to w: {self.normalised_width} x h:{self.normalised_height}')
+
         # Open output video
         writer = None
         if record:
             writer = utils.get_writer("outputvideo.mp4", source_width, source_height) #  MWG: I don't like the idea of this being here, TODO Move this into a listener
 
         self.font_size = int(source_height / 1000.0)
+        if normalise_video:
+            self.font_size = int(self.normalised_height / 1000.0)
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -109,19 +127,35 @@ class VideoTracker():
             print('Cannot read video file')
             sys.exit()
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if normalise_video:
+            frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+
+        frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type)
+        # Blur image
+        if blur:
+            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+
+        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
         frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
         for i in range(5):
             ok, frame = self.video.read()
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            if normalise_video:
+                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+
+            frame_gray = utils.convert_to_gray(frame)
+
+            # Blur image
+            if blur:
+                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
-        key_points = utils.perform_blob_detection(frame_masked_background)
+        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
         # Create Trackers
         self.create_trackers_from_keypoints(tracker_type, key_points, frame_output, frame_hsv)
@@ -136,10 +170,17 @@ class VideoTracker():
             # Start timer
             timer = cv2.getTickCount()
 
+            if normalise_video:
+                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+
             # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
             frame_output = frame.copy()
-            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+            # Blur image
+            if blur:
+                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
 
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
@@ -147,7 +188,7 @@ class VideoTracker():
             _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
             # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(frame_masked_background)
+            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
             self.update_trackers(tracker_type, key_points, frame_output, frame_hsv)
 

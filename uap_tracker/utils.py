@@ -4,6 +4,9 @@ import numpy as np
 def get_cv_version():
     return (cv2.__version__).split('.')
 
+def normalize_frame(frame, w, h):
+    return scale_image_to(frame, w, h)
+
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
@@ -69,30 +72,41 @@ def bbox_overlap(bbox1, bbox2):
     assert iou <= 1.0
     return iou
 
+def bbox1_contain_bbox2(bbox1, bbox2):
+    x1, y1, w1, h1 = bbox1
+    x2, y2, w2, h2 = bbox2
+    return (x2 > x1) and (y2 > y1) and (x2+w2 < x1+w1) and (y2+h2 < y1+h1)
+
 def is_bbox_being_tracked(live_trackers, bbox):
-    # simple check to see if the new bbox intersects with an existing tracked bbox
-    tracked = False
+    # MG: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
     for tracker in live_trackers:
-        if tracker.does_bbx_overlap(bbox):
-            tracked = True
-            break
+        if tracker.is_bbx_contained(bbox):
+            return True
+        else:
+            if tracker.does_bbx_overlap(bbox):
+                return True
 
-    return tracked
+    return False
 
-def perform_blob_detection(frame):
+def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
 
     params.minRepeatability = 2
     params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)  # 5% of the width of the image
-
     params.minThreshold = 3
-
     params.filterByArea = 1
-    params.minArea = 5
-
     params.filterByColor = 0
-    #    params.blobColor=255
+    # params.blobColor=255
+
+    if sensitivity == 1:  # Detects small, medium and large objects
+        params.minArea = 3
+    elif sensitivity == 2:  # Detects medium and large objects
+        params.minArea = 5
+    elif sensitivity == 3:  # Detects large objects
+        params.minArea = 25
+    else:
+        raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 
     detector = cv2.SimpleBlobDetector_create(params)
     # params.write('params.json')
@@ -104,16 +118,22 @@ def perform_blob_detection(frame):
     return keypoints
 
 def scale_image(img, max_size_h_or_w):
-    # calculate the width and height percent of original size
-    width = int((max_size_h_or_w / img.shape[1]) * 100)
-    height = int((max_size_h_or_w / img.shape[0]) * 100)
-    # pick the smallest of the two
-    scale_percent = max(width, height)
-    # calc the scaled width and height
-    scaled_width = int(img.shape[1] * scale_percent / 100)
-    scaled_height = int(img.shape[0] * scale_percent / 100)
-    #resize the image
-    return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+    return scale_image_to(img, max_size_h_or_w, max_size_h_or_w)
+
+def scale_image_to(img, w, h):
+    if img.shape[0] > h or img.shape[1] > w:
+        # calculate the width and height percent of original size
+        width = int((w / img.shape[1]) * 100)
+        height = int((h / img.shape[0]) * 100)
+        # pick the largest of the two
+        scale_percent = max(width, height)
+        # calc the scaled width and height
+        scaled_width = int(img.shape[1] * scale_percent / 100)
+        scaled_height = int(img.shape[0] * scale_percent / 100)
+        #resize the image
+        return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+    else:
+        return img
 
 def apply_fisheye_mask(frame):
     shape = frame.shape[:2]
@@ -132,3 +152,8 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+
+def convert_to_gray(src, dst=None):
+    weight = 1.0 / 3.0
+    m = np.array([[weight, weight, weight]], np.float32)
+    return cv2.transform(src, m, dst)
