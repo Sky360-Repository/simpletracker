@@ -20,7 +20,7 @@ class Tracker():
     def get_bbox(self):
         return self.bboxes[-1]
 
-    def update(self, frame, frame_hsv):
+    def update(self, frame, frame_hsv, sensitivity):
         ok, bbox = self.cv2_tracker.update(frame)
         if ok:
             self.bboxes.append(bbox)

@@ -31,6 +31,8 @@ class VideoTracker():
         self.max_display_dim = 1080
         self.normalised_width = 1920
         self.normalised_height = 1080
+        self.blur_radius = 3
+        self.max_active_trackers = 10
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -55,7 +57,7 @@ class VideoTracker():
         self.total_trackers_started += 1
 
         tracker = Tracker(self.total_trackers_started, tracker_type, frame, frame_hsv, bbox, self.font_size, self.font_colour)
-        tracker.update(frame, frame_hsv)
+        tracker.update(frame, frame_hsv, self.detection_sensitivity)
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, key_points, frame, frame_hsv):
@@ -70,7 +72,7 @@ class VideoTracker():
         for idx, tracker in enumerate(self.live_trackers):
 
             # Update tracker
-            ok, bbox = tracker.update(frame, frame_hsv)
+            ok, bbox = tracker.update(frame, frame_hsv, self.detection_sensitivity)
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
@@ -89,14 +91,13 @@ class VideoTracker():
             self.total_trackers_finished += 1
 
         # Add new detections to live tracker
-        max_trackers = 10
         for kp, new_bbox in kp_bbox_map.items():
             # Hit max trackers?
-            if len(self.live_trackers) < max_trackers:
+            if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, frame_hsv, new_bbox)
 
-    def detect_and_track(self, record=False, two_by_two=True, normalise_video=False):
+    def detect_and_track(self, record=False, two_by_two=True, blur=False, normalise_video=False):
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
@@ -132,6 +133,10 @@ class VideoTracker():
         frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+        # Blur image
+        if blur:
+            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+
         background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
         frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
@@ -143,6 +148,11 @@ class VideoTracker():
                 frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
 
             frame_gray = utils.convert_to_gray(frame)
+
+            # Blur image
+            if blur:
+                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
         key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
@@ -165,8 +175,12 @@ class VideoTracker():
 
             # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
             frame_output = frame.copy()
-            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+            # Blur image
+            if blur:
+                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
 
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 

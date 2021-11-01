@@ -32,4 +32,4 @@ if __name__ == '__main__':
         sys.exit()
     
     video_tracker = VideoTracker(video, VideoTracker.DETECTION_SENSITIVITY_HIGH)
-    video_tracker.detect_and_track(two_by_two=False, normalise_video=True)
+    video_tracker.detect_and_track(two_by_two=True, blur=True, normalise_video=True)
