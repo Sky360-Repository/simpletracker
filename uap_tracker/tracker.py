@@ -62,6 +62,9 @@ class Tracker():
             utils.add_bbox_to_image(bbox, frame, self.id, self.font_size, self.bbox_color)
 
         return ok, bbox
+    
+    def is_trackable(self):
+        return self.bbox_color == self.font_color
 
     def does_bbx_overlap(self, bbox):
         overlap = utils.bbox_overlap(self.bboxes[-1], bbox)
