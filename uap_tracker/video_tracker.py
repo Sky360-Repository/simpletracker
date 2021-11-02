@@ -136,6 +136,7 @@ class VideoTracker():
         # Blur image
         if blur:
             frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
         background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
@@ -152,6 +153,7 @@ class VideoTracker():
             # Blur image
             if blur:
                 frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
@@ -181,6 +183,7 @@ class VideoTracker():
             # Blur image
             if blur:
                 frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
@@ -198,7 +201,7 @@ class VideoTracker():
             for listener in self.listeners:
                 listener.trackers_updated_callback(frame, frame_gray, frame_masked_background, frame_count+1, self.live_trackers, fps)
 
-            msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}  (Sky360)"
+            msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), self.live_trackers))}, alive:{len(self.live_trackers)}, started:{self.total_trackers_started}, ended:{self.total_trackers_finished} (Sky360)"
             print(msg)
             cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
             cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
