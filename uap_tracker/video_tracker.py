@@ -29,8 +29,7 @@ class VideoTracker():
         self.font_size = 8
         self.font_colour = (50, 170, 50)
         self.max_display_dim = 1080
-        self.normalised_width = 1920
-        self.normalised_height = 1080
+        self.normalised_w_h = (1920, 1080)
         self.blur_radius = 3
         self.max_active_trackers = 10
 
@@ -110,7 +109,7 @@ class VideoTracker():
 
         print(f'Video size w:{source_width} x h:{source_height}')
         if normalise_video:
-            print(f'Video frames wil be normalised to w: {self.normalised_width} x h:{self.normalised_height}')
+            print(f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
 
         # Open output video
         writer = None
@@ -119,7 +118,7 @@ class VideoTracker():
 
         self.font_size = int(source_height / 1000.0)
         if normalise_video:
-            self.font_size = int(self.normalised_height / 1000.0)
+            self.font_size = int(self.normalised_w_h[1] / 1000.0)
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -128,7 +127,7 @@ class VideoTracker():
             sys.exit()
 
         if normalise_video:
-            frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -146,7 +145,7 @@ class VideoTracker():
             ok, frame = self.video.read()
 
             if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
             frame_gray = utils.convert_to_gray(frame)
 
@@ -173,7 +172,7 @@ class VideoTracker():
             timer = cv2.getTickCount()
 
             if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
             # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
             frame_output = frame.copy()
