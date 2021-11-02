@@ -46,7 +46,7 @@ class STF2CSV():
                     image_dir=os.path.join(path,'images')
                     for frame in annotations_file['frames']:
                         frame_number = frame['frame']
-                        file=f"{frame_number:06}.jpg"
+                        file=f"{frame_number:06}.png"
                         image_filename = os.path.join(image_dir,file)
                         target_filename=os.path.join(out_segment_dir,file)
                         if os.path.exists(image_filename):

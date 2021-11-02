@@ -76,17 +76,15 @@ class TrackerListenerStf():
                 self._close_segment()
 
     def _write_image(self, frame, frame_gray, frame_masked_background,frame_id):
-        filename = self.images_dir + f"{frame_id:06}.jpg"
+        filename = self.images_dir + f"{frame_id:06}.png"
         if self.movement_alpha:
             # First create the image with alpha channel
-            out_frame=frame.copy()
-            image = cv2.cvtColor(out_frame, cv2.COLOR_RGB2RGBA)
-            # Then assign the mask to the last channel of the image
-            image[:, :, 3] = frame_gray
+            c_red, c_green, c_blue = cv2.split(frame)
+            image = cv2.merge((c_red, c_green, c_blue,frame_masked_background))
         else:
             zero_channel = np.zeros(frame_gray.shape, dtype="uint8")
             image=cv2.merge([frame_gray, zero_channel, frame_masked_background])
-        
+        print(f"writing {image.shape} to {filename}")
         cv2.imwrite(filename,image)
 
     def _add_trackid_label(self, track_id, label):
