@@ -54,7 +54,7 @@ def main(argv):
             print("Could not open video")
             sys.exit()
 
-        video_tracker = VideoTracker(video)
+        video_tracker = VideoTracker(video,detection_sensitivity=1)
 
         formatters={
             'dev':TrackerListenerDev,

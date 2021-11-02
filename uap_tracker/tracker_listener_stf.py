@@ -42,6 +42,8 @@ class TrackerListenerStf():
 
         self.final_dir=None
 
+        self.movement_alpha=True
+
         print(f"TrackerListenerSly processing {full_path}")
 
     def _create_output_dir(self, dir_ext):
@@ -62,7 +64,7 @@ class TrackerListenerStf():
             for tracker in alive_trackers:
                 frame_annotations['annotations'].append(self._create_stf_annotation(frame_id, tracker))
             self.frame_annotations.append(frame_annotations)
-            self._write_image(frame_gray, frame_masked_background, frame_id)
+            self._write_image(frame, frame_gray, frame_masked_background, frame_id)
 
             self.writer.write(frame)
 
@@ -73,10 +75,18 @@ class TrackerListenerStf():
             if self.writer:
                 self._close_segment()
 
-    def _write_image(self,frame_gray, frame_masked_background,frame_id):
+    def _write_image(self, frame, frame_gray, frame_masked_background,frame_id):
         filename = self.images_dir + f"{frame_id:06}.jpg"
-        zero_channel = np.zeros(frame_gray.shape, dtype="uint8")
-        image=cv2.merge([frame_gray, zero_channel, frame_masked_background])
+        if self.movement_alpha:
+            # First create the image with alpha channel
+            out_frame=frame.copy()
+            image = cv2.cvtColor(out_frame, cv2.COLOR_RGB2RGBA)
+            # Then assign the mask to the last channel of the image
+            image[:, :, 3] = frame_gray
+        else:
+            zero_channel = np.zeros(frame_gray.shape, dtype="uint8")
+            image=cv2.merge([frame_gray, zero_channel, frame_masked_background])
+        
         cv2.imwrite(filename,image)
 
     def _add_trackid_label(self, track_id, label):
