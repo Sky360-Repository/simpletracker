@@ -3,6 +3,7 @@ import os
 import json
 import csv
 import shutil
+import random
 
 def main(args=None):
     parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
@@ -29,14 +30,16 @@ class STF2CSV():
         if not os.path.exists(self.out_dir):
             os.mkdir(self.out_dir)
 
-    def process(self):
-        ann_file=os.path.join(self.out_dir,'annotations.csv')
+
+    def _write_annotations(self,set_name, dirs):
+        set_dir=os.path.join(self.out_dir, set_name)
+        os.mkdir(set_dir)
+        ann_file=os.path.join(set_dir,'annotations.csv')
         with open(ann_file, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            
-            for name in os.listdir(self.stf_dir):
+            for name in dirs:
                 path=os.path.join(self.stf_dir, name)
-                out_segment_dir=os.path.join(self.out_dir,name)
+                out_segment_dir=os.path.join(self.out_dir,set_name,name)
                 os.mkdir(out_segment_dir)
                 if os.path.isdir(path):
                     annotations_filename=os.path.join(path,'annotations.json')
@@ -57,6 +60,32 @@ class STF2CSV():
                             label=annotations_file['track_labels'][str(track_id)]
                             self._add_label_if_necessary(label)
                             csvwriter.writerow([target_filename,bbox[0],bbox[1],bbox[0]+bbox[2],bbox[1]+bbox[3],label])
+
+    def process(self):
+            
+        dirs=[]
+
+        for name in os.listdir(self.stf_dir):
+            fullname=os.path.join(self.stf_dir,name)
+            if os.path.isdir(fullname):
+                dirs.append(name)
+        random.shuffle(dirs)
+        test_size=max(2,int(0.1 * len(dirs)))
+        test_set=dirs[:test_size]
+        dirs=dirs[test_size:]
+        print(f"test size:({test_size}), set: {test_set}")
+        self._write_annotations('test', test_set)
+
+        validation_size=max(2,int(0.2 * len(dirs)))
+        validation_set=dirs[:validation_size]
+        dirs=dirs[validation_size:]
+        print(f"validation set:{validation_set}")
+        self._write_annotations('validation', validation_set)
+
+        print(f"train set:{dirs}")
+        self._write_annotations('train', dirs)
+
+            
         classes_file=os.path.join(self.out_dir,'classes.csv')
         with open(classes_file, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
