@@ -29,8 +29,7 @@ class VideoTracker():
         self.font_size = 8
         self.font_colour = (50, 170, 50)
         self.max_display_dim = 1080
-        self.normalised_width = 1920
-        self.normalised_height = 1080
+        self.normalised_w_h = (1920, 1080)
         self.blur_radius = 3
         self.max_active_trackers = 10
 
@@ -110,7 +109,7 @@ class VideoTracker():
 
         print(f'Video size w:{source_width} x h:{source_height}')
         if normalise_video:
-            print(f'Video frames wil be normalised to w: {self.normalised_width} x h:{self.normalised_height}')
+            print(f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
 
         # Open output video
         writer = None
@@ -119,7 +118,7 @@ class VideoTracker():
 
         self.font_size = int(source_height / 1000.0)
         if normalise_video:
-            self.font_size = int(self.normalised_height / 1000.0)
+            self.font_size = int(self.normalised_w_h[1] / 1000.0)
 
         # Read first frame.
         ok, frame = self.video.read()
@@ -128,7 +127,7 @@ class VideoTracker():
             sys.exit()
 
         if normalise_video:
-            frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = utils.convert_to_gray(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -136,6 +135,7 @@ class VideoTracker():
         # Blur image
         if blur:
             frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
         background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
@@ -145,13 +145,14 @@ class VideoTracker():
             ok, frame = self.video.read()
 
             if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
             frame_gray = utils.convert_to_gray(frame)
 
             # Blur image
             if blur:
                 frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
             frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
 
@@ -171,7 +172,7 @@ class VideoTracker():
             timer = cv2.getTickCount()
 
             if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_width, self.normalised_height)
+                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
             # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
             frame_output = frame.copy()
@@ -181,6 +182,7 @@ class VideoTracker():
             # Blur image
             if blur:
                 frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
@@ -198,7 +200,7 @@ class VideoTracker():
             for listener in self.listeners:
                 listener.trackers_updated_callback(frame, frame_gray, frame_masked_background, frame_count+1, self.live_trackers, fps)
 
-            msg = f"Trackers: started:{self.total_trackers_started}, ended:{self.total_trackers_finished}, alive:{len(self.live_trackers)}  (Sky360)"
+            msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), self.live_trackers))}, alive:{len(self.live_trackers)}, started:{self.total_trackers_started}, ended:{self.total_trackers_finished} (Sky360)"
             print(msg)
             cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
             cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)

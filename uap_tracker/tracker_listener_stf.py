@@ -53,7 +53,8 @@ class TrackerListenerStf():
         return dir_to_create
 
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
-        if len(alive_trackers) > 0:
+        high_quality_trackers=map(lambda x : x.is_trackable(), alive_trackers)
+        if sum(high_quality_trackers) > 0:
             if self.writer is None:
                 self._init_writer()
             
@@ -61,7 +62,8 @@ class TrackerListenerStf():
                     'frame':frame_id,
                     'annotations': []
             }
-            for tracker in alive_trackers:
+            for tracker in filter(lambda x : x.is_trackable(),alive_trackers):
+                print(tracker)
                 frame_annotations['annotations'].append(self._create_stf_annotation(frame_id, tracker))
             self.frame_annotations.append(frame_annotations)
             self._write_image(frame, frame_gray, frame_masked_background, frame_id)
