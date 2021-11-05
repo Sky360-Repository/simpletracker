@@ -7,7 +7,7 @@ import sys
 import cv2
 from uap_tracker.video_tracker import VideoTracker
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
-from uap_tracker.tracker_listener_stf import TrackerListenerStf
+from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf
 from config import settings
 
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
@@ -18,7 +18,7 @@ def _setup_tracker(video):
 def _setup_listener(video, full_path, root_name):
     formatters={
         'dev':TrackerListenerDev,
-        'stf':TrackerListenerStf
+        'mot_stf':TrackerListenerMOTStf,
     }
     formatter_clz = formatters[settings.format]
     return formatter_clz(video, full_path, root_name, settings.output_dir)
