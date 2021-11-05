@@ -157,10 +157,10 @@ class TrackerListenerStf():
             os.mkdir(dir_to_create)
         return dir_to_create
 
-    def _init_stf_writer(self):
+    def _create_stf_writer(self):
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.stf_writer = STFWriter(self.stf_dir, self.file_name, source_width, source_height)
+        return STFWriter(self.stf_dir, self.file_name, source_width, source_height)    
 
     def finish(self):
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
@@ -177,7 +177,7 @@ class TrackerListenerMOTStf(TrackerListenerStf):
         if sum(high_quality_trackers) > 0:
 
             if self.stf_writer is None:
-                self._init_stf_writer()
+                self.stf_writer = self._create_stf_writer()
 
             annotated_frame = frame.copy()
             for tracker in filter(lambda x : x.is_trackable(),alive_trackers):
@@ -190,11 +190,63 @@ class TrackerListenerMOTStf(TrackerListenerStf):
 
         else:
             if self.stf_writer:
-                self.stf_writer.close()
+                self._close_segment()
+
+    def _close_segment(self):
+        self.stf_writer.close()
+        self.stf_writer=None
 
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         self._mot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
-        self.stf_writer.close()
+        self._close_segment()
         super().finish()
+
+
+class TrackerListenerSOTStf(TrackerListenerStf):
+    def __init__(self, video, full_path, file_name, output_dir):
+        super().__init__(video, full_path, file_name, output_dir)
+
+        self.open_writers={}
+
+    def _sot(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers):
+        high_quality_trackers=map(lambda x : x.is_trackable(), alive_trackers)
+                
+        alive_trackers_to_process=set(filter(lambda x : x.is_trackable(),alive_trackers))
+        processed=set()
+        newly_closed=[]
+        for tracker,writer in self.open_writers.items():
+            if tracker in alive_trackers_to_process:
+                self.process_tracker(frame, frame_gray, frame_masked_background, frame_id, tracker, writer)
+            else:
+                writer.close()
+                newly_closed.append(tracker)
+            processed.add(tracker)
+        for tracker in newly_closed:
+            self.open_writers.pop(tracker, None)
+        for tracker in alive_trackers_to_process-processed:
+            writer=self._create_stf_writer()
+            self.open_writers[tracker] = writer
+            self.process_tracker(frame, frame_gray, frame_masked_background, frame_id, tracker, writer)
+
+
+    def process_tracker(self, frame, frame_gray, frame_masked_background, frame_id, tracker, writer):
+        writer.add_bbox(frame_id,tracker)
+        writer.write_original_frame(frame)
+                
+        annotated_frame = frame.copy()
+        utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))                
+        writer.write_annotated_frame(annotated_frame)
+                
+        writer.write_image(frame, frame_gray, frame_masked_background, frame_id)
+
+    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
+        self._sot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
+
+    def finish(self, total_trackers_started, total_trackers_finished):
+        for _tracker,writer in self.open_writers:
+            writer.close()
+        super().finish()
+
+
