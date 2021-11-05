@@ -1,0 +1,14 @@
+
+# Format options: ['dev','stf']
+format = 'stf'
+
+input_dir = 'videos/samples'
+
+output_dir = 'videos/out'
+
+
+[VideoTracker]
+
+mask_pct=80
+sensitivity=1
+
