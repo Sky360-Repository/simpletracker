@@ -1,6 +1,6 @@
 
 # Format options: ['dev','stf']
-format = 'stf'
+format = 'mot_stf'
 
 input_dir = 'videos/samples'
 
