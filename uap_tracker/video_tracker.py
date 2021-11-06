@@ -14,8 +14,9 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, video, detection_sensitivity=2):
+    def __init__(self, video, detection_sensitivity=2, mask_pct=92):
         # print(f'VideoTracker called {video}')
+        
 
         if detection_sensitivity < 1 or detection_sensitivity > 3:
             raise Exception(f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
@@ -32,6 +33,7 @@ class VideoTracker():
         self.normalised_w_h = (1920, 1080)
         self.blur_radius = 3
         self.max_active_trackers = 10
+        self.mask_pct=mask_pct
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -139,7 +141,7 @@ class VideoTracker():
 
         background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
 
-        frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
+        frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
 
         for i in range(5):
             ok, frame = self.video.read()
@@ -154,7 +156,7 @@ class VideoTracker():
                 frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
                 # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-            frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
+            frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
 
         key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
@@ -187,7 +189,7 @@ class VideoTracker():
             cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
             # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-            _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor)
+            _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
 
             # Detect new objects of interest to pass to tracker
             key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)

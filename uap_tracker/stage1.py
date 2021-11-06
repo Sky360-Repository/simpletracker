@@ -8,43 +8,45 @@ import cv2
 from uap_tracker.video_tracker import VideoTracker
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
 from uap_tracker.tracker_listener_stf import TrackerListenerStf
+from config import settings
 
-USAGE = 'python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory> [-f [original|stf]]'
+USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
+
+def _setup_tracker(video):
+    return VideoTracker(video,detection_sensitivity=settings.VideoTracker.sensitivity, mask_pct=settings.VideoTracker.mask_pct)
+
+def _setup_listener(video, full_path, root_name):
+    formatters={
+        'dev':TrackerListenerDev,
+        'stf':TrackerListenerStf
+    }
+    formatter_clz = formatters[settings.format]
+    return formatter_clz(video, full_path, root_name, settings.output_dir)
+
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, "hi:o:f:", ["ifile=", "ofile=", "format="])
+        opts, args = getopt.getopt(argv, "h", [])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
-
-    #default output format to simpletracker
-    format = 'original'
-
+    
     for opt, arg in opts:
         if opt == '-h':
             print(USAGE)
             sys.exit()
-        elif opt in ("-i", "--idir"):
-            input_dir = arg
-        elif opt in ("-o", "--odir"):
-            output_dir = arg
-        elif opt in ("-f", "--format"):
-            format = arg
+    
+    print('Settings are ', settings.as_dict())
 
-    print('Input dir is ', input_dir)
-    print('Output dir is ', output_dir)
-    print('Format is ', format)
+    if not os.path.isdir(settings.output_dir):
+        os.mkdir(settings.output_dir)
 
-    if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
-
-    for filename in os.listdir(input_dir):
+    for filename in os.listdir(settings.input_dir):
 
         base = os.path.basename(filename)
         root_name = os.path.splitext(base)[0]
 
-        full_path = input_dir + filename
+        full_path = os.path.join(settings.input_dir,filename)
 
         print(f"Opening {full_path}")
         video = cv2.VideoCapture(full_path)
@@ -54,14 +56,9 @@ def main(argv):
             print("Could not open video")
             sys.exit()
 
-        video_tracker = VideoTracker(video,detection_sensitivity=1)
+        video_tracker=_setup_tracker(video)
 
-        formatters={
-            'dev':TrackerListenerDev,
-            'stf':TrackerListenerStf
-        }
-        formatter_clz = formatters[format]
-        listener = formatter_clz(video, full_path, root_name, output_dir)
+        listener = _setup_listener(video, full_path, root_name)
 
         video_tracker.listen(listener)
         video_tracker.detect_and_track()

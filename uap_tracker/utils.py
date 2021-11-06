@@ -135,15 +135,16 @@ def scale_image_to(img, w, h):
     else:
         return img
 
-def apply_fisheye_mask(frame):
+def apply_fisheye_mask(frame, mask_pct):
+    mask_radius = mask_pct/100.0/2.0
     shape = frame.shape[:2]
     # print(f'shape: {shape}')
     mask = np.zeros(shape, dtype="uint8")
-    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)), int(min(shape[0], shape[1]) * 0.46), 255, -1)
+    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)), int(min(shape[0], shape[1]) * mask_radius), 255, -1)
     return cv2.bitwise_and(frame, frame, mask=mask)
 
-def apply_background_subtraction(frame_gray, background_subtractor):
-    masked_frame = apply_fisheye_mask(frame_gray)
+def apply_background_subtraction(frame_gray, background_subtractor, mask_pct):
+    masked_frame = apply_fisheye_mask(frame_gray, mask_pct)
     foreground_mask = background_subtractor.apply(masked_frame)
     return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)
 

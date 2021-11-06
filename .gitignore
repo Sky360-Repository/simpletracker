@@ -152,3 +152,6 @@ wotidid
 .env
 .venv
 tmp
+
+# Ignore dynaconf secret files
+.secrets.*
