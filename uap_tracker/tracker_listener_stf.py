@@ -129,13 +129,12 @@ class STFWriter():
             self._close_video_writers()
             #only save if >= 5 frames
             print(self.annotations)
-            if len(self.annotations['frames']) >= 5:
+            if len(self.annotations['frames']) >= 25:
                 self._close_annotations()
                 print(f"Renaming {self.tmp_video_dir} to {self.final_video_dir}")
                 os.rename(self.tmp_video_dir,self.final_video_dir)
             else:
-                print(f"would rm -rf {self.tmp_video_dir}")
-                #shutil.rmtree(self.tmp_video_dir)
+                shutil.rmtree(self.tmp_video_dir)
 
 
 
@@ -188,13 +187,13 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.write_annotated_frame(annotated_frame)
             self.stf_writer.write_image(frame, frame_gray, frame_masked_background, frame_id)
 
-        else:
-            if self.stf_writer:
-                self._close_segment()
+        else:            
+            self._close_segment()
 
     def _close_segment(self):
-        self.stf_writer.close()
-        self.stf_writer=None
+        if self.stf_writer:
+            self.stf_writer.close()
+            self.stf_writer=None
 
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         self._mot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
