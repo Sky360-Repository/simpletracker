@@ -17,7 +17,7 @@ class CameraStreamController():
         self.video_tracker = None
         self.writer = None
         self.max_display_dim = 1080
-        self.minute_interval = 1
+        self.minute_interval = 5
         self.execute = True
 
     def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
@@ -39,8 +39,7 @@ class CameraStreamController():
         while self.execute:
             # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
-            break_point = datetime.datetime.now() + iteration_period
-            self.process_iteration(cameraCapture, break_point, detection_sensitivity, blur, normalise_video, mask_pct)
+            self.process_iteration(cameraCapture, (datetime.datetime.now() + iteration_period), detection_sensitivity, blur, normalise_video, mask_pct)
 
         if self.writer is not None:
             self.writer.release()
