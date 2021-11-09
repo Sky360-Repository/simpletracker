@@ -1,6 +1,6 @@
 import cv2
 
-class DefaultVisualiser():
+class SimpleVisualiser():
 
     def __init__(self):
         self.font_size = None
@@ -14,5 +14,7 @@ class DefaultVisualiser():
 
         msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
         print(msg)
+        cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
+        cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
 
         return frame_output

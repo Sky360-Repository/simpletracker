@@ -123,6 +123,8 @@ class VideoTrackerNew():
         if self.normalise_video:
             self.font_size = int(self.normalised_w_h[1] / 1000.0)
 
+        self.font_size = max(self.font_size, 1)
+
         # MG: Ultimately I would like the visualiser to be passed in
         if self.visualiser is not None:
             self.visualiser.initialise(self.font_size, self.font_colour)
