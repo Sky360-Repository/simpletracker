@@ -10,6 +10,7 @@ from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_tracker import VideoTracker
 from uap_tracker.video_tracker_new import VideoTrackerNew
 from video_playback_controller import VideoPlaybackController
+from camera_stream_controller import CameraStreamController
 
 #from object_detection.utils import config_util
 
@@ -28,6 +29,9 @@ if __name__ == '__main__':
         #input_file = "vids/Test_Trimmed.mp4"
         input_file = "vids/birds_and_plane.mp4"
 
-    #playback = VideoPlaybackController(input_file, visualiser=DefaultVisualiser())
-    playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
-    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
+    ##playback = VideoPlaybackController(input_file, visualiser=DefaultVisualiser())
+    #playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
+    #playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
+
+    playback = CameraStreamController()
+    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=True, mask_pct=92)
