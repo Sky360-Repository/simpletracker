@@ -5,7 +5,11 @@
 #from typing_extensions import ParamSpecArgs
 import cv2
 import sys
+from uap_tracker.default_visualiser import DefaultVisualiser
+from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_tracker import VideoTracker
+from uap_tracker.video_tracker_new import VideoTrackerNew
+from video_playback_controller import VideoPlaybackController
 
 #from object_detection.utils import config_util
 
@@ -24,12 +28,6 @@ if __name__ == '__main__':
         #input_file = "vids/Test_Trimmed.mp4"
         input_file = "vids/birds_and_plane.mp4"
 
-    video = cv2.VideoCapture(input_file)
-        
-    # Exit if video not opened.
-    if not video.isOpened():
-        print("Could not open video")
-        sys.exit()
-    
-    video_tracker = VideoTracker(video, VideoTracker.DETECTION_SENSITIVITY_HIGH)
-    video_tracker.detect_and_track(two_by_two=True, blur=True, normalise_video=True)
+    #playback = VideoPlaybackController(input_file, visualiser=DefaultVisualiser())
+    playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
+    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
