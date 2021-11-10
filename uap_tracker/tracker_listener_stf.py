@@ -27,7 +27,13 @@ class STFWriter():
         cls.video_count+=1
         return ret
    
-    def __init__(self, stf_output_dir, video_file_root_name, source_width, source_height, movement_alpha=True):
+    def __init__(self, 
+                 stf_output_dir, 
+                 video_file_root_name, 
+                 source_width, 
+                 source_height, 
+                 movement_alpha=True):
+
         self.video_id=self._get_and_increment_video_count()
                 
         self.writer = None
@@ -98,6 +104,27 @@ class STFWriter():
 
         last_frame['annotations'].append(self._create_stf_annotation(tracker))
 
+
+    #staticmethod TODO extract
+    def zoom_and_clip(frame, center, zoom_level):
+
+        print(f"center {center}")
+        x,y=center
+        height, width, _channels = frame.shape
+        new_height=int(height/zoom_level)
+        new_width=int(width/zoom_level)
+        half_width=int(new_width/2)
+        half_height=int(new_height/2)
+        left=max(0,x-half_width)
+        right=min(x+half_width,width)
+        right=max(new_width,right)
+        
+        top=max(0,y-half_height)
+        bottom=min(y+half_height,height)
+        bottom=max(new_height,bottom)
+        print(f"w,h:{(width,height)}, x1,y1,x2,y2:{(left,top,right,bottom)}")
+        return frame[top:bottom, left:right]
+
     def write_original_frame(self, frame):
         self.writer.write(frame)
 
@@ -140,7 +167,7 @@ class STFWriter():
 
 class TrackerListenerStf():
 
-    def __init__(self, video, full_path, file_name, output_dir):
+    def __init__(self, video, full_path, file_name, output_dir, zoom_level=10):
         self.video = video
         self.full_path = full_path
         self.file_name = file_name
@@ -149,6 +176,8 @@ class TrackerListenerStf():
         self._create_output_dir('/stf')
         self.stf_dir = self._create_output_dir('/stf/')
         self.processed_dir = self._create_output_dir('/processed/')
+        self.zoom_level=zoom_level
+
         
     def _create_output_dir(self, dir_ext):
         dir_to_create = self.output_dir + dir_ext
@@ -156,10 +185,17 @@ class TrackerListenerStf():
             os.mkdir(dir_to_create)
         return dir_to_create
 
-    def _create_stf_writer(self):
+    def _target_video_width_height(self):
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        return STFWriter(self.stf_dir, self.file_name, source_width, source_height)    
+        return (
+            int(source_width/self.zoom_level),
+            int(source_height/self.zoom_level),
+        )
+
+    def _create_stf_writer(self):
+        width, height = self._target_video_width_height()
+        return STFWriter(self.stf_dir, self.file_name, width, height)    
 
     def finish(self):
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
@@ -232,9 +268,11 @@ class TrackerListenerSOTStf(TrackerListenerStf):
 
     def process_tracker(self, frame, frame_gray, frame_masked_background, frame_id, tracker, writer):
         writer.add_bbox(frame_id,tracker)
-        writer.write_original_frame(frame)
-                
-        annotated_frame = frame.copy()
+        zoom_frame=STFWriter.zoom_and_clip(frame, tracker.get_center(), self.zoom_level)
+        print(f"Zoom shape: {zoom_frame.shape}")
+        writer.write_original_frame(zoom_frame)
+        
+        annotated_frame = zoom_frame.copy()
         utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))                
         writer.write_annotated_frame(annotated_frame)
                 
@@ -244,7 +282,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         self._sot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
-        for _tracker,writer in self.open_writers:
+        for _tracker,writer in self.open_writers.items():
             writer.close()
         super().finish()
 
