@@ -7,18 +7,18 @@ from uap_tracker.video_tracker_new import VideoTrackerNew
 
 class CameraStreamController():
 
-    def __init__(self, camera_index=0, visualiser=None, events=None, output_file=""):
+    def __init__(self, camera_index=0, visualiser=None, events=None, record=False):
 
         self.camera_index = camera_index
         self.visualiser = visualiser
         self.events = events
-        self.output_file = output_file
-        self.record = len(output_file) > 0
+        self.record = record
         self.video_tracker = None
-        self.writer = None
         self.max_display_dim = 1080
         self.minute_interval = 5
-        self.execute = True
+        self.running = False
+        self.source_width = 0
+        self.source_height = 0
 
     def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
 
@@ -29,20 +29,14 @@ class CameraStreamController():
             print(f"Could not open video from camera {self.camera_index}")
             sys.exit()
 
-        source_width = int(cameraCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        source_height = int(cameraCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.running = True
+        self.source_width = int(cameraCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.source_height = int(cameraCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        # Open output video
-        if self.record:
-            self.writer = utils.get_writer(self.output_file, source_width, source_height)
-
-        while self.execute:
+        while self.running:
             # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
             self.process_iteration(cameraCapture, (datetime.datetime.now() + iteration_period), detection_sensitivity, blur, normalise_video, mask_pct)
-
-        if self.writer is not None:
-            self.writer.release()
 
     def process_iteration(self, cameraCapture, iteration_period, detection_sensitivity, blur, normalise_video, mask_pct):
 
@@ -60,6 +54,8 @@ class CameraStreamController():
 
         self.video_tracker.initialise_trackers()
 
+        recording = False
+        writer = None
         frame_count = 0
         fps = 0
         while True:
@@ -81,13 +77,28 @@ class CameraStreamController():
                 else:
                     cv2.imshow("Tracking", processed_frame)
 
-                if self.writer is not None:
-                    self.writer.write(processed_frame)
-
                 frame_count += 1
 
-            now = datetime.datetime.now()
-            if now >= iteration_period:
+                # MG: Setup the writer to record as we are tracking an object
+                if self.record:
+                    if self.video_tracker.is_tracking:
+                        if not recording:
+                            output_file = "sky360-tracking-" + datetime.datetime.now().strftime("%d-%m-%YT%H:%M:%S:%f") + ".mp4"
+                            print(f"Recording to {output_file} as we are tracking")
+                            writer = utils.get_writer(output_file, self.source_width, self.source_height)
+                            recording = True
+                    else:
+                        if recording:
+                            recording = False
+                            print(f"Stop recording as we are no longer tracking")
+                            if writer is not None:
+                                writer.release()
+                                writer = None
+
+                if writer is not None:
+                    writer.write(processed_frame)
+
+            if datetime.datetime.now() >= iteration_period:
                 # print(f"Iteration complete break")
                 if not self.video_tracker.is_tracking:
                     # print(f"Breaking loop")
@@ -95,7 +106,11 @@ class CameraStreamController():
                     break
 
             if cv2.waitKey(1) == 27:  # Escape
-                # print(f"Escape key, set execute to false and break even if we are tracking {self.video_tracker.is_tracking}")
+                print(f"Escape key, set execute to false and break even if we are tracking {self.video_tracker.is_tracking}")
                 self.video_tracker.finalise()
-                self.execute = False
+                self.running = False
                 break
+
+        # MG: A bit of a catch all for the writer here
+        if writer is not None:
+            writer.release()

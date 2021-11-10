@@ -31,8 +31,11 @@ if __name__ == '__main__':
         input_file = "vids/birds_and_plane.mp4"
 
     ##playback = VideoPlaybackController(input_file, visualiser=DefaultVisualiser())
-    #playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
-    #playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
+    playback = VideoPlaybackController(input_file, visualiser=SimpleVisualiser())
+    ##playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
+    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
 
-    playback = CameraStreamController(visualiser=DefaultVisualiser())
-    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=False, mask_pct=92)
+    #streamer = CameraStreamController(visualiser=DefaultVisualiser())
+    #streamer = CameraStreamController(visualiser=SimpleVisualiser())
+    #streamer = CameraStreamController(visualiser=TwoByTwoVisualiser())
+    #streamer.run(VideoTrackerNew.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=False, mask_pct=92)
