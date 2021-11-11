@@ -26,6 +26,9 @@ class TrackerListenerDev():
             os.mkdir(dir_to_create)
         return dir_to_create
 
+    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+        pass
+
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         if self.recording or len(alive_trackers) > 0:
             self.recording = True

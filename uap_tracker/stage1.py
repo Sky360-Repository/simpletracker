@@ -8,6 +8,7 @@ import cv2
 
 from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.event_publisher import EventPublisher
+from uap_tracker.tracker_listener_no_op import TrackerListenerNoOp
 from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
@@ -21,6 +22,7 @@ def _setup_controller(video, events):
 def _setup_listener(video, full_path, root_name):
     formatters={
         'dev':TrackerListenerDev,
+        'noop': TrackerListenerNoOp,
         'mot_stf':TrackerListenerMOTStf,
         'sot_stf':TrackerListenerSOTStf
     }

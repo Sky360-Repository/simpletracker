@@ -195,6 +195,9 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.close()
             self.stf_writer=None
 
+    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+        pass
+
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         self._mot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
 
@@ -239,6 +242,9 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         writer.write_annotated_frame(annotated_frame)
                 
         writer.write_image(frame, frame_gray, frame_masked_background, frame_id)
+
+    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+        pass
 
     def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         self._sot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
