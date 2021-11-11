@@ -13,7 +13,8 @@ class EventPublisher():
         return self._listeners
 
     def publish_initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
-        pass
+        for listener in self.listeners:
+            listener.initialise(sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height)
 
     def publish_process_frame(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
         for listener in self.listeners:
