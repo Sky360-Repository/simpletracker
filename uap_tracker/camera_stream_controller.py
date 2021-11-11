@@ -3,7 +3,7 @@ import sys
 import datetime
 from datetime import timedelta
 import uap_tracker.utils as utils
-from uap_tracker.video_tracker_new import VideoTrackerNew
+from uap_tracker.video_tracker import VideoTracker
 
 class CameraStreamController():
 
@@ -38,7 +38,7 @@ class CameraStreamController():
 
     def process_iteration(self, iteration_period, detection_sensitivity, blur, normalise_video, mask_pct):
 
-        self.video_tracker = VideoTrackerNew(self.visualiser, self.events, detection_sensitivity, mask_pct)
+        self.video_tracker = VideoTracker(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
         # Read first frame.
         success, frame = self.camera.read()

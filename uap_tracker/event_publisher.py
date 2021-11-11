@@ -1,7 +1,4 @@
 import cv2
-import sys
-import uap_tracker.utils as utils
-from uap_tracker.video_tracker_new import VideoTrackerNew
 
 class EventPublisher():
 

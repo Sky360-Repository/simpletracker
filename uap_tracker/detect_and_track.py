@@ -9,7 +9,6 @@ from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_tracker import VideoTracker
-from uap_tracker.video_tracker_new import VideoTrackerNew
 from video_playback_controller import VideoPlaybackController
 from camera_stream_controller import CameraStreamController
 
@@ -34,10 +33,10 @@ if __name__ == '__main__':
     #playback = VideoPlaybackController(video, visualiser=DefaultVisualiser())
     playback = VideoPlaybackController(video, visualiser=SimpleVisualiser())
     #playback = VideoPlaybackController(video, visualiser=TwoByTwoVisualiser())
-    playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
+    playback.run(VideoTracker.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
 
     #camera = cv2.VideoCapture(0)
     #streamer = CameraStreamController(camera, visualiser=DefaultVisualiser())
     #streamer = CameraStreamController(camera, visualiser=SimpleVisualiser())
     #streamer = CameraStreamController(camera, visualiser=TwoByTwoVisualiser())
-    #streamer.run(VideoTrackerNew.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=False, mask_pct=92)
+    #streamer.run(VideoTracker.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=False, mask_pct=92)

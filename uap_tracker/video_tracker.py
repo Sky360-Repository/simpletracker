@@ -1,5 +1,4 @@
 import cv2
-import sys
 import numpy as np
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
@@ -14,28 +13,33 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, video, detection_sensitivity=2, mask_pct=92):
+    def __init__(self, visualiser, events, detection_sensitivity=2, mask_pct=92):
         # print(f'VideoTracker called {video}')
 
         if detection_sensitivity < 1 or detection_sensitivity > 3:
-            raise Exception(f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
+            raise Exception(
+                f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
 
-        self.video = video
         self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
-        self.listeners = []
+        self.events = events
+        self.visualiser = visualiser
         self.font_size = 8
         self.font_colour = (50, 170, 50)
-        self.max_display_dim = 1080
         self.normalised_w_h = (1920, 1080)
         self.blur_radius = 3
         self.max_active_trackers = 10
         self.mask_pct = mask_pct
 
-    def listen(self, listener):
-        self.listeners.append(listener)
+        self.blur = False
+        self.normalise_video = False
+        self.tracker_type = None
+        self.background_subtractor_type = None
+        self.background_subtractor = None
+        self.frame_output = None
+        self.frame_masked_background = None
 
     @property
     def is_tracking(self):
@@ -97,151 +101,102 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def detect_and_track(self, record=False, two_by_two=True, blur=False, normalise_video=False):
+    def initialise(self, frame, blur, normalise_video):
+
+        self.blur = blur
+        self.normalise_video = normalise_video
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
 
-        tracker_type = tracker_types[7]
-        background_subtractor_type = background_subtractor_types[0]
+        self.tracker_type = tracker_types[7]
+        self.background_subtractor_type = background_subtractor_types[0]
 
-        source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
-        source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        source_width = int(frame.shape[1])
+        source_height = int(frame.shape[1])
 
         print(f'Video size w:{source_width} x h:{source_height}')
-        if normalise_video:
+        if self.normalise_video:
             print(f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
 
-        # Open output video
-        writer = None
-        if record:
-            writer = utils.get_writer("outputvideo.mp4", source_width, source_height)
-
         self.font_size = int(source_height / 1000.0)
-        if normalise_video:
+        if self.normalise_video:
             self.font_size = int(self.normalised_w_h[1] / 1000.0)
 
-        # Read first frame.
-        ok, frame = self.video.read()
-        if not ok:
-            print('Cannot read video file')
-            sys.exit()
+        self.font_size = max(self.font_size, 1)
 
-        if normalise_video:
+        # MG: Ultimately I would like the visualiser to be passed in
+        if self.visualiser is not None:
+            self.visualiser.initialise(self.font_size, self.font_colour)
+
+        if self.normalise_video:
             frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = utils.convert_to_gray(frame)
 
         # Blur image
-        if blur:
+        if self.blur:
             frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        background_subtractor = BackgroundSubtractorFactory.create(background_subtractor_type, self.detection_sensitivity)
+        self.background_subtractor = BackgroundSubtractorFactory.create(self.background_subtractor_type, self.detection_sensitivity)
 
-        frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
+        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
 
-        for i in range(5):
-            ok, frame = self.video.read()
+        if self.events is not None:
+            self.events.publish_initialise(self.detection_sensitivity, self.blur, self.normalise_video, self.tracker_type, self.background_subtractor_type, source_width, source_height)
 
-            if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
+    def initialise_background_subtraction(self, frame):
 
-            frame_gray = utils.convert_to_gray(frame)
+        if self.normalise_video:
+            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
-            # Blur image
-            if blur:
-                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
-                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
+        frame_gray = utils.convert_to_gray(frame)
 
-            frame_output, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
+        # Blur image
+        if self.blur:
+            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
+
+    def initialise_trackers(self):
+
+        key_points = utils.perform_blob_detection(self.frame_masked_background, self.detection_sensitivity)
 
         # Create Trackers
-        self.create_trackers_from_keypoints(tracker_type, key_points, frame_output)
+        self.create_trackers_from_keypoints(self.tracker_type, key_points, self.frame_output)
 
-        frame_count = 0
-        while True:
-            # Read a new frame
-            ok, frame = self.video.read()
-            if not ok:
-                break
+    def process_frame(self, frame, frame_count, fps):
 
-            # Start timer
-            timer = cv2.getTickCount()
+        if self.normalise_video:
+            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
-            if normalise_video:
-                frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
+        self.frame_output = frame.copy()
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
-            frame_output = frame.copy()
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Blur image
+        if self.blur:
+            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-            # Blur image
-            if blur:
-                frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
-                # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
+        # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
+        _, frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
 
-            cv2.putText(frame, 'Original Frame (Sky360)', (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
+        # Detect new objects of interest to pass to tracker
+        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
 
-            # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-            _, frame_masked_background = utils.apply_background_subtraction(frame_gray, background_subtractor, self.mask_pct)
+        self.update_trackers(self.tracker_type, key_points, self.frame_output)
 
-            # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+        if self.events is not None:
+            self.events.publish_process_frame(frame, frame_gray, frame_masked_background, frame_count + 1, self.live_trackers, fps)
 
-            self.update_trackers(tracker_type, key_points, frame_output)
+        if self.visualiser is not None:
+            self.frame_output = self.visualiser.visualise_frame(self, frame, frame_masked_background, self.frame_output, key_points, fps)
 
-            # Calculate Frames per second (FPS)
-            fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+        return self.frame_output
 
-            for listener in self.listeners:
-                listener.trackers_updated_callback(frame, frame_gray, frame_masked_background, frame_count+1, self.live_trackers, fps)
-
-            msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), self.live_trackers))}, alive:{len(self.live_trackers)}, started:{self.total_trackers_started}, ended:{self.total_trackers_finished} (Sky360)"
-            print(msg)
-            cv2.putText(frame_output, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
-            cv2.putText(frame_output, f"FPS: {str(int(fps))} (Sky360)", (100, 300), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
-
-            if two_by_two:
-                # Create a copy as we need to put text on it and also turn it into a 24 bit image
-                frame_masked_background_copy = cv2.cvtColor(frame_masked_background.copy(), cv2.COLOR_GRAY2BGR)
-
-                frame_masked_background_with_key_points = cv2.drawKeypoints(frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                msg = f"Detected {len(key_points)} Key Points (Sky360)"
-                cv2.putText(frame_masked_background_with_key_points, msg, (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
-
-                cv2.putText(frame_masked_background_copy, "Masked Background (Sky360)", (100, 200), cv2.FONT_HERSHEY_SIMPLEX,
-                            self.font_size, self.font_colour, 2)
-
-                im_h1 = cv2.hconcat([frame, frame_output])
-                im_h2 = cv2.hconcat([frame_masked_background_copy, frame_masked_background_with_key_points])
-
-                frame_final = cv2.vconcat([im_h1, im_h2])
-            else:
-                frame_final = frame_output
-
-            # Display result, resize it to a standard size
-            if frame_final.shape[0] > self.max_display_dim or frame_final.shape[1] > self.max_display_dim:
-                #  MG: scale the image to something that is of a reasonable viewing size but write the original to file
-                frame_scaled = utils.scale_image(frame_final, self.max_display_dim)
-                cv2.imshow("Tracking", frame_scaled)
-            else:
-                cv2.imshow("Tracking", frame_final)
-
-            if writer is not None:
-                writer.write(frame_final)
-
-            # Exit if ESC pressed
-            k = cv2.waitKey(1) & 0xff
-            if k == 27:
-                break
-
-            frame_count += 1
-
-        if writer is not None:
-            writer.release()
-
-        for listener in self.listeners:
-            listener.finish(self.total_trackers_started, self.total_trackers_finished)
+    def finalise(self):
+        if self.events is not None:
+            self.events.publish_finalise(self.total_trackers_started, self.total_trackers_finished)

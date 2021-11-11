@@ -1,7 +1,7 @@
 import cv2
 import sys
 import uap_tracker.utils as utils
-from uap_tracker.video_tracker_new import VideoTrackerNew
+from uap_tracker.video_tracker import VideoTracker
 
 class VideoPlaybackController():
 
@@ -29,7 +29,7 @@ class VideoPlaybackController():
         if self.record:
             self.writer = utils.get_writer(self.output_file, source_width, source_height)
 
-        self.video_tracker = VideoTrackerNew(self.visualiser, self.events, detection_sensitivity, mask_pct)
+        self.video_tracker = VideoTracker(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
         # Read first frame.
         success, frame = self.capture.read()
