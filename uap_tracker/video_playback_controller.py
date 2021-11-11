@@ -5,9 +5,9 @@ from uap_tracker.video_tracker_new import VideoTrackerNew
 
 class VideoPlaybackController():
 
-    def __init__(self, input_file, visualiser=None, events=None, output_file=""):
+    def __init__(self, capture, visualiser=None, events=None, output_file=""):
 
-        self.input_file = input_file
+        self.capture = capture
         self.visualiser = visualiser
         self.events = events
         self.output_file = output_file
@@ -18,15 +18,12 @@ class VideoPlaybackController():
 
     def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
 
-        capture = cv2.VideoCapture(self.input_file)
-
-        # Exit if video not opened.
-        if not capture.isOpened():
-            print(f"Could not open video {self.input_file}")
+        if not self.capture.isOpened():
+            print(f"Could not open video stream")
             sys.exit()
 
-        source_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        source_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        source_width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        source_height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Open output video
         if self.record:
@@ -35,12 +32,12 @@ class VideoPlaybackController():
         self.video_tracker = VideoTrackerNew(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
         # Read first frame.
-        success, frame = capture.read()
+        success, frame = self.capture.read()
         if success:
             self.video_tracker.initialise(frame, blur, normalise_video)
 
         for i in range(5):
-            success, frame = capture.read()
+            success, frame = self.capture.read()
             if success:
                 self.video_tracker.initialise_background_subtraction(frame)
 
@@ -49,7 +46,7 @@ class VideoPlaybackController():
         frame_count = 0
         fps = 0
         while cv2.waitKey(1) != 27:  # Escape
-            success, frame = capture.read()
+            success, frame = self.capture.read()
             if success:
 
                 timer = cv2.getTickCount()

@@ -7,9 +7,9 @@ from uap_tracker.video_tracker_new import VideoTrackerNew
 
 class CameraStreamController():
 
-    def __init__(self, camera_index=0, visualiser=None, events=None, record=False):
+    def __init__(self, camera, visualiser=None, events=None, record=False):
 
-        self.camera_index = camera_index
+        self.camera = camera
         self.visualiser = visualiser
         self.events = events
         self.record = record
@@ -22,33 +22,31 @@ class CameraStreamController():
 
     def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
 
-        cameraCapture = cv2.VideoCapture(self.camera_index)
-
-        success, _ = cameraCapture.read()
+        success, _ = self.camera.read()
         if not success:
-            print(f"Could not open video from camera {self.camera_index}")
+            print(f"Could not open camera video stream")
             sys.exit()
 
         self.running = True
-        self.source_width = int(cameraCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.source_height = int(cameraCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.source_width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.source_height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         while self.running:
             # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
-            self.process_iteration(cameraCapture, (datetime.datetime.now() + iteration_period), detection_sensitivity, blur, normalise_video, mask_pct)
+            self.process_iteration((datetime.datetime.now() + iteration_period), detection_sensitivity, blur, normalise_video, mask_pct)
 
-    def process_iteration(self, cameraCapture, iteration_period, detection_sensitivity, blur, normalise_video, mask_pct):
+    def process_iteration(self, iteration_period, detection_sensitivity, blur, normalise_video, mask_pct):
 
         self.video_tracker = VideoTrackerNew(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
         # Read first frame.
-        success, frame = cameraCapture.read()
+        success, frame = self.camera.read()
         if success:
             self.video_tracker.initialise(frame, blur, normalise_video)
 
         for i in range(5):
-            success, frame = cameraCapture.read()
+            success, frame = self.camera.read()
             if success:
                 self.video_tracker.initialise_background_subtraction(frame)
 
@@ -59,7 +57,7 @@ class CameraStreamController():
         frame_count = 0
         fps = 0
         while True:
-            success, frame = cameraCapture.read()
+            success, frame = self.camera.read()
             if success:
 
                 timer = cv2.getTickCount()
@@ -106,7 +104,7 @@ class CameraStreamController():
                     break
 
             if cv2.waitKey(1) == 27:  # Escape
-                print(f"Escape key, set execute to false and break even if we are tracking {self.video_tracker.is_tracking}")
+                print(f"Escape keypress detected, exit even if we are tracking: {self.video_tracker.is_tracking}")
                 self.video_tracker.finalise()
                 self.running = False
                 break

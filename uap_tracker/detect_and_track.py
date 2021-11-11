@@ -30,12 +30,14 @@ if __name__ == '__main__':
         #input_file = "vids/Test_Trimmed.mp4"
         input_file = "vids/birds_and_plane.mp4"
 
-    ##playback = VideoPlaybackController(input_file, visualiser=DefaultVisualiser())
-    playback = VideoPlaybackController(input_file, visualiser=SimpleVisualiser())
-    ##playback = VideoPlaybackController(input_file, visualiser=TwoByTwoVisualiser())
+    video = cv2.VideoCapture(input_file)
+    #playback = VideoPlaybackController(video, visualiser=DefaultVisualiser())
+    playback = VideoPlaybackController(video, visualiser=SimpleVisualiser())
+    #playback = VideoPlaybackController(video, visualiser=TwoByTwoVisualiser())
     playback.run(VideoTrackerNew.DETECTION_SENSITIVITY_HIGH, blur=True, normalise_video=True, mask_pct=92)
 
-    #streamer = CameraStreamController(visualiser=DefaultVisualiser())
-    #streamer = CameraStreamController(visualiser=SimpleVisualiser())
-    #streamer = CameraStreamController(visualiser=TwoByTwoVisualiser())
+    #camera = cv2.VideoCapture(0)
+    #streamer = CameraStreamController(camera, visualiser=DefaultVisualiser())
+    #streamer = CameraStreamController(camera, visualiser=SimpleVisualiser())
+    #streamer = CameraStreamController(camera, visualiser=TwoByTwoVisualiser())
     #streamer.run(VideoTrackerNew.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=False, mask_pct=92)
