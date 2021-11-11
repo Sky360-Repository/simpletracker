@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #playback = VideoPlaybackController(video, visualiser=DefaultVisualiser(), events=events)
     playback = VideoPlaybackController(video, visualiser=SimpleVisualiser(), events=events)
     #playback = VideoPlaybackController(video, visualiser=\TwoByTwoVisualiser(), events=events)
-    playback.run(VideoTracker.DETECTION_SENSITIVITY_NORMAL, blur=True, normalise_video=True, mask_pct=92)
+    playback.run(VideoTracker.DETECTION_SENSITIVITY_HIGH, blur=False, normalise_video=True, mask_pct=92)
 
     #camera = cv2.VideoCapture(0)
     #streamer = CameraStreamController(camera, visualiser=DefaultVisualiser(), events=events)

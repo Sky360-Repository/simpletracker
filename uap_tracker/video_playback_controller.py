@@ -16,7 +16,7 @@ class VideoPlaybackController():
         self.writer = None
         self.max_display_dim = 1080
 
-    def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
+    def run(self, detection_sensitivity=2, blur=False, normalise_video=False, mask_pct=92):
 
         if not self.capture.isOpened():
             print(f"Could not open video stream")
