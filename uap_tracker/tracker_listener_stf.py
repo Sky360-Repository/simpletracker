@@ -103,27 +103,7 @@ class STFWriter():
             self.annotations['frames'].append(last_frame)
 
         last_frame['annotations'].append(self._create_stf_annotation(tracker))
-
-
-    #staticmethod TODO extract
-    def zoom_and_clip(frame, center, zoom_level):
-
-        print(f"center {center}")
-        x,y=center
-        height, width, _channels = frame.shape
-        new_height=int(height/zoom_level)
-        new_width=int(width/zoom_level)
-        half_width=int(new_width/2)
-        half_height=int(new_height/2)
-        left=max(0,x-half_width)
-        right=min(x+half_width,width)
-        right=max(new_width,right)
-        
-        top=max(0,y-half_height)
-        bottom=min(y+half_height,height)
-        bottom=max(new_height,bottom)
-        print(f"w,h:{(width,height)}, x1,y1,x2,y2:{(left,top,right,bottom)}")
-        return frame[top:bottom, left:right]
+    
 
     def write_original_frame(self, frame):
         self.writer.write(frame)
@@ -271,7 +251,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
 
     def process_tracker(self, frame, frame_gray, frame_masked_background, frame_id, tracker, writer):
         writer.add_bbox(frame_id,tracker)
-        zoom_frame=STFWriter.zoom_and_clip(frame, tracker.get_center(), self.zoom_level)
+        zoom_frame=utils.zoom_and_clip(frame, tracker.get_center(), self.zoom_level)
         print(f"Zoom shape: {zoom_frame.shape}")
         writer.write_original_frame(zoom_frame)
         

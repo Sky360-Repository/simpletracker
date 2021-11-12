@@ -158,3 +158,26 @@ def convert_to_gray(src, dst=None):
     weight = 1.0 / 3.0
     m = np.array([[weight, weight, weight]], np.float32)
     return cv2.transform(src, m, dst)
+
+
+# Takes a frame and returns a smaller one 
+# (size divided by zoom level) centered on center
+def zoom_and_clip(frame, center, zoom_level):
+        x,y=center
+        height, width, _channels = frame.shape
+
+        new_height=int(height/zoom_level)
+        new_width=int(width/zoom_level)
+
+        half_width=int(new_width/2)
+        half_height=int(new_height/2)
+
+        left=max(0,x-half_width)
+        right=min(x+half_width,width)
+        right=max(new_width,right)
+        
+        top=max(0,y-half_height)
+        bottom=min(y+half_height,height)
+        bottom=max(new_height,bottom)
+
+        return frame[top:bottom, left:right]
