@@ -161,6 +161,9 @@ class TrackerListenerStf():
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         return STFWriter(self.stf_dir, self.file_name, source_width, source_height)    
 
+    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+        pass
+
     def finish(self):
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
 

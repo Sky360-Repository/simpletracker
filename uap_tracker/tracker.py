@@ -8,7 +8,7 @@ from uap_tracker.tracker_factory import TrackerFactory
 #
 class Tracker():
 
-    def __init__(self, id, tracker_type, frame, frame_hsv, bbox, font_size, font_color):
+    def __init__(self, id, tracker_type, frame, bbox, font_size, font_color):
 
         self.id = id
         self.cv2_tracker = TrackerFactory.create(tracker_type)
@@ -23,7 +23,7 @@ class Tracker():
     def get_bbox(self):
         return self.bboxes[-1]
 
-    def update(self, frame, frame_hsv, sensitivity, validate_target=True):
+    def update(self, frame, sensitivity, validate_target=True):
         ok, bbox = self.cv2_tracker.update(frame)
         # print(f'updating tracker {self.id}, result: {ok}')
         if ok:

@@ -5,26 +5,30 @@ import os
 import getopt
 import sys
 import cv2
-from uap_tracker.video_tracker import VideoTracker
+
+from uap_tracker.default_visualiser import DefaultVisualiser
+from uap_tracker.event_publisher import EventPublisher
+from uap_tracker.tracker_listener_no_op import TrackerListenerNoOp
+from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from config import settings
 
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
-def _setup_tracker(video):
-    return VideoTracker(video,detection_sensitivity=settings.VideoTracker.sensitivity, mask_pct=settings.VideoTracker.mask_pct)
+def _setup_controller(video, events):
+    return VideoPlaybackController(video, visualiser=DefaultVisualiser(), events=events)
 
 def _setup_listener(video, full_path, root_name):
     formatters={
         'dev':TrackerListenerDev,
+        'noop': TrackerListenerNoOp,
         'mot_stf':TrackerListenerMOTStf,
         'sot_stf':TrackerListenerSOTStf
     }
     print(f"Initilaizing {settings.format}")
     formatter_clz = formatters[settings.format]
     return formatter_clz(video, full_path, root_name, settings.output_dir)
-
 
 def main(argv):
     try:
@@ -58,12 +62,11 @@ def main(argv):
             print("Could not open video")
             sys.exit()
 
-        video_tracker=_setup_tracker(video)
+        events = EventPublisher()
+        events.listen(_setup_listener(video, full_path, root_name))
 
-        listener = _setup_listener(video, full_path, root_name)
-
-        video_tracker.listen(listener)
-        video_tracker.detect_and_track()
+        controller = _setup_controller(video, events)
+        controller.run(detection_sensitivity=settings.VideoTracker.sensitivity, mask_pct=settings.VideoTracker.mask_pct)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
