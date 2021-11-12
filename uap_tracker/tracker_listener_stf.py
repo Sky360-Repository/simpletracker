@@ -197,6 +197,9 @@ class TrackerListenerStf():
         width, height = self._target_video_width_height()
         return STFWriter(self.stf_dir, self.file_name, width, height)    
 
+    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+        pass
+
     def finish(self):
         os.rename(self.full_path, self.processed_dir + os.path.basename(self.full_path))
 
