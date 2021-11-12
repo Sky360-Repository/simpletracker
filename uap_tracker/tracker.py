@@ -20,8 +20,14 @@ class Tracker():
         self.bbox_color = font_color
         self.frame_stationary_check = 0
 
+    # (x1,y1,w,h)
     def get_bbox(self):
         return self.bboxes[-1]
+    
+    def get_center(self):
+        x1,y1,w,h=self.get_bbox()
+        return (int(x1+(w/2)),
+                int(y1+(h/2)))
 
     def update(self, frame, sensitivity, validate_target=True):
         ok, bbox = self.cv2_tracker.update(frame)
