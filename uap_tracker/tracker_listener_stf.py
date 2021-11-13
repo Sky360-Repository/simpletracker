@@ -214,7 +214,7 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.close()
             self.stf_writer=None
 
-    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
+    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, optical_flow_frame, frame_id, alive_trackers, fps):
         self._mot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
@@ -248,9 +248,8 @@ class TrackerListenerSOTStf(TrackerListenerStf):
             self.open_writers[tracker] = writer
             self.process_tracker(frame, frame_gray, frame_masked_background, frame_id, tracker, writer)
 
-
-    def process_tracker(self, frame, frame_gray, frame_masked_background, frame_id, tracker, writer):
-        writer.add_bbox(frame_id,tracker)
+    def process_tracker(self, frame, frame_gray, frame_masked_background, optical_flow_frame, frame_id, tracker, writer):
+        writer.add_bbox(frame_id, tracker)
         zoom_frame=utils.zoom_and_clip(frame, tracker.get_center(), self.zoom_level)
         print(f"Zoom shape: {zoom_frame.shape}")
         writer.write_original_frame(zoom_frame)

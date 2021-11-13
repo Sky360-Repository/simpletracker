@@ -3,10 +3,13 @@ import numpy as np
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
+from uap_tracker.dense_optical_flow import DenseOpticalFlow
 
 #
 # Tracks multiple objects in a video
 #
+
+
 class VideoTracker():
 
     DETECTION_SENSITIVITY_HIGH = 1
@@ -41,6 +44,8 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
 
+        self.dof = DenseOpticalFlow(480, 480)
+
     @property
     def is_tracking(self):
         return len(self.live_trackers) > 0
@@ -60,13 +65,14 @@ class VideoTracker():
 
         self.total_trackers_started += 1
 
-        tracker = Tracker(self.total_trackers_started, tracker_type, frame, bbox, self.font_size, self.font_colour)
+        tracker = Tracker(self.total_trackers_started, tracker_type,
+                          frame, bbox, self.font_size, self.font_colour)
         tracker.update(frame, self.detection_sensitivity)
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, bboxes, frame):
- 
-        unmatched_bboxes=bboxes.copy()
+
+        unmatched_bboxes = bboxes.copy()
         failed_trackers = []
         for tracker in self.live_trackers:
 
@@ -101,18 +107,20 @@ class VideoTracker():
         self.blur = blur
         self.normalise_video = normalise_video
 
-        tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
+        tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
+                         'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
         background_subtractor_types = ['KNN']
 
         self.tracker_type = tracker_types[7]
         self.background_subtractor_type = background_subtractor_types[0]
 
         source_width = int(frame.shape[1])
-        source_height = int(frame.shape[1])
+        source_height = int(frame.shape[0])
 
         print(f'Video size w:{source_width} x h:{source_height}')
         if self.normalise_video:
-            print(f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
+            print(
+                f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
 
         self.font_size = int(source_height / 1000.0)
         if self.normalise_video:
@@ -125,47 +133,58 @@ class VideoTracker():
             self.visualiser.initialise(self.font_size, self.font_colour)
 
         if self.normalise_video:
-            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
+            frame = utils.normalize_frame(
+                frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = utils.convert_to_gray(frame)
 
         # Blur image
         if self.blur:
-            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            frame_gray = cv2.GaussianBlur(
+                frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        self.background_subtractor = BackgroundSubtractorFactory.create(self.background_subtractor_type, self.detection_sensitivity)
+        self.background_subtractor = BackgroundSubtractorFactory.create(
+            self.background_subtractor_type, self.detection_sensitivity)
 
-        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
+        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
+            frame_gray, self.background_subtractor, self.mask_pct)
 
         if self.events is not None:
-            self.events.publish_initialise(self.detection_sensitivity, self.blur, self.normalise_video, self.tracker_type, self.background_subtractor_type, source_width, source_height)
+            self.events.publish_initialise(self.detection_sensitivity, self.blur, self.normalise_video,
+                                           self.tracker_type, self.background_subtractor_type, source_width, source_height)
 
     def initialise_background_subtraction(self, frame):
 
         if self.normalise_video:
-            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
+            frame = utils.normalize_frame(
+                frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = utils.convert_to_gray(frame)
 
         # Blur image
         if self.blur:
-            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            frame_gray = cv2.GaussianBlur(
+                frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
+        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
+            frame_gray, self.background_subtractor, self.mask_pct)
 
     def initialise_trackers(self):
 
-        key_points = utils.perform_blob_detection(self.frame_masked_background, self.detection_sensitivity)
+        key_points = utils.perform_blob_detection(
+            self.frame_masked_background, self.detection_sensitivity)
 
         # Create Trackers
-        self.create_trackers_from_keypoints(self.tracker_type, key_points, self.frame_output)
+        self.create_trackers_from_keypoints(
+            self.tracker_type, key_points, self.frame_output)
 
     def process_frame(self, frame, frame_count, fps):
 
         if self.normalise_video:
-            frame = utils.normalize_frame(frame, self.normalised_w_h[0], self.normalised_w_h[1])
+            frame = utils.normalize_frame(
+                frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
         self.frame_output = frame.copy()
@@ -173,26 +192,45 @@ class VideoTracker():
 
         # Blur image
         if self.blur:
-            frame_gray = cv2.GaussianBlur(frame_gray, (self.blur_radius, self.blur_radius), 0)
+            frame_gray = cv2.GaussianBlur(
+                frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-        _, frame_masked_background = utils.apply_background_subtraction(frame_gray, self.background_subtractor, self.mask_pct)
+        optical_flow_frame=None
+        if False:
 
-        # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
-        bboxes = [utils.kp_to_bbox(x) for x in key_points]
+            # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
+            _, frame_masked_background = utils.apply_background_subtraction(
+                frame_gray, self.background_subtractor, self.mask_pct)
 
+            # Detect new objects of interest to pass to tracker
+            key_points = utils.perform_blob_detection(
+                frame_masked_background, self.detection_sensitivity)
+            bboxes = [utils.kp_to_bbox(x) for x in key_points]
+        else:
+            bboxes = []
+            # TODO dont use frame_masked_bg
+            dof_frame = self.dof.process_grey_frame(frame_gray)
+            height, width, _ = frame.shape
+            frame_masked_background = None
+            optical_flow_frame = cv2.resize(dof_frame, (width, height))
+            
+            key_points = []
+
+        
         self.update_trackers(self.tracker_type, bboxes, self.frame_output)
 
         if self.events is not None:
-            self.events.publish_process_frame(frame, frame_gray, frame_masked_background, frame_count + 1, self.live_trackers, fps)
+            self.events.publish_process_frame(
+                frame, frame_gray, frame_masked_background, optical_flow_frame, frame_count + 1, self.live_trackers, fps)
 
         if self.visualiser is not None:
-            self.frame_output = self.visualiser.visualise_frame(self, frame, frame_masked_background, self.frame_output, key_points, fps)
+            self.frame_output = self.visualiser.visualise_frame(
+                self, frame, frame_masked_background, self.frame_output, optical_flow_frame, key_points, fps)
 
         return self.frame_output
 
     def finalise(self):
         if self.events is not None:
-            self.events.publish_finalise(self.total_trackers_started, self.total_trackers_finished)
+            self.events.publish_finalise(
+                self.total_trackers_started, self.total_trackers_finished)

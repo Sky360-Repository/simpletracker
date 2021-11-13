@@ -8,7 +8,9 @@ import cv2
 
 from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.event_publisher import EventPublisher
+from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.tracker_listener_no_op import TrackerListenerNoOp
+from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
@@ -17,7 +19,14 @@ from config import settings
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
 def _setup_controller(video, events):
-    return VideoPlaybackController(video, visualiser=DefaultVisualiser(), events=events)
+    visualizers={
+        'default': DefaultVisualiser,
+        'simple': SimpleVisualiser,
+        'two_by_two': TwoByTwoVisualiser
+    }
+    visualizer_setting = settings.get('visualizer', 'default')
+    visualizer_clz=visualizers[visualizer_setting]
+    return VideoPlaybackController(video, visualiser=visualizer_clz(), events=events)
 
 def _setup_listener(video, full_path, root_name):
     formatters={
