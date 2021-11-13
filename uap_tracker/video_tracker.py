@@ -64,16 +64,11 @@ class VideoTracker():
         tracker.update(frame, self.detection_sensitivity)
         self.live_trackers.append(tracker)
 
-    def update_trackers(self, tracker_type, key_points, frame):
-
-        # cache kp -> bbox mapping for removing failed trackers
-        kp_bbox_map = {}
-        for kp in key_points:
-            bbox = utils.kp_to_bbox(kp)
-            kp_bbox_map[kp] = bbox
-
+    def update_trackers(self, tracker_type, bboxes, frame):
+ 
+        unmatched_bboxes=bboxes.copy()
         failed_trackers = []
-        for idx, tracker in enumerate(self.live_trackers):
+        for tracker in self.live_trackers:
 
             # Update tracker
             ok, bbox = tracker.update(frame, self.detection_sensitivity)
@@ -82,12 +77,12 @@ class VideoTracker():
                 failed_trackers.append(tracker)
 
             # Try to match the new detections with this tracker
-            for idx, kp in enumerate(key_points):
-                if kp in kp_bbox_map:
-                    overlap = utils.bbox_overlap(bbox, kp_bbox_map[kp])
+            for new_bbox in bboxes:
+                if new_bbox in unmatched_bboxes:
+                    overlap = utils.bbox_overlap(bbox, new_bbox)
                     # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
                     if overlap > 0.2:
-                        del (kp_bbox_map[kp])
+                        unmatched_bboxes.remove(new_bbox)
 
         # remove failed trackers from live tracking
         for tracker in failed_trackers:
@@ -95,7 +90,7 @@ class VideoTracker():
             self.total_trackers_finished += 1
 
         # Add new detections to live tracker
-        for kp, new_bbox in kp_bbox_map.items():
+        for new_bbox in unmatched_bboxes:
             # Hit max trackers?
             if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
@@ -186,8 +181,9 @@ class VideoTracker():
 
         # Detect new objects of interest to pass to tracker
         key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+        bboxes = [utils.kp_to_bbox(x) for x in key_points]
 
-        self.update_trackers(self.tracker_type, key_points, self.frame_output)
+        self.update_trackers(self.tracker_type, bboxes, self.frame_output)
 
         if self.events is not None:
             self.events.publish_process_frame(frame, frame_gray, frame_masked_background, frame_count + 1, self.live_trackers, fps)
