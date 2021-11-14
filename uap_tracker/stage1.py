@@ -89,6 +89,11 @@ def main(argv):
 
             print(f"Opening {full_path}")
             video = cv2.VideoCapture(full_path)
+            # Exit if video not opened.
+            if not video.isOpened():
+                print("Could not open video")
+                sys.exit()
+
             events = EventPublisher()
             listener = _setup_listener(video, full_path, root_name)
             if listener:
@@ -141,11 +146,6 @@ def get_camera(config):
 
 
 def _run(controller, listener, media):
-
-    # Exit if video not opened.
-    #    if not media.isOpened():
-    #        print("Could not open video")
-    #        sys.exit()
 
     events = EventPublisher()
 
