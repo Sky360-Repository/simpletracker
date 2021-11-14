@@ -16,11 +16,12 @@ from uap_tracker.camera_stream_controller import CameraStreamController
 from uap_tracker.tracker_listener_dev import TrackerListenerDev
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from config import settings
+from uap_tracker.video_tracker import VideoTracker
 
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
 
-def _setup_controller(video, events):
+def _setup_controller(media, events):
     controller_clz = get_controller()
 
     visualizers = {
@@ -31,7 +32,7 @@ def _setup_controller(video, events):
     visualizer_setting = settings.get('visualizer', 'default')
     visualizer_clz = visualizers[visualizer_setting]
 
-    return controller_clz(video, visualiser=visualizer_clz(), events=events)
+    return controller_clz(media, visualiser=visualizer_clz(), events=events)
 
 
 def get_controller():
@@ -155,7 +156,7 @@ def _run(controller, listener, media):
     controller.run(
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
-        normalise_video=False
+        normalise_video=settings.VideoTracker.get('normalize',False)
     )
 
 
