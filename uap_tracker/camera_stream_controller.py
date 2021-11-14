@@ -21,7 +21,7 @@ class CameraStreamController():
         self.source_height = 0
 
     def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
-
+        print("Running Camera")
         success, _ = self.camera.read()
         if not success:
             print(f"Could not open camera video stream")

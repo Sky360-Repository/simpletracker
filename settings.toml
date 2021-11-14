@@ -12,3 +12,6 @@ output_dir = 'videos/out'
 mask_pct=80
 sensitivity=1
 
+[Camera]
+
+camera_mode = 'rtsp'
