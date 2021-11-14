@@ -1,5 +1,5 @@
-# usage: python uap_tracker/stage1.py -i <inputdir> -o <outputdirectory>
-# e.g. python uap_tracker/stage1.py -i videos/samples/ -o videos/sp3
+# usage: python uap_tracker/stage1.py
+# e.g. python uap_tracker/stage1.py
 
 import os
 import getopt
@@ -101,8 +101,8 @@ def main(argv):
 
             _run(controller, listener, video)
     elif controller == CameraStreamController:
-        full_path = os.path.join(settings.input_dir, 'streaming')
         camera = get_camera(settings.get('camera', {}))
+        full_path = os.path.join(settings.input_dir, 'streaming')
         listener = _setup_listener(camera, full_path, 'capture')
 
         _run(controller, listener, camera)
