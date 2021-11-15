@@ -10,6 +10,7 @@ from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.tracker_listener_no_op import TrackerListenerNoOp
+from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.camera_stream_controller import CameraStreamController
@@ -27,7 +28,8 @@ def _setup_controller(media, events):
     visualizers = {
         'default': DefaultVisualiser,
         'simple': SimpleVisualiser,
-        'two_by_two': TwoByTwoVisualiser
+        'two_by_two': TwoByTwoVisualiser,
+        'two_by_two_optical_flow': TwoByTwoOpticalFlowVisualiser
     }
     visualizer_setting = settings.get('visualizer', 'default')
     visualizer_clz = visualizers[visualizer_setting]
