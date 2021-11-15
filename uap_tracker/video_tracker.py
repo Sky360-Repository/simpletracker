@@ -196,7 +196,7 @@ class VideoTracker():
                 frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        mode = 'optical_flow'
+        mode = 'background_subtraction'
         frames = {
             'original': frame,
             'grey': frame_gray

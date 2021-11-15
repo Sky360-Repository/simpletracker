@@ -13,8 +13,9 @@ class TwoByTwoVisualiser():
         self.font_size = font_size
         self.font_colour = font_colour
 
-    def visualise_frame(self, video_tracker, frame_input, frame_masked_background, frame_output, optical_flow_frame, key_points, fps):
-
+    def visualise_frame(self, video_tracker, frames, frame_output, key_points, fps):
+        frame_input = frames['original']
+        frame_masked_background = frames['masked_background']
         utils.stamp_original_frame(frame_input,self.font_size, self.font_colour)
 
         utils.stamp_output_frame(video_tracker, frame_output, self.font_size, self.font_colour, fps)
