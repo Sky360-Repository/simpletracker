@@ -5,15 +5,12 @@ from uap_tracker.video_tracker import VideoTracker
 
 class VideoPlaybackController():
 
-    def __init__(self, capture, visualiser=None, events=None, output_file=""):
+    def __init__(self, capture, visualiser=None, events=None):
 
         self.capture = capture
         self.visualiser = visualiser
         self.events = events
-        self.output_file = output_file
-        self.record = len(output_file) > 0
         self.video_tracker = None
-        self.writer = None
         self.max_display_dim = 1080
 
     def run(self, detection_sensitivity=2, blur=False, normalise_video=False, mask_pct=92):
@@ -21,13 +18,6 @@ class VideoPlaybackController():
         if not self.capture.isOpened():
             print(f"Could not open video stream")
             sys.exit()
-
-        source_width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        source_height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        # Open output video
-        if self.record:
-            self.writer = utils.get_writer(self.output_file, source_width, source_height)
 
         self.video_tracker = VideoTracker(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
@@ -64,14 +54,8 @@ class VideoPlaybackController():
                 else:
                     cv2.imshow("Tracking", processed_frame)
 
-                if self.writer is not None:
-                    self.writer.write(processed_frame)
-
                 frame_count += 1
             else:
                 break
-
-        if self.writer is not None:
-            self.writer.release()
 
         self.video_tracker.finalise()
