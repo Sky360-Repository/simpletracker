@@ -190,7 +190,10 @@ class TrackerListenerMOTStf(TrackerListenerStf):
 
         self.stf_writer=None
 
-    def _mot(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers):
+    def _mot(self, frames, frame_id, alive_trackers):
+        frame = frames['original']
+        frame_gray = frames['grey']
+        frame_masked_background = frames['masked_background']
         high_quality_trackers=map(lambda x : x.is_trackable(), alive_trackers)
         if sum(high_quality_trackers) > 0:
 
@@ -214,8 +217,8 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.close()
             self.stf_writer=None
 
-    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, optical_flow_frame, frame_id, alive_trackers, fps):
-        self._mot(frame, frame_gray, frame_masked_background, frame_id, alive_trackers)
+    def trackers_updated_callback(self, frames, frame_id, alive_trackers, fps):
+        self._mot(frames, frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         self._close_segment()
@@ -228,15 +231,17 @@ class TrackerListenerSOTStf(TrackerListenerStf):
 
         self.open_writers={}
 
-    def _sot(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers):
-        high_quality_trackers=map(lambda x : x.is_trackable(), alive_trackers)
-                
+    def _sot(self, frames, frame_id, alive_trackers):
+        frame = frames['original']
+        frame_gray = frames['grey']
+        frame_masked_background = frames['masked_background']
+
         alive_trackers_to_process=set(filter(lambda x : x.is_trackable(),alive_trackers))
         processed=set()
         newly_closed=[]
         for tracker,writer in self.open_writers.items():
             if tracker in alive_trackers_to_process:
-                self.process_tracker(frame, frame_gray, frame_masked_background, frame_id, tracker, writer)
+                self.process_tracker(frames, frame_id, tracker, writer)
             else:
                 writer.close()
                 newly_closed.append(tracker)
@@ -246,9 +251,12 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         for tracker in alive_trackers_to_process-processed:
             writer=self._create_stf_writer()
             self.open_writers[tracker] = writer
-            self.process_tracker(frame, frame_gray, frame_masked_background, frame_id, tracker, writer)
+            self.process_tracker(frames, frame_id, tracker, writer)
 
-    def process_tracker(self, frame, frame_gray, frame_masked_background, optical_flow_frame, frame_id, tracker, writer):
+    def process_tracker(self, frames, frame_id, tracker, writer):
+        frame = frames['original']
+        frame_gray = frames['grey']
+        frame_masked_background = frames['masked_background']
         writer.add_bbox(frame_id, tracker)
         zoom_frame=utils.zoom_and_clip(frame, tracker.get_center(), self.zoom_level)
         print(f"Zoom shape: {zoom_frame.shape}")

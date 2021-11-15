@@ -196,39 +196,50 @@ class VideoTracker():
                 frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        optical_flow_frame=None
-        if False:
-
-            # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-            _, frame_masked_background = utils.apply_background_subtraction(
-                frame_gray, self.background_subtractor, self.mask_pct)
-
-            # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(
-                frame_masked_background, self.detection_sensitivity)
+        mode = 'optical_flow'
+        frames = {
+            'original': frame,
+            'grey': frame_gray
+        }
+        if mode == 'background_subtraction':
+            key_points, frame_masked_background = self.keypoints_from_bg_subtraction(
+                frame_gray)
+            frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in key_points]
-        else:
+        elif mode == 'optical_flow':
+            key_points, optical_flow_frame = self.keypoints_from_optical_flow(
+                frame_gray)
+            frames['optical_flow'] = optical_flow_frame
             bboxes = []
-            # TODO dont use frame_masked_bg
-            dof_frame = self.dof.process_grey_frame(frame_gray)
-            height, width, _ = frame.shape
-            frame_masked_background = None
-            optical_flow_frame = cv2.resize(dof_frame, (width, height))
-            
-            key_points = []
 
-        
         self.update_trackers(self.tracker_type, bboxes, self.frame_output)
 
         if self.events is not None:
             self.events.publish_process_frame(
-                frame, frame_gray, frame_masked_background, optical_flow_frame, frame_count + 1, self.live_trackers, fps)
+                frames, frame_count + 1, self.live_trackers, fps)
 
         if self.visualiser is not None:
             self.frame_output = self.visualiser.visualise_frame(
-                self, frame, frame_masked_background, self.frame_output, optical_flow_frame, key_points, fps)
+                self, frames, self.frame_output, key_points, fps)
 
         return self.frame_output
+
+    def keypoints_from_optical_flow(self, frame_gray):
+        dof_frame = self.dof.process_grey_frame(frame_gray)
+        height, width = frame_gray.shape
+        optical_flow_frame = cv2.resize(dof_frame, (width, height))
+        # TODO Key Points
+        return [], optical_flow_frame
+
+    def keypoints_from_bg_subtraction(self, frame_gray):
+        # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
+        _, frame_masked_background = utils.apply_background_subtraction(
+            frame_gray, self.background_subtractor, self.mask_pct)
+
+        # Detect new objects of interest to pass to tracker
+        key_points = utils.perform_blob_detection(
+            frame_masked_background, self.detection_sensitivity)
+        return key_points, frame_masked_background
 
     def finalise(self):
         if self.events is not None:
