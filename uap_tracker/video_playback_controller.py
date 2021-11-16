@@ -5,21 +5,17 @@ from uap_tracker.video_tracker import VideoTracker
 
 class VideoPlaybackController():
 
-    def __init__(self, capture, visualiser=None, events=None):
+    def __init__(self, capture, video_tracker):
 
         self.capture = capture
-        self.visualiser = visualiser
-        self.events = events
-        self.video_tracker = None
+        self.video_tracker = video_tracker
         self.max_display_dim = 1080
 
-    def run(self, detection_sensitivity=2, blur=False, normalise_video=False, mask_pct=92):
+    def run(self, blur=False, normalise_video=False):
 
         if not self.capture.isOpened():
             print(f"Could not open video stream")
             sys.exit()
-
-        self.video_tracker = VideoTracker(self.visualiser, self.events, detection_sensitivity, mask_pct)
 
         # Read first frame.
         success, frame = self.capture.read()

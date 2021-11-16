@@ -116,7 +116,8 @@ class STFWriter():
 
     def write_images(self, images, frame_id):
         for name, image in images.items():
-            filename = os.join(self.images_dir, f"{frame_id:06}.{name}.jpg")
+            filename = os.path.join(
+                self.images_dir, f"{frame_id:06}.{name}.jpg")
             cv2.imwrite(filename, image)
 
     def _close_annotations(self):
@@ -176,8 +177,10 @@ class TrackerListenerStf():
         pass
 
     def finish(self):
-        os.rename(self.full_path, self.processed_dir +
-                  os.path.basename(self.full_path))
+        dest_filename = os.path.join(self.processed_dir,
+                                     os.path.basename(self.full_path))
+        print(f"Finished processing {dest_filename}")
+        os.rename(self.full_path, dest_filename)
 
 
 class TrackerListenerMOTStf(TrackerListenerStf):
@@ -188,6 +191,7 @@ class TrackerListenerMOTStf(TrackerListenerStf):
 
     def _mot(self, video_tracker, frame_id, alive_trackers):
         frame = video_tracker.get_image('original')
+        print(f"frame shape: {frame.shape}")
         high_quality_trackers = map(lambda x: x.is_trackable(), alive_trackers)
         if sum(high_quality_trackers) > 0:
 
