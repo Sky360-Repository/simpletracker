@@ -16,9 +16,9 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, visualiser, events, detection_sensitivity=2, mask_pct=92):
-        # print(f'VideoTracker called {video}')
+    def __init__(self, detection_mode, visualiser, events, detection_sensitivity=2, mask_pct=92):
 
+        self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
             raise Exception(
                 f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
@@ -196,31 +196,30 @@ class VideoTracker():
                 frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
 
-        mode = 'background_subtraction'
-        frames = {
+        self.frames = {
             'original': frame,
             'grey': frame_gray
         }
-        if mode == 'background_subtraction':
+        if self.detection_mode == 'background_subtraction':
             key_points, frame_masked_background = self.keypoints_from_bg_subtraction(
                 frame_gray)
-            frames['masked_background'] = frame_masked_background
+            self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in key_points]
-        elif mode == 'optical_flow':
+        elif self.detection_mode == 'optical_flow':
             key_points, optical_flow_frame = self.keypoints_from_optical_flow(
                 frame_gray)
-            frames['optical_flow'] = optical_flow_frame
+            self.frames['optical_flow'] = optical_flow_frame
             bboxes = []
 
         self.update_trackers(self.tracker_type, bboxes, self.frame_output)
 
         if self.events is not None:
             self.events.publish_process_frame(
-                frames, frame_count + 1, self.live_trackers, fps)
+                self, frame_count + 1, self.live_trackers, fps)
 
         if self.visualiser is not None:
             self.frame_output = self.visualiser.visualise_frame(
-                self, frames, self.frame_output, key_points, fps)
+                self, self.frame_output, key_points, fps)
 
         return self.frame_output
 
@@ -245,3 +244,13 @@ class VideoTracker():
         if self.events is not None:
             self.events.publish_finalise(
                 self.total_trackers_started, self.total_trackers_finished)
+
+    # called from listeners / visualizers
+    # returns named image for current frame
+    def get_image(self, frame_name):
+        return self.frames[frame_name]
+
+    # called from listeners / visualizers
+    # returns all images for current frame
+    def get_images_for_current_frame(self):
+        return self.frames

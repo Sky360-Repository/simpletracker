@@ -8,19 +8,17 @@ from uap_tracker.video_tracker import VideoTracker
 
 class CameraStreamController():
 
-    def __init__(self, camera, visualiser=None, events=None):
+    def __init__(self, camera, video_tracker):
 
         self.camera = camera
-        self.visualiser = visualiser
-        self.events = events
-        self.video_tracker = None
+        self.video_tracker = video_tracker
         self.max_display_dim = 1080
         self.minute_interval = 5
         self.running = False
         self.source_width = 0
         self.source_height = 0
 
-    def run(self, detection_sensitivity=2, blur=True, normalise_video=True, mask_pct=92):
+    def run(self, blur=True, normalise_video=True):
         print("Running Camera")
         success, _ = self.camera.read()
         if not success:
@@ -35,12 +33,9 @@ class CameraStreamController():
             # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
             self.process_iteration((datetime.datetime.now(
-            ) + iteration_period), detection_sensitivity, blur, normalise_video, mask_pct)
+            ) + iteration_period), blur, normalise_video)
 
-    def process_iteration(self, iteration_period, detection_sensitivity, blur, normalise_video, mask_pct):
-
-        self.video_tracker = VideoTracker(
-            self.visualiser, self.events, detection_sensitivity, mask_pct)
+    def process_iteration(self, iteration_period, blur, normalise_video):
 
         # Read first frame.
         success, frame = self.camera.read()

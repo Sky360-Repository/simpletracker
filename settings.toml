@@ -3,7 +3,6 @@
 format = 'mot_stf'
 
 input_dir = 'videos/samples'
-
 output_dir = 'videos/out'
 
 
@@ -13,6 +12,11 @@ mask_pct=80
 sensitivity=1
 normalize=false
 
+# Detection Mode
+#   one of: 'background_subtraction', 'optical_flow'
+detection_mode='background_subtraction'
+
 [Camera]
 
 camera_mode = 'rtsp'
+# N.B. place camera_uri in secrets.toml
