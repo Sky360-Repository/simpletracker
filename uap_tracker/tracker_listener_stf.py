@@ -161,13 +161,13 @@ class TrackerListenerStf():
             os.mkdir(dir_to_create)
         return dir_to_create
 
-    def _target_video_width_height(self):
+    def _source_video_width_height(self):
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         source_height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        return (
-            int(source_width/self.zoom_level),
-            int(source_height/self.zoom_level),
-        )
+        return source_width, source_height
+
+    def _target_video_width_height(self):
+        pass
 
     def _create_stf_writer(self):
         width, height = self._target_video_width_height()
@@ -188,6 +188,9 @@ class TrackerListenerMOTStf(TrackerListenerStf):
         super().__init__(video, full_path, file_name, output_dir)
 
         self.stf_writer = None
+
+    def _target_video_width_height(self):
+        return self._source_video_width_height()
 
     def _mot(self, video_tracker, frame_id, alive_trackers):
         frame = video_tracker.get_image('original')
@@ -230,6 +233,13 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         super().__init__(video, full_path, file_name, output_dir)
 
         self.open_writers = {}
+    
+    def _target_video_width_height(self):
+        source_width, source_height = self._source_video_width_height()
+        return (
+            int(source_width/self.zoom_level),
+            int(source_height/self.zoom_level),
+        )
 
     def _sot(self, video_tracker, frame_id, alive_trackers):
         alive_trackers_to_process = set(
@@ -237,6 +247,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         processed = set()
         newly_closed = []
         for tracker, writer in self.open_writers.items():
+
             if tracker in alive_trackers_to_process:
                 self.process_tracker(video_tracker, frame_id, tracker, writer)
             else:
