@@ -55,7 +55,7 @@ The output for the STF formatter is in this directory structure
    annotations.json                    # Annotations file
    video.mp4                           # Original video transcoded to mp4 and split for this section
    images/       
-     <frame_id:06>.jpg                 # Image with the following channels: [greyscale,zeros,background subtraction]
+     <frame_id:06>.{image_name>.jpg    # Images generated during detection such as 'original', 'grey', 'background_subtraction'
 ```
 
 ```
