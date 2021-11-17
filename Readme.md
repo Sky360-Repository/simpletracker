@@ -38,10 +38,10 @@ python uap_tracker/main.py
 
 Where:
 
-* SKY360_CONTROLLER Determines the input source type: \[Camera, Video\] 
+* SKY360_CONTROLLER Determines the input source type: \[camera, video\] 
 * SKY360_VISUALIZER Determines the display output to screen: [two_by_two, simple, none] 
 * SKY360_DETECTION_MODE Determines the method used as basis for object detection: [background_subtraction, optical_flow] 
-* SKY360_OUTPUT_FORMAT Determines the MultipleObjectTracking or SingleObjectTracking file output mode: [mot_stf, sot_stf] 
+* SKY360_OUTPUT_FORMAT Determines the MultipleObjectTracking or SingleObjectTracking file output mode: [mot_stf, sot_stf, none] 
 
 Other settings can be found in the [settings.toml](https://github.com/Sky360-Repository/simpletracker/blob/master/settings.toml) file. Environemnt variables override settings.toml ones.
 
