@@ -181,6 +181,7 @@ class VideoTracker():
             self.tracker_type, key_points, self.frame_output)
 
     def process_frame(self, frame, frame_count, fps):
+        print(f"fps:{int(fps)}")
 
         if self.normalise_video:
             frame = utils.normalize_frame(

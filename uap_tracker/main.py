@@ -32,6 +32,7 @@ def _setup_controller(media, events):
     }
 
     visualizers = {
+        'none': None,
         'default': DefaultVisualiser,
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
@@ -39,9 +40,11 @@ def _setup_controller(media, events):
     visualizer_setting = settings.get('visualizer', 'default')
     visualizer_clz = visualizers[visualizer_setting]
 
+    visualizer = visualizer_clz() if visualizer_clz else None
+    print(f"Visualizer: {visualizer}")
     video_tracker = VideoTracker(
         detection_mode,
-        visualizer_clz(),
+        visualizer,
         events,
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct
@@ -60,7 +63,7 @@ def get_controller():
     return controller_clz
 
 
-def _setup_listener(video, full_path, root_name):
+def _setup_listener(video, root_name):
     formatters = {
         'none': None,
         'mot_stf': TrackerListenerMOTStf,
@@ -69,21 +72,24 @@ def _setup_listener(video, full_path, root_name):
     print(f"Initilaizing {settings.format}")
     formatter_clz = formatters[settings.format]
     if formatter_clz:
-        return formatter_clz(video, full_path, root_name, settings.output_dir)
+        return formatter_clz(video, root_name, settings.output_dir)
 
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, "h", [])
+        opts, args = getopt.getopt(argv, "hf:", [])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
 
+    cmdline_filename = None
     for opt, arg in opts:
         if opt == '-h':
             print(USAGE)
             sys.exit()
-
+        if opt == '-f':
+            cmdline_filename = arg
+    print(f"cmdline_filename: {cmdline_filename}")
     print('Settings are ', settings.as_dict())
 
     if not os.path.isdir(settings.output_dir):
@@ -93,32 +99,36 @@ def main(argv):
 
     if controller == VideoPlaybackController:
 
-        for filename in os.listdir(settings.input_dir):
-
-            base = os.path.basename(filename)
-            root_name = os.path.splitext(base)[0]
-
-            full_path = os.path.join(settings.input_dir, filename)
-
-            print(f"Opening {full_path}")
-            video = cv2.VideoCapture(full_path)
-            # Exit if video not opened.
-            if not video.isOpened():
-                print("Could not open video")
-                sys.exit()
-
-            events = EventPublisher()
-            listener = _setup_listener(video, full_path, root_name)
-            if listener:
-                events.listen(listener)
-
-            _run(controller, listener, video)
+        if cmdline_filename:
+            process_file(controller, cmdline_filename)
+        else:
+            for filename in os.listdir(settings.input_dir):
+                full_path = os.path.join(settings.input_dir, filename)
+                process_file(controller, full_path)
     elif controller == CameraStreamController:
         camera = get_camera(settings.get('camera', {}))
-        full_path = os.path.join(settings.input_dir, 'streaming')
-        listener = _setup_listener(camera, full_path, 'capture')
+        listener = _setup_listener(camera, 'capture')
 
         _run(controller, listener, camera)
+
+
+def process_file(controller, full_path):
+    base = os.path.basename(full_path)
+    root_name = os.path.splitext(base)[0]
+
+    print(f"Opening {full_path}")
+    video = cv2.VideoCapture(full_path)
+            # Exit if video not opened.
+    if not video.isOpened():
+        print("Could not open video")
+        sys.exit()
+
+    events = EventPublisher()
+    listener = _setup_listener(video, root_name)
+    if listener:
+        events.listen(listener)
+
+    _run(controller, listener, video)
 
 
 def get_camera(config):

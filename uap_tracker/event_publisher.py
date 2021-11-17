@@ -18,7 +18,6 @@ class EventPublisher():
 
     def publish_process_frame(self, frames, frame_id, alive_trackers, fps):
         for listener in self.listeners:
-            print(listener)
             listener.trackers_updated_callback(
                 frames, frame_id, alive_trackers, fps
             )

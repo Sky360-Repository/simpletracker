@@ -15,7 +15,7 @@ import uuid
 #   annotations.json
 #   video.mp4
 #   images/
-#     <frame_id:06>.jpg
+#     <frame_id:06>.<image_contents>.jpg
 #
 
 
@@ -46,6 +46,7 @@ class STFWriter():
         self.annotated_video_filename = None
 
         self.final_video_dir = f"{stf_output_dir}/{video_file_root_name}_{self.video_id:06}"
+        os.mkdir(self.final_video_dir)
 
         self.annotations = {
             'track_labels': {},
@@ -56,16 +57,11 @@ class STFWriter():
 
         ###
 
-        tmp_filename = str(uuid.uuid4())
-
-        self.tmp_video_dir = os.path.join(stf_output_dir, tmp_filename)
-        os.mkdir(self.tmp_video_dir)
-
-        self.images_dir = self.tmp_video_dir + '/images/'
+        self.images_dir = self.final_video_dir + '/images/'
         os.mkdir(self.images_dir)
 
-        self.video_filename = self.tmp_video_dir + '/' + 'video.mp4'
-        self.annotated_video_filename = self.tmp_video_dir + '/' + 'annotated_video.mp4'
+        self.video_filename = self.final_video_dir + '/' + 'video.mp4'
+        self.annotated_video_filename = self.final_video_dir + '/' + 'annotated_video.mp4'
 
         self.writer = utils.get_writer(
             self.video_filename, source_width, source_height)
@@ -122,7 +118,7 @@ class STFWriter():
 
     def _close_annotations(self):
 
-        filename = os.path.join(self.tmp_video_dir, 'annotations.json')
+        filename = os.path.join(self.final_video_dir, 'annotations.json')
 
         with open(filename, 'w') as outfile:
             json.dump(self.annotations, outfile, indent=2)
@@ -135,18 +131,15 @@ class STFWriter():
             print(self.annotations)
             if len(self.annotations['frames']) >= 25:
                 self._close_annotations()
-                print(
-                    f"Renaming {self.tmp_video_dir} to {self.final_video_dir}")
-                os.rename(self.tmp_video_dir, self.final_video_dir)
             else:
-                shutil.rmtree(self.tmp_video_dir)
+                shutil.rmtree(self.final_video_dir)
 
 
 class TrackerListenerStf():
 
-    def __init__(self, video, full_path, file_name, output_dir, zoom_level=10):
+    def __init__(self, video, file_name, output_dir,
+                 move_source=False, zoom_level=10):
         self.video = video
-        self.full_path = full_path
         self.file_name = file_name
         self.output_dir = output_dir
         self.recording = False
@@ -154,6 +147,8 @@ class TrackerListenerStf():
         self.stf_dir = self._create_output_dir('/stf/')
         self.processed_dir = self._create_output_dir('/processed/')
         self.zoom_level = zoom_level
+        # move the source file to a  processeed dir
+        self.move_source = move_source
 
     def _create_output_dir(self, dir_ext):
         dir_to_create = self.output_dir + dir_ext
@@ -177,15 +172,12 @@ class TrackerListenerStf():
         pass
 
     def finish(self):
-        dest_filename = os.path.join(self.processed_dir,
-                                     os.path.basename(self.full_path))
-        print(f"Finished processing {dest_filename}")
-        os.rename(self.full_path, dest_filename)
+        print(f"Finished processing {self.file_name}")
 
 
 class TrackerListenerMOTStf(TrackerListenerStf):
-    def __init__(self, video, full_path, file_name, output_dir):
-        super().__init__(video, full_path, file_name, output_dir)
+    def __init__(self, video, file_name, output_dir):
+        super().__init__(video, file_name, output_dir)
 
         self.stf_writer = None
 
@@ -194,7 +186,6 @@ class TrackerListenerMOTStf(TrackerListenerStf):
 
     def _mot(self, video_tracker, frame_id, alive_trackers):
         frame = video_tracker.get_image('original')
-        print(f"frame shape: {frame.shape}")
         high_quality_trackers = map(lambda x: x.is_trackable(), alive_trackers)
         if sum(high_quality_trackers) > 0:
 
@@ -229,11 +220,11 @@ class TrackerListenerMOTStf(TrackerListenerStf):
 
 
 class TrackerListenerSOTStf(TrackerListenerStf):
-    def __init__(self, video, full_path, file_name, output_dir):
-        super().__init__(video, full_path, file_name, output_dir)
+    def __init__(self, video, file_name, output_dir):
+        super().__init__(video, file_name, output_dir)
 
         self.open_writers = {}
-    
+
     def _target_video_width_height(self):
         source_width, source_height = self._source_video_width_height()
         return (
@@ -276,9 +267,9 @@ class TrackerListenerSOTStf(TrackerListenerStf):
 
         writer.write_images(video_tracker.get_images(), frame_id)
 
-    def trackers_updated_callback(self, frame, frame_gray, frame_masked_background, frame_id, alive_trackers, fps):
-        self._sot(frame, frame_gray, frame_masked_background,
-                  frame_id, alive_trackers)
+
+    def trackers_updated_callback(self, video_tracker, frame_id, alive_trackers, fps):
+        self._sot(video_tracker,frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         for _tracker, writer in self.open_writers.items():
