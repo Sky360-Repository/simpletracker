@@ -12,4 +12,4 @@ source $conda_install_path/etc/profile.d/conda.sh
 
 conda create -y --name $conda_env_name
 conda activate $conda_env_name
-conda install -c conda-forge opencv
+conda install -c conda-forge opencv dynaconf
