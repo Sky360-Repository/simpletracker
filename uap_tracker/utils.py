@@ -201,3 +201,14 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
                 cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
         100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
+
+
+def display_frame(processed_frame, max_display_dim):
+    # Display result, resize it to a standard size
+    if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
+        # MG: scale the image to something that is of a reasonable viewing size
+        frame_scaled = scale_image(
+            processed_frame, max_display_dim)
+        cv2.imshow("Tracking", frame_scaled)
+    else:
+        cv2.imshow("Tracking", processed_frame)

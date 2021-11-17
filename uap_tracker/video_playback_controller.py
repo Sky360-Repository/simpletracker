@@ -43,12 +43,7 @@ class VideoPlaybackController():
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
 
                 # Display result, resize it to a standard size
-                if processed_frame.shape[0] > self.max_display_dim or processed_frame.shape[1] > self.max_display_dim:
-                    # MG: scale the image to something that is of a reasonable viewing size
-                    frame_scaled = utils.scale_image(processed_frame, self.max_display_dim)
-                    cv2.imshow("Tracking", frame_scaled)
-                else:
-                    cv2.imshow("Tracking", processed_frame)
+                utils.display_frame(processed_frame, self.max_display_dim)
 
                 frame_count += 1
             else:

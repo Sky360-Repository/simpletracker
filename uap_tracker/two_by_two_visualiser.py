@@ -14,6 +14,7 @@ class TwoByTwoVisualiser():
         self.font_colour = font_colour
 
     def visualise_frame(self, video_tracker, frame_output, key_points, fps):
+        print(f"visualise_frame called")
         frame_input = video_tracker.get_image('original')
         frame_masked_background = video_tracker.get_image('masked_background')
 
