@@ -56,8 +56,8 @@ def _setup_controller(media, events):
 
 def get_controller():
     controllers = {
-        'Video': VideoPlaybackController,
-        'Camera': CameraStreamController
+        'video': VideoPlaybackController,
+        'camera': CameraStreamController
     }
     controller_setting = settings.get('controller', 'Video')
     controller_clz = controllers[controller_setting]
@@ -70,8 +70,8 @@ def _setup_listener(video, root_name):
         'mot_stf': TrackerListenerMOTStf,
         'sot_stf': TrackerListenerSOTStf
     }
-    print(f"Initilaizing {settings.format}")
-    formatter_clz = formatters[settings.format]
+    print(f"Initilaizing {settings.output_format}")
+    formatter_clz = formatters[settings.output_format]
     if formatter_clz:
         return formatter_clz(video, root_name, settings.output_dir)
 
