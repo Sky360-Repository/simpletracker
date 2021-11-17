@@ -1,6 +1,7 @@
 # usage: python uap_tracker/stage1.py
 # e.g. python uap_tracker/stage1.py
 
+from datetime import datetime
 import os
 import getopt
 import sys
@@ -22,7 +23,7 @@ USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.to
 
 
 def _setup_controller(media, events):
-    controller_clz = get_controller()
+    controller_clz = _get_controller()
 
     detection_mode = settings.get(
         'detection_mode', 'background_subtraction')
@@ -54,7 +55,7 @@ def _setup_controller(media, events):
     return controller_clz(media, video_tracker)
 
 
-def get_controller():
+def _get_controller():
     controllers = {
         'video': VideoPlaybackController,
         'camera': CameraStreamController
@@ -64,7 +65,7 @@ def get_controller():
     return controller_clz
 
 
-def _setup_listener(video, root_name):
+def _setup_listener(video, root_name, output_dir):
     formatters = {
         'none': None,
         'mot_stf': TrackerListenerMOTStf,
@@ -73,7 +74,7 @@ def _setup_listener(video, root_name):
     print(f"Initilaizing {settings.output_format}")
     formatter_clz = formatters[settings.output_format]
     if formatter_clz:
-        return formatter_clz(video, root_name, settings.output_dir)
+        return formatter_clz(video, root_name, output_dir)
 
 
 def main(argv):
@@ -93,27 +94,35 @@ def main(argv):
     print(f"cmdline_filename: {cmdline_filename}")
     print('Settings are ', settings.as_dict())
 
-    if not os.path.isdir(settings.output_dir):
-        os.mkdir(settings.output_dir)
+    output_dir = _create_output_dir()
 
-    controller = get_controller()
+    controller = _get_controller()
 
     if controller == VideoPlaybackController:
 
         if cmdline_filename:
-            process_file(controller, cmdline_filename)
+            process_file(controller, cmdline_filename, output_dir)
         else:
             for filename in os.listdir(settings.input_dir):
                 full_path = os.path.join(settings.input_dir, filename)
-                process_file(controller, full_path)
+                process_file(controller, full_path, output_dir)
     elif controller == CameraStreamController:
         camera = get_camera(settings.get('camera', {}))
-        listener = _setup_listener(camera, 'capture')
+        listener = _setup_listener(camera, 'capture', output_dir)
 
         _run(controller, listener, camera)
 
+def _create_output_dir():
+    if not os.path.isdir(settings.output_dir):
+        os.mkdir(settings.output_dir)
 
-def process_file(controller, full_path):
+    time_based_dir = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    output_dir = os.path.join(settings.output_dir, time_based_dir)
+    os.mkdir(output_dir)
+    return output_dir
+
+
+def process_file(controller, full_path, output_dir):
     base = os.path.basename(full_path)
     root_name = os.path.splitext(base)[0]
 
@@ -125,7 +134,7 @@ def process_file(controller, full_path):
         sys.exit()
 
     events = EventPublisher()
-    listener = _setup_listener(video, root_name)
+    listener = _setup_listener(video, root_name, output_dir)
     if listener:
         events.listen(listener)
 

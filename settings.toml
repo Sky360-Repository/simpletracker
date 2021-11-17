@@ -3,8 +3,8 @@
 #   one of: ['mot_stf','sot_stf']
 format = 'mot_stf'
 
-input_dir = 'videos/samples'
-output_dir = 'videos/out'
+input_dir = 'input'
+output_dir = 'output'
 
 
 [VideoTracker]
