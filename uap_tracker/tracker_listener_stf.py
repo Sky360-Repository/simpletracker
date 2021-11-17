@@ -201,7 +201,7 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.write_original_frame(frame)
             self.stf_writer.write_annotated_frame(annotated_frame)
             self.stf_writer.write_images(
-                video_tracker.get_images_for_current_frame(), frame_id)
+                video_tracker.get_images(), frame_id)
 
         else:
             self._close_segment()

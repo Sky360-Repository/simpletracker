@@ -253,5 +253,5 @@ class VideoTracker():
 
     # called from listeners / visualizers
     # returns all images for current frame
-    def get_images_for_current_frame(self):
+    def get_images(self):
         return self.frames
