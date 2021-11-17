@@ -253,7 +253,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
             self.process_tracker(video_tracker, frame_id, tracker, writer)
 
     def process_tracker(self, video_tracker, frame_id, tracker, writer):
-        frame = video_tracker.get_frame('original')
+        frame = video_tracker.get_image('original')
         writer.add_bbox(frame_id, tracker)
         zoom_frame = utils.zoom_and_clip(
             frame, tracker.get_center(), self.zoom_level)
