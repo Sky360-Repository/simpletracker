@@ -47,10 +47,9 @@ class CameraStreamController():
         frame_count = 0
         fps = 0
         while True:
+            timer = cv2.getTickCount()
             success, frame = self.camera.read()
             if success:
-
-                timer = cv2.getTickCount()
 
                 self.video_tracker.process_frame(
                     frame, frame_count, fps)
