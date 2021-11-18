@@ -64,7 +64,7 @@ class VideoTracker():
 
         tracker = Tracker(self.total_trackers_started, tracker_type,
                           frame, bbox)
-        tracker.update(frame, self.detection_sensitivity)
+        tracker.update(frame)
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, bboxes, frame):
@@ -74,7 +74,7 @@ class VideoTracker():
         for tracker in self.live_trackers:
 
             # Update tracker
-            ok, bbox = tracker.update(frame, self.detection_sensitivity)
+            ok, bbox = tracker.update(frame)
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
