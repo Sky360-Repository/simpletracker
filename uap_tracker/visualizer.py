@@ -3,9 +3,9 @@ from uap_tracker.tracker import Tracker
 
 
 class Visualizer():
-    def __init__(self):
-        self.max_display_dim = 1080
-        self.font_size = max(1, self.max_display_dim/250)
+    def __init__(self, max_display_dim):
+        self.max_display_dim = max_display_dim
+        self.font_size = max(1, self.max_display_dim/1000)
         self.font_colour = (50, 170, 50)
 
     def display(self, frame):

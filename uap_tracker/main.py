@@ -50,16 +50,22 @@ def _get_visualizer(detection_mode):
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
     }
-    visualizer_setting = settings.get('visualizer', None)
+    visualizer_format = settings.Visualizer.get('format', None)
+    visualizer_max_display_dim = settings.Visualizer.get(
+        'max_display_dim', None)
 
-    if not visualizer_setting:
+    if not visualizer_format:
         print(
             f"Please set 'visualizer' in the config or use the SKY360_VISUALIZER env var: {visualizers.keys()}")
         sys.exit(1)
 
-    visualizer_clz = visualizers[visualizer_setting]
+    visualizer_clz = visualizers[visualizer_format]
 
-    visualizer = visualizer_clz() if visualizer_clz else None
+    if visualizer_clz:
+        visualizer = visualizer_clz(
+            visualizer_max_display_dim)
+    else:
+        visualizer = None
     print(f"Visualizer: {visualizer}")
     return visualizer
 
@@ -132,21 +138,22 @@ def main(argv):
 
     visualizer = _get_visualizer(detection_mode)
 
-    if controller == VideoPlaybackController:
+    # If a video was passed in on commandline, run that and ignore other sources
+    if cmdline_filename:
+        process_file(controller, visualizer, cmdline_filename,
+                     output_dir, detection_mode)
+    else:
+        if controller == VideoPlaybackController:
 
-        if cmdline_filename:
-            process_file(controller, visualizer, cmdline_filename,
-                         output_dir, detection_mode)
-        else:
             for filename in os.listdir(settings.input_dir):
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
 
-    elif controller == CameraStreamController:
-        camera = get_camera(settings.get('camera', {}))
-        listener = _setup_listener(camera, 'capture', output_dir)
-        _run(controller, [listener, visualizer], camera, detection_mode)
+        elif controller == CameraStreamController:
+            camera = get_camera(settings.get('camera', {}))
+            listener = _setup_listener(camera, 'capture', output_dir)
+            _run(controller, [listener, visualizer], camera, detection_mode)
 
 
 def _create_output_dir():
