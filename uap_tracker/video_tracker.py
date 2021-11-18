@@ -47,6 +47,13 @@ class VideoTracker():
     def is_tracking(self):
         return len(self.live_trackers) > 0
 
+    def active_trackers(self):
+        trackers = filter(lambda x: x.is_trackable(), self.live_trackers)
+        if trackers is None:
+            return []
+        else:
+            return trackers
+
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
         for kp in key_points:
             bbox = utils.kp_to_bbox(kp)
@@ -239,6 +246,20 @@ class VideoTracker():
     # returns named image for current frame
     def get_image(self, frame_name):
         return self.frames[frame_name]
+
+    # called from listeners / visualizers
+    # returns annotated image for current frame
+    def get_annotated_image(self):
+        annotated_frame = self.frames.get('annotated_image', None)
+        if annotated_frame is None:
+            annotated_frame = self.frames['original'].copy()
+            for tracker in self.active_trackers():
+                utils.add_bbox_to_image(
+                    tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
+            self.frames['annotated_image'] = annotated_frame
+
+        return self.frames['annotated_image']
+
 
     # called from listeners / visualizers
     # returns all images for current frame

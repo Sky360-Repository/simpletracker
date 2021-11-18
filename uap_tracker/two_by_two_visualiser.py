@@ -9,13 +9,15 @@ class TwoByTwoVisualiser(Visualizer):
     def visualise_frame(self, video_tracker):
         frame_input = video_tracker.get_image('original')
         frame_masked_background = video_tracker.get_image('masked_background')
-        frame_output = frame_input.copy()
+        frame_output = video_tracker.get_annotated_image()
         key_points = video_tracker.get_keypoints()
         fps = video_tracker.get_fps()
 
-        utils.stamp_original_frame(frame_input,self.font_size, self.font_colour)
+        utils.stamp_original_frame(
+            frame_input, self.font_size, self.font_colour)
 
-        utils.stamp_output_frame(video_tracker, frame_output, self.font_size, self.font_colour, fps)
+        utils.stamp_output_frame(
+            video_tracker, frame_output, self.font_size, self.font_colour, fps)
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
         frame_masked_background_copy = cv2.cvtColor(

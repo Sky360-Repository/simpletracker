@@ -10,7 +10,7 @@ class TwoByTwoOpticalFlowVisualiser(Visualizer):
 
         frame_input = video_tracker.get_image('original')
         optical_flow_frame = video_tracker.get_image('optical_flow')
-        frame_output = frame_input.copy()
+        frame_output = video_tracker.get_annotated_image()
         fps = video_tracker.get_fps()
 
         utils.stamp_original_frame(

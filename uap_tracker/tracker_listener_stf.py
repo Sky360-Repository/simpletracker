@@ -191,11 +191,9 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             if self.stf_writer is None:
                 self.stf_writer = self._create_stf_writer()
 
-            annotated_frame = frame.copy()
+            annotated_frame = video_tracker.get_annotated_image()
             for tracker in filter(lambda x: x.is_trackable(), alive_trackers):
                 self.stf_writer.add_bbox(frame_id, tracker)
-                utils.add_bbox_to_image(
-                    tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
 
             self.stf_writer.write_original_frame(frame)
             self.stf_writer.write_annotated_frame(annotated_frame)
