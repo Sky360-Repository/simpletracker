@@ -12,15 +12,9 @@ class EventPublisher():
     def listeners(self):
         return self._listeners
 
-    def publish_initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
+    def publish_process_frame(self, video_tracker):
         for listener in self.listeners:
-            listener.initialise(sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height)
-
-    def publish_process_frame(self, frames, frame_id, alive_trackers, fps):
-        for listener in self.listeners:
-            listener.trackers_updated_callback(
-                frames, frame_id, alive_trackers, fps
-            )
+            listener.trackers_updated_callback(video_tracker)
 
     def publish_finalise(self, total_trackers_started, total_trackers_finished):
         for listener in self.listeners:

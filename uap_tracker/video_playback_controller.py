@@ -3,6 +3,7 @@ import sys
 import uap_tracker.utils as utils
 from uap_tracker.video_tracker import VideoTracker
 
+
 class VideoPlaybackController():
 
     def __init__(self, capture, video_tracker):
@@ -37,13 +38,10 @@ class VideoPlaybackController():
 
                 timer = cv2.getTickCount()
 
-                processed_frame = self.video_tracker.process_frame(frame, frame_count, fps)
+                self.video_tracker.process_frame(frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
-
-                # Display result, resize it to a standard size
-                utils.display_frame(processed_frame, self.max_display_dim)
 
                 frame_count += 1
             else:

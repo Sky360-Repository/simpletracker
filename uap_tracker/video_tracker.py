@@ -16,7 +16,7 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, visualiser, events, detection_sensitivity=2, mask_pct=92):
+    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=92, blur=True, normalise_video=True):
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -28,16 +28,13 @@ class VideoTracker():
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
-        self.visualiser = visualiser
-        self.font_size = 8
-        self.font_colour = (50, 170, 50)
         self.normalised_w_h = (1920, 1080)
         self.blur_radius = 3
         self.max_active_trackers = 10
         self.mask_pct = mask_pct
 
-        self.blur = False
-        self.normalise_video = False
+        self.blur = blur
+        self.normalise_video = normalise_video
         self.tracker_type = None
         self.background_subtractor_type = None
         self.background_subtractor = None
@@ -66,7 +63,7 @@ class VideoTracker():
         self.total_trackers_started += 1
 
         tracker = Tracker(self.total_trackers_started, tracker_type,
-                          frame, bbox, self.font_size, self.font_colour)
+                          frame, bbox)
         tracker.update(frame, self.detection_sensitivity)
         self.live_trackers.append(tracker)
 
@@ -128,10 +125,6 @@ class VideoTracker():
 
         self.font_size = max(self.font_size, 1)
 
-        # MG: Ultimately I would like the visualiser to be passed in
-        if self.visualiser is not None:
-            self.visualiser.initialise(self.font_size, self.font_colour)
-
         if self.normalise_video:
             frame = utils.normalize_frame(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
@@ -149,10 +142,6 @@ class VideoTracker():
 
         self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
             frame_gray, self.background_subtractor, self.mask_pct)
-
-        if self.events is not None:
-            self.events.publish_initialise(self.detection_sensitivity, self.blur, self.normalise_video,
-                                           self.tracker_type, self.background_subtractor_type, source_width, source_height)
 
     def initialise_background_subtraction(self, frame):
 
@@ -172,7 +161,6 @@ class VideoTracker():
             frame_gray, self.background_subtractor, self.mask_pct)
 
     def initialise_trackers(self):
-
         key_points = utils.perform_blob_detection(
             self.frame_masked_background, self.detection_sensitivity)
 
@@ -182,13 +170,13 @@ class VideoTracker():
 
     def process_frame(self, frame, frame_count, fps):
         print(f"fps:{int(fps)}")
+        self.fps = fps
+        self.frame_count = frame_count
 
         if self.normalise_video:
             frame = utils.normalize_frame(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
-        # Copy the frame as we want to mark the original and use the copy for displaying tracking artifacts
-        self.frame_output = frame.copy()
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Blur image
@@ -211,16 +199,18 @@ class VideoTracker():
                 frame_gray)
             self.frames['optical_flow'] = optical_flow_frame
             bboxes = []
+        else:
+            print('Detection Mode None')
+            bboxes = []
+            key_points = []
 
-        self.update_trackers(self.tracker_type, bboxes, self.frame_output)
+        self.update_trackers(self.tracker_type, bboxes, frame)
+
+        frame_count + 1
 
         if self.events is not None:
             self.events.publish_process_frame(
-                self, frame_count + 1, self.live_trackers, fps)
-
-        if self.visualiser is not None:
-            self.frame_output = self.visualiser.visualise_frame(
-                self, self.frame_output, key_points, fps)
+                self)
 
         return self.frame_output
 
@@ -255,3 +245,12 @@ class VideoTracker():
     # returns all images for current frame
     def get_images(self):
         return self.frames
+
+    def get_fps(self):
+        return self.fps
+
+    def get_frame_count(self):
+        return self.frame_count
+
+    def get_live_trackers(self):
+        return self.live_trackers

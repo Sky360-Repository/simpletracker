@@ -22,15 +22,26 @@ from camera import get_camera
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
 
-def _setup_controller(media, events):
+def _setup_controller(media, events, detection_mode):
     controller_clz = _get_controller()
 
-    detection_mode = settings.get(
-        'detection_mode', 'background_subtraction')
+    video_tracker = VideoTracker(
+        detection_mode,
+        events,
+        detection_sensitivity=settings.VideoTracker.sensitivity,
+        mask_pct=settings.VideoTracker.mask_pct,
+        blur=settings.VideoTracker.get('blur', False),
+        normalise_video=settings.VideoTracker.get('normalize', False)
+    )
 
+    return controller_clz(media, video_tracker)
+
+
+def _get_visualizer(detection_mode):
     two_by_two_mode_visualizers = {
         'background_subtraction': TwoByTwoVisualiser,
-        'optical_flow': TwoByTwoOpticalFlowVisualiser
+        'optical_flow': TwoByTwoOpticalFlowVisualiser,
+        'none': None
     }
 
     visualizers = {
@@ -39,20 +50,33 @@ def _setup_controller(media, events):
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
     }
-    visualizer_setting = settings.get('visualizer', 'default')
+    visualizer_setting = settings.get('visualizer', None)
+
+    if not visualizer_setting:
+        print(
+            f"Please set 'visualizer' in the config or use the SKY360_VISUALIZER env var: {visualizers.keys()}")
+        sys.exit(1)
+
     visualizer_clz = visualizers[visualizer_setting]
 
     visualizer = visualizer_clz() if visualizer_clz else None
     print(f"Visualizer: {visualizer}")
-    video_tracker = VideoTracker(
-        detection_mode,
-        visualizer,
-        events,
-        detection_sensitivity=settings.VideoTracker.sensitivity,
-        mask_pct=settings.VideoTracker.mask_pct
-    )
+    return visualizer
 
-    return controller_clz(media, video_tracker)
+
+def _get_detection_mode():
+    detection_mode = settings.VideoTracker.get(
+        'detection_mode', None)
+
+    detection_modes = ['background_subtraction', 'optical_flow', 'none']
+
+    if not detection_mode:
+        print(
+            f"Please set detection_mode in the config or use the SKY360_DETECTION_MODE env var: {detection_modes}")
+        sys.exit(1)
+    else:
+        print(f"Detection Mode: {detection_mode}")
+    return detection_mode
 
 
 def _get_controller():
@@ -60,7 +84,13 @@ def _get_controller():
         'video': VideoPlaybackController,
         'camera': CameraStreamController
     }
-    controller_setting = settings.get('controller', 'Video')
+    controller_setting = settings.get('controller', None)
+
+    if not controller_setting:
+        print(
+            f"Please set controller in the config or use the SKY360_CONTROLLER env var: {controllers.keys()}")
+        sys.exit(1)
+
     controller_clz = controllers[controller_setting]
     return controller_clz
 
@@ -98,19 +128,26 @@ def main(argv):
 
     controller = _get_controller()
 
+    detection_mode = _get_detection_mode()
+
+    visualizer = _get_visualizer(detection_mode)
+
     if controller == VideoPlaybackController:
 
         if cmdline_filename:
-            process_file(controller, cmdline_filename, output_dir)
+            process_file(controller, visualizer, cmdline_filename,
+                         output_dir, detection_mode)
         else:
             for filename in os.listdir(settings.input_dir):
                 full_path = os.path.join(settings.input_dir, filename)
-                process_file(controller, full_path, output_dir)
+                process_file(controller, visualizer, full_path,
+                             output_dir, detection_mode)
+
     elif controller == CameraStreamController:
         camera = get_camera(settings.get('camera', {}))
         listener = _setup_listener(camera, 'capture', output_dir)
+        _run(controller, [listener, visualizer], camera, detection_mode)
 
-        _run(controller, listener, camera)
 
 def _create_output_dir():
     if not os.path.isdir(settings.output_dir):
@@ -122,7 +159,7 @@ def _create_output_dir():
     return output_dir
 
 
-def process_file(controller, full_path, output_dir):
+def process_file(controller, visualizer, full_path, output_dir, detection_mode):
     base = os.path.basename(full_path)
     root_name = os.path.splitext(base)[0]
 
@@ -135,23 +172,20 @@ def process_file(controller, full_path, output_dir):
 
     events = EventPublisher()
     listener = _setup_listener(video, root_name, output_dir)
-    if listener:
-        events.listen(listener)
 
-    _run(controller, listener, video)
+    _run(controller, [listener, visualizer], video, detection_mode)
 
 
-def _run(controller, listener, media):
+def _run(controller, listeners, media, detection_mode):
 
     events = EventPublisher()
 
-    if listener:
-        events.listen(listener)
+    for listener in listeners:
+        if listener:
+            events.listen(listener)
 
-    controller = _setup_controller(media, events)
-    controller.run(
-        normalise_video=settings.VideoTracker.get('normalize', False)
-    )
+    controller = _setup_controller(media, events, detection_mode)
+    controller.run()
 
 
 if __name__ == '__main__':

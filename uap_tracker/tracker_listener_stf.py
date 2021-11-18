@@ -168,9 +168,6 @@ class TrackerListenerStf():
         width, height = self._target_video_width_height()
         return STFWriter(self.stf_dir, self.file_name, width, height)
 
-    def initialise(self, sensitivity, blur, normalise_video, tracker_type, background_subtractor_type, source_width, source_height):
-        pass
-
     def finish(self):
         print(f"Finished processing {self.file_name}")
 
@@ -184,7 +181,9 @@ class TrackerListenerMOTStf(TrackerListenerStf):
     def _target_video_width_height(self):
         return self._source_video_width_height()
 
-    def _mot(self, video_tracker, frame_id, alive_trackers):
+    def _mot(self, video_tracker):
+        frame_id = video_tracker.get_frame_count()
+        alive_trackers = video_tracker.get_live_trackers()
         frame = video_tracker.get_image('original')
         high_quality_trackers = map(lambda x: x.is_trackable(), alive_trackers)
         if sum(high_quality_trackers) > 0:
@@ -211,8 +210,8 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             self.stf_writer.close()
             self.stf_writer = None
 
-    def trackers_updated_callback(self, video_tracker, frame_id, alive_trackers, fps):
-        self._mot(video_tracker, frame_id, alive_trackers)
+    def trackers_updated_callback(self, video_tracker):
+        self._mot(video_tracker)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         self._close_segment()
@@ -267,9 +266,8 @@ class TrackerListenerSOTStf(TrackerListenerStf):
 
         writer.write_images(video_tracker.get_images(), frame_id)
 
-
     def trackers_updated_callback(self, video_tracker, frame_id, alive_trackers, fps):
-        self._sot(video_tracker,frame_id, alive_trackers)
+        self._sot(video_tracker, frame_id, alive_trackers)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         for _tracker, writer in self.open_writers.items():

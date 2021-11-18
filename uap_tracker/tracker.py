@@ -8,16 +8,13 @@ from uap_tracker.tracker_factory import TrackerFactory
 #
 class Tracker():
 
-    def __init__(self, id, tracker_type, frame, bbox, font_size, font_color):
+    def __init__(self, id, tracker_type, frame, bbox):
 
         self.id = id
         self.cv2_tracker = TrackerFactory.create(tracker_type)
         self.cv2_tracker.init(frame, bbox)
         self.bbox_0 = bbox
         self.bboxes = [bbox]
-        self.font_size = font_size
-        self.font_color = font_color
-        self.bbox_color = font_color
         self.frame_stationary_check = 0
 
     # (x1,y1,w,h)

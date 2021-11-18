@@ -12,11 +12,8 @@ class CameraStreamController():
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.max_display_dim = 1080
         self.minute_interval = 5
         self.running = False
-        self.source_width = 0
-        self.source_height = 0
 
     def run(self, blur=True, normalise_video=True):
         print("Running Camera")
@@ -26,8 +23,6 @@ class CameraStreamController():
             sys.exit()
 
         self.running = True
-        self.source_width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.source_height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         while self.running:
             # print(f"execute iteration")
@@ -57,14 +52,11 @@ class CameraStreamController():
 
                 timer = cv2.getTickCount()
 
-                processed_frame = self.video_tracker.process_frame(
+                self.video_tracker.process_frame(
                     frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
-
-                # Display result, resize it to a standard size
-                utils.display_frame(processed_frame, self.max_display_dim)
 
                 frame_count += 1
 
