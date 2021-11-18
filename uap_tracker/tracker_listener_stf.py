@@ -45,6 +45,9 @@ class STFWriter():
         self.video_filename = None
         self.annotated_video_filename = None
 
+        self.source_width = source_width
+        self.source_height = source_height
+
         self.final_video_dir = f"{stf_output_dir}/{video_file_root_name}_{self.video_id:06}"
         os.mkdir(self.final_video_dir)
 
@@ -65,14 +68,14 @@ class STFWriter():
 
         self.writer = utils.get_writer(
             self.video_filename, source_width, source_height)
-        self.annotated_writer = utils.get_writer(
-            self.annotated_video_filename, source_width, source_height)
+
 
     def _close_video_writers(self):
         self.writer.release()
         self.writer = None
-        self.annotated_writer.release()
-        self.annotated_writer = None
+        if self.annotated_writer:
+            self.annotated_writer.release()
+            self.annotated_writer = None
 
     def _add_trackid_label(self, track_id, label):
         if track_id not in self.annotations['track_labels']:
@@ -108,6 +111,9 @@ class STFWriter():
         self.writer.write(frame)
 
     def write_annotated_frame(self, frame):
+        if not self.annotated_writer:
+            self.annotated_writer = utils.get_writer(
+                self.annotated_video_filename, self.source_width, self.source_height)
         self.annotated_writer.write(frame)
 
     def write_images(self, images, frame_id):
@@ -229,7 +235,9 @@ class TrackerListenerSOTStf(TrackerListenerStf):
             int(source_height/self.zoom_level),
         )
 
-    def _sot(self, video_tracker, frame_id, alive_trackers):
+    def _sot(self, video_tracker):
+        frame_id = video_tracker.get_frame_count()
+        alive_trackers = video_tracker.get_live_trackers()
         alive_trackers_to_process = set(
             filter(lambda x: x.is_trackable(), alive_trackers))
         processed = set()
@@ -256,16 +264,10 @@ class TrackerListenerSOTStf(TrackerListenerStf):
             frame, tracker.get_center(), self.zoom_level)
         print(f"Zoom shape: {zoom_frame.shape}")
         writer.write_original_frame(zoom_frame)
-
-        annotated_frame = zoom_frame.copy()
-        utils.add_bbox_to_image(
-            tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
-        writer.write_annotated_frame(annotated_frame)
-
         writer.write_images(video_tracker.get_images(), frame_id)
 
-    def trackers_updated_callback(self, video_tracker, frame_id, alive_trackers, fps):
-        self._sot(video_tracker, frame_id, alive_trackers)
+    def trackers_updated_callback(self, video_tracker):
+        self._sot(video_tracker)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         for _tracker, writer in self.open_writers.items():
