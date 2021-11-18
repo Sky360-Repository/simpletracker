@@ -169,7 +169,7 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id),
-                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
 
 
 def convert_to_gray(src, dst=None):
@@ -209,16 +209,16 @@ def combine_frames_2x2(top_left, top_right, bottom_left, bottom_right):
 
 def stamp_original_frame(frame, font_size, font_color):
     cv2.putText(frame, 'Original Frame (Sky360)', (100, 200),
-                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
+                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
 
 
 def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
     msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
     print(msg)
     cv2.putText(frame, msg, (100, 200),
-                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
+                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
-        100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
+        100, 300), cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
 
 
 def display_frame(processed_frame, max_display_dim):
