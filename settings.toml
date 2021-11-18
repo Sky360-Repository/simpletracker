@@ -1,11 +1,14 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['mot_stf','sot_stf']
-format = 'mot_stf'
+output_format = 'mot_stf'
 
 input_dir = 'input'
 output_dir = 'output'
 
+controller = 'video'
+
+visualizer = 'two_by_two'
 
 [VideoTracker]
 
