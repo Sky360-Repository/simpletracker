@@ -1,21 +1,17 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
+from uap_tracker.visualizer import Visualizer
 
 
-class TwoByTwoVisualiser():
+class TwoByTwoVisualiser(Visualizer):
 
-    def __init__(self):
-        self.font_size = None
-        self.font_colour = None
-
-    def initialise(self, font_size, font_colour):
-        self.font_size = font_size
-        self.font_colour = font_colour
-
-    def visualise_frame(self, video_tracker, frame_output, key_points, fps):
+    def visualise_frame(self, video_tracker):
         frame_input = video_tracker.get_image('original')
         frame_masked_background = video_tracker.get_image('masked_background')
+        frame_output = frame_input.copy()
+        key_points = video_tracker.get_keypoints()
+        fps = video_tracker.get_fps()
 
         utils.stamp_original_frame(frame_input,self.font_size, self.font_colour)
 

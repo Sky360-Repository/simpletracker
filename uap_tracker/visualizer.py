@@ -1,5 +1,5 @@
 from uap_tracker import utils
-
+from uap_tracker.tracker import Tracker
 
 class Visualizer():
     def __init__(self):

@@ -1,22 +1,17 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
+from uap_tracker.visualizer import Visualizer
 
 
-class TwoByTwoOpticalFlowVisualiser():
+class TwoByTwoOpticalFlowVisualiser(Visualizer):
 
-    def __init__(self):
-        self.font_size = None
-        self.font_colour = None
-
-    def initialise(self, font_size, font_colour):
-        self.font_size = font_size
-        self.font_colour = font_colour
-
-    def visualise_frame(self, video_tracker, frame_output, key_points, fps):
+    def visualise_frame(self, video_tracker):
 
         frame_input = video_tracker.get_image('original')
         optical_flow_frame = video_tracker.get_image('optical_flow')
+        frame_output = frame_input.copy()
+        fps = video_tracker.get_fps()
 
         utils.stamp_original_frame(
             frame_input, self.font_size, self.font_colour)

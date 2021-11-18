@@ -190,29 +190,28 @@ class VideoTracker():
             'grey': frame_gray
         }
         if self.detection_mode == 'background_subtraction':
-            key_points, frame_masked_background = self.keypoints_from_bg_subtraction(
+            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
                 frame_gray)
             self.frames['masked_background'] = frame_masked_background
-            bboxes = [utils.kp_to_bbox(x) for x in key_points]
+            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
         elif self.detection_mode == 'optical_flow':
-            key_points, optical_flow_frame = self.keypoints_from_optical_flow(
+            keypoints, optical_flow_frame = self.keypoints_from_optical_flow(
                 frame_gray)
             self.frames['optical_flow'] = optical_flow_frame
             bboxes = []
         else:
             print('Detection Mode None')
             bboxes = []
-            key_points = []
+            keypoints = []
+
+        self.keypoints = keypoints
 
         self.update_trackers(self.tracker_type, bboxes, frame)
 
         frame_count + 1
 
         if self.events is not None:
-            self.events.publish_process_frame(
-                self)
-
-        return self.frame_output
+            self.events.publish_process_frame(self)
 
     def keypoints_from_optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
@@ -254,3 +253,6 @@ class VideoTracker():
 
     def get_live_trackers(self):
         return self.live_trackers
+
+    def get_keypoints(self):
+        return self.keypoints

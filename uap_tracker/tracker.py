@@ -80,3 +80,10 @@ class Tracker():
 
     def is_bbx_contained(self, bbox):
         return utils.bbox1_contain_bbox2(self.bboxes[-1], bbox)
+
+    def bbox_color(self):
+        return {
+            Tracker.PROVISIONARY_TARGET: (25, 175, 175),
+            Tracker.ACTIVE_TARGET: (50, 170, 50),
+            Tracker.LOST_TARGET: (50, 50, 225)
+        }[self.tracking_state]

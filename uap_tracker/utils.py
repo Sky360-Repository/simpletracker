@@ -201,7 +201,9 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
                 cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
         100, 300), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, 2)
-
+    for tracker in video_tracker.get_live_trackers():
+        add_bbox_to_image(tracker.get_bbox(), frame, tracker.id,
+                          font_size, tracker.bbox_color())
 
 def display_frame(processed_frame, max_display_dim):
     # Display result, resize it to a standard size
