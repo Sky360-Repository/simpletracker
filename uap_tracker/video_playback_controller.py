@@ -20,8 +20,6 @@ class VideoPlaybackController():
             if success:
                 self.video_tracker.initialise_background_subtraction(frame)
 
-        self.video_tracker.initialise_trackers()
-
         frame_count = 0
         fps = 0
         while cv2.waitKey(1) != 27:  # Escape

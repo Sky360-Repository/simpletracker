@@ -30,12 +30,7 @@ class CameraStreamController():
 
     def process_iteration(self, iteration_period):
 
-        for i in range(5):
-            success, frame = self.camera.read()
-            if success:
-                self.video_tracker.initialise_background_subtraction(frame)
-
-        self.video_tracker.initialise_trackers()
+        #self.video_tracker.initialise_trackers()
 
         frame_count = 0
         fps = 0

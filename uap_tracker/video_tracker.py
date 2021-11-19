@@ -135,14 +135,6 @@ class VideoTracker():
         self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
             frame_gray, self.background_subtractor, self.mask_pct)
 
-    def initialise_trackers(self):
-        key_points = utils.perform_blob_detection(
-            self.frame_masked_background, self.detection_sensitivity)
-
-        # Create Trackers
-        self.create_trackers_from_keypoints(
-            self.tracker_type, key_points, self.frame_output)
-
     def process_frame(self, frame, frame_count, fps):
         print(f"fps:{int(fps)}")
         self.fps = fps
@@ -167,6 +159,9 @@ class VideoTracker():
         if self.detection_mode == 'background_subtraction':
             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
                 frame_gray)
+            if frame_count < 5:
+                # Need 5 frames to get the background subtractor initialised
+                return
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
         elif self.detection_mode == 'optical_flow':
