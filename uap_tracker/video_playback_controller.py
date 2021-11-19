@@ -15,11 +15,6 @@ class VideoPlaybackController():
             print(f"Could not open video stream")
             sys.exit()
 
-        for i in range(5):
-            success, frame = self.capture.read()
-            if success:
-                self.video_tracker.initialise_background_subtraction(frame)
-
         frame_count = 0
         fps = 0
         while cv2.waitKey(1) != 27:  # Escape

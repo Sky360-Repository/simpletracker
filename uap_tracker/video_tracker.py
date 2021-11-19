@@ -116,25 +116,6 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def initialise_background_subtraction(self, frame):
-
-        if self.normalise_video:
-            print(
-                f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
-            frame = utils.normalize_frame(
-                frame, self.normalised_w_h[0], self.normalised_w_h[1])
-
-        frame_gray = utils.convert_to_gray(frame)
-
-        # Blur image
-        if self.blur:
-            frame_gray = cv2.GaussianBlur(
-                frame_gray, (self.blur_radius, self.blur_radius), 0)
-            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
-
-        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
-            frame_gray, self.background_subtractor, self.mask_pct)
-
     def process_frame(self, frame, frame_count, fps):
         print(f"fps:{int(fps)}")
         self.fps = fps
@@ -188,6 +169,7 @@ class VideoTracker():
         height, width = frame_gray.shape
         optical_flow_frame = cv2.resize(dof_frame, (width, height))
         # TODO Key Points
+
         return [], optical_flow_frame
 
     def keypoints_from_bg_subtraction(self, frame_gray):
