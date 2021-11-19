@@ -2,8 +2,6 @@ import cv2
 import sys
 import datetime
 from datetime import timedelta
-import uap_tracker.utils as utils
-from uap_tracker.video_tracker import VideoTracker
 
 
 class CameraStreamController():
