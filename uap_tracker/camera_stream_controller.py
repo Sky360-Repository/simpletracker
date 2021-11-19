@@ -32,11 +32,6 @@ class CameraStreamController():
 
     def process_iteration(self, iteration_period):
 
-        # Read first frame.
-        success, frame = self.camera.read()
-        if success:
-            self.video_tracker.initialise(frame)
-
         for i in range(5):
             success, frame = self.camera.read()
             if success:

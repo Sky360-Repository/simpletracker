@@ -10,18 +10,12 @@ class VideoPlaybackController():
 
         self.capture = capture
         self.video_tracker = video_tracker
-        self.max_display_dim = 1080
 
-    def run(self, blur=False, normalise_video=False):
+    def run(self):
 
         if not self.capture.isOpened():
             print(f"Could not open video stream")
             sys.exit()
-
-        # Read first frame.
-        success, frame = self.capture.read()
-        if success:
-            self.video_tracker.initialise(frame, blur, normalise_video)
 
         for i in range(5):
             success, frame = self.capture.read()

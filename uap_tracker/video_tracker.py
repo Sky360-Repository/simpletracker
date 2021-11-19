@@ -43,6 +43,16 @@ class VideoTracker():
 
         self.dof = DenseOpticalFlow(480, 480)
 
+        tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
+                         'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
+        background_subtractor_types = ['KNN']
+
+        self.tracker_type = tracker_types[7]
+        self.background_subtractor_type = background_subtractor_types[0]
+
+        self.background_subtractor = BackgroundSubtractorFactory.create(
+            self.background_subtractor_type, self.detection_sensitivity)
+
     @property
     def is_tracking(self):
         return len(self.live_trackers) > 0
@@ -106,50 +116,11 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def initialise(self, frame):
-
-        tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
-                         'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
-        background_subtractor_types = ['KNN']
-
-        self.tracker_type = tracker_types[7]
-        self.background_subtractor_type = background_subtractor_types[0]
-
-        source_width = int(frame.shape[1])
-        source_height = int(frame.shape[0])
-
-        print(f'Video size w:{source_width} x h:{source_height}')
-        if self.normalise_video:
-            print(
-                f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
-
-        self.font_size = int(source_height / 1000.0)
-        if self.normalise_video:
-            self.font_size = int(self.normalised_w_h[1] / 1000.0)
-
-        self.font_size = max(self.font_size, 1)
-
-        if self.normalise_video:
-            frame = utils.normalize_frame(
-                frame, self.normalised_w_h[0], self.normalised_w_h[1])
-
-        frame_gray = utils.convert_to_gray(frame)
-
-        # Blur image
-        if self.blur:
-            frame_gray = cv2.GaussianBlur(
-                frame_gray, (self.blur_radius, self.blur_radius), 0)
-            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
-
-        self.background_subtractor = BackgroundSubtractorFactory.create(
-            self.background_subtractor_type, self.detection_sensitivity)
-
-        self.frame_output, self.frame_masked_background = utils.apply_background_subtraction(
-            frame_gray, self.background_subtractor, self.mask_pct)
-
     def initialise_background_subtraction(self, frame):
 
         if self.normalise_video:
+            print(
+                f'Video frames wil be normalised to w: {self.normalised_w_h[0]} x h:{self.normalised_w_h[1]}')
             frame = utils.normalize_frame(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
@@ -257,9 +228,9 @@ class VideoTracker():
 
         return self.frames['annotated_image']
 
-
     # called from listeners / visualizers
     # returns all images for current frame
+
     def get_images(self):
         return self.frames
 
