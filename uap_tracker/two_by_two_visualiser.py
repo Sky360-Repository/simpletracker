@@ -10,6 +10,7 @@ class TwoByTwoVisualiser(Visualizer):
         frame_input = video_tracker.get_image('original')
         frame_masked_background = video_tracker.get_image('masked_background')
         frame_output = video_tracker.get_annotated_image()
+
         key_points = video_tracker.get_keypoints()
         fps = video_tracker.get_fps()
 
@@ -21,7 +22,7 @@ class TwoByTwoVisualiser(Visualizer):
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
         frame_masked_background_copy = cv2.cvtColor(
-            frame_masked_background.copy(), cv2.COLOR_GRAY2BGR)
+            frame_masked_background, cv2.COLOR_GRAY2BGR)
 
         frame_masked_background_with_key_points = cv2.drawKeypoints(
             frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)

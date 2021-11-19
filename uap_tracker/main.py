@@ -130,6 +130,8 @@ def main(argv):
     print(f"cmdline_filename: {cmdline_filename}")
     print('Settings are ', settings.as_dict())
 
+    #cv2.namedWindow("Tracking", cv2.WINDOW_AUTOSIZE)
+
     output_dir = _create_output_dir()
 
     controller = _get_controller()

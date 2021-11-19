@@ -28,7 +28,7 @@ class VideoTracker():
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
-        self.normalised_w_h = (1920, 1080)
+        self.normalised_w_h = (1024, 1024)
         self.blur_radius = 3
         self.max_active_trackers = 10
         self.mask_pct = mask_pct
@@ -106,10 +106,7 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def initialise(self, frame, blur, normalise_video):
-
-        self.blur = blur
-        self.normalise_video = normalise_video
+    def initialise(self, frame):
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
                          'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']

@@ -222,11 +222,14 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
 
 
 def display_frame(processed_frame, max_display_dim):
+    print(
+        f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
     # Display result, resize it to a standard size
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
         # MG: scale the image to something that is of a reasonable viewing size
         frame_scaled = scale_image(
             processed_frame, max_display_dim)
+        print(f"{frame_scaled.shape}")
         cv2.imshow("Tracking", frame_scaled)
     else:
         cv2.imshow("Tracking", processed_frame)

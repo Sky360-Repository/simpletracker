@@ -15,7 +15,7 @@ class CameraStreamController():
         self.minute_interval = 5
         self.running = False
 
-    def run(self, blur=True, normalise_video=True):
+    def run(self):
         print("Running Camera")
         success, _ = self.camera.read()
         if not success:
@@ -28,14 +28,14 @@ class CameraStreamController():
             # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
             self.process_iteration((datetime.datetime.now(
-            ) + iteration_period), blur, normalise_video)
+            ) + iteration_period))
 
-    def process_iteration(self, iteration_period, blur, normalise_video):
+    def process_iteration(self, iteration_period):
 
         # Read first frame.
         success, frame = self.camera.read()
         if success:
-            self.video_tracker.initialise(frame, blur, normalise_video)
+            self.video_tracker.initialise(frame)
 
         for i in range(5):
             success, frame = self.camera.read()

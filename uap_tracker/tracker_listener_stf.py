@@ -66,10 +66,6 @@ class STFWriter():
         self.video_filename = self.final_video_dir + '/' + 'video.mp4'
         self.annotated_video_filename = self.final_video_dir + '/' + 'annotated_video.mp4'
 
-        self.writer = utils.get_writer(
-            self.video_filename, source_width, source_height)
-
-
     def _close_video_writers(self):
         self.writer.release()
         self.writer = None
@@ -108,12 +104,24 @@ class STFWriter():
         last_frame['annotations'].append(self._create_stf_annotation(tracker))
 
     def write_original_frame(self, frame):
+
+        height = frame.shape[0]
+        width = frame.shape[1]
+
+        if not self.writer:
+            self.writer = utils.get_writer(
+                self.video_filename, width, height)
+
         self.writer.write(frame)
 
     def write_annotated_frame(self, frame):
+        height = frame.shape[0]
+        width = frame.shape[1]
+
         if not self.annotated_writer:
             self.annotated_writer = utils.get_writer(
-                self.annotated_video_filename, self.source_width, self.source_height)
+                self.annotated_video_filename, width, height)
+
         self.annotated_writer.write(frame)
 
     def write_images(self, images, frame_id):
