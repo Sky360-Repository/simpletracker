@@ -16,7 +16,10 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=92, blur=True, normalise_video=True):
+    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, blur=True, normalise_video=True):
+
+        print(
+            f"Initializing Tracker:\n  normalize:{normalise_video}\n  blur: {blur}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -121,6 +124,8 @@ class VideoTracker():
         self.fps = fps
         self.frame_count = frame_count
 
+        frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+
         if self.normalise_video:
             frame = utils.normalize_frame(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
@@ -174,8 +179,8 @@ class VideoTracker():
 
     def keypoints_from_bg_subtraction(self, frame_gray):
         # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
-        _, frame_masked_background = utils.apply_background_subtraction(
-            frame_gray, self.background_subtractor, self.mask_pct)
+        frame_masked_background = utils.apply_background_subtraction(
+            frame_gray, self.background_subtractor)
 
         # Detect new objects of interest to pass to tracker
         key_points = utils.perform_blob_detection(

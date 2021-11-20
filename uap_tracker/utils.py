@@ -147,21 +147,31 @@ def scale_image_to(img, w, h):
     else:
         return img
 
-
+# mask_pct - The percentage of the fisheye you want to mask
 def apply_fisheye_mask(frame, mask_pct):
-    mask_radius = mask_pct/100.0/2.0
+    mask_height = (100-mask_pct)/100.0
+    mask_radius = mask_height/2.0
     shape = frame.shape[:2]
-    # print(f'shape: {shape}')
+    height = shape[0]
+    width = shape[1]
+    new_width = int(mask_height * width)
+    new_height = int(mask_height * height)
     mask = np.zeros(shape, dtype="uint8")
-    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)),
-               int(min(shape[0], shape[1]) * mask_radius), 255, -1)
-    return cv2.bitwise_and(frame, frame, mask=mask)
+    cv2.circle(mask, (int(width / 2), int(height / 2)),
+               int(min(height, width) * mask_radius), 255, -1)
+    masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
+    clipped_masked_frame = clip_at_center(
+        masked_frame,
+        (int(width/2), int(height/2)),
+        width,
+        height,
+        new_width,
+        new_height)
+    return clipped_masked_frame
 
-
-def apply_background_subtraction(frame_gray, background_subtractor, mask_pct):
-    masked_frame = apply_fisheye_mask(frame_gray, mask_pct)
-    foreground_mask = background_subtractor.apply(masked_frame)
-    return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)
+def apply_background_subtraction(frame_gray, background_subtractor):
+    foreground_mask = background_subtractor.apply(frame_gray)
+    return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
 
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
@@ -181,12 +191,16 @@ def convert_to_gray(src, dst=None):
 # Takes a frame and returns a smaller one
 # (size divided by zoom level) centered on center
 def zoom_and_clip(frame, center, zoom_level):
-    x, y = center
     height, width, _channels = frame.shape
 
     new_height = int(height/zoom_level)
     new_width = int(width/zoom_level)
 
+    return clip_at_center(frame, center, width, height, new_width, new_height)
+
+
+def clip_at_center(frame, center, width, height, new_width, new_height):
+    x, y = center
     half_width = int(new_width/2)
     half_height = int(new_height/2)
 
