@@ -23,14 +23,11 @@ class CameraStreamController():
         self.running = True
 
         while self.running:
-            # print(f"execute iteration")
             iteration_period = timedelta(minutes=self.minute_interval)
             self.process_iteration((datetime.datetime.now(
             ) + iteration_period))
 
     def process_iteration(self, iteration_period):
-
-        #self.video_tracker.initialise_trackers()
 
         frame_count = 0
         fps = 0

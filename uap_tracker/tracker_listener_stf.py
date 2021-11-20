@@ -10,8 +10,7 @@ import uuid
 # Listener to create output suitable for input to stage2
 # in SimpleTrackerFormat (stf) format:
 #
-# ./processed/
-# ./stf/<video_name>_<section_id>/
+# ./<video_name>_<section_id>/
 #   annotations.json
 #   video.mp4
 #   images/
@@ -48,7 +47,8 @@ class STFWriter():
         self.source_width = source_width
         self.source_height = source_height
 
-        self.final_video_dir = f"{stf_output_dir}/{video_file_root_name}_{self.video_id:06}"
+        self.final_video_dir = os.path.join(
+            stf_output_dir, f"{video_file_root_name}_{self.video_id:06}")
         os.mkdir(self.final_video_dir)
 
         self.annotations = {
@@ -60,11 +60,12 @@ class STFWriter():
 
         ###
 
-        self.images_dir = self.final_video_dir + '/images/'
+        self.images_dir = os.path.join(self.final_video_dir, 'images')
         os.mkdir(self.images_dir)
 
-        self.video_filename = self.final_video_dir + '/' + 'video.mp4'
-        self.annotated_video_filename = self.final_video_dir + '/' + 'annotated_video.mp4'
+        self.video_filename = os.path.join(self.final_video_dir, 'video.mp4')
+        self.annotated_video_filename = os.path.join(
+            self.final_video_dir, 'annotated_video.mp4')
 
     def _close_video_writers(self):
         self.writer.release()
@@ -152,23 +153,13 @@ class STFWriter():
 class TrackerListenerStf():
 
     def __init__(self, video, file_name, output_dir,
-                 move_source=False, zoom_level=10):
+                 zoom_level=10):
         self.video = video
         self.file_name = file_name
         self.output_dir = output_dir
-        self.recording = False
-        self._create_output_dir('/stf')
-        self.stf_dir = self._create_output_dir('/stf/')
-        self.processed_dir = self._create_output_dir('/processed/')
+        if not os.path.isdir(self.output_dir):
+            os.mkdir(self.output_dir)
         self.zoom_level = zoom_level
-        # move the source file to a  processeed dir
-        self.move_source = move_source
-
-    def _create_output_dir(self, dir_ext):
-        dir_to_create = self.output_dir + dir_ext
-        if not os.path.isdir(dir_to_create):
-            os.mkdir(dir_to_create)
-        return dir_to_create
 
     def _source_video_width_height(self):
         source_width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -180,7 +171,7 @@ class TrackerListenerStf():
 
     def _create_stf_writer(self):
         width, height = self._target_video_width_height()
-        return STFWriter(self.stf_dir, self.file_name, width, height)
+        return STFWriter(self.output_dir, self.file_name, width, height)
 
     def finish(self):
         print(f"Finished processing {self.file_name}")
