@@ -39,9 +39,10 @@ class DenseOpticalFlow():
         self.hsv[..., 0] = angle * ((1 / 360.0) * (180 / 255.0))
 
         # set value according to the normalized magnitude of optical flow
-        self.hsv[..., 2] = cv2.normalize(
-            magnitude, None, 0.0, 1.0, cv2.NORM_MINMAX, -1,
-        )
+        self.hsv[..., 2] = magnitude
+        #cv2.normalize(
+        #    magnitude, None, 0.0, 1.0, cv2.NORM_MINMAX, -1,
+        #)
 
         # multiply each pixel value to 255
         hsv_8u = np.uint8(self.hsv * 255.0)
