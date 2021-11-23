@@ -1,21 +1,26 @@
 import cv2
 import numpy as np
 
+
 def get_cv_version():
     return (cv2.__version__).split('.')
+
 
 def normalize_frame(frame, w, h):
     return scale_image_to(frame, w, h)
 
+
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
+
 
 def kp_to_bbox(kp):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
     return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * kp.size), int(scale * kp.size))
+
 
 def bbox_overlap(bbox1, bbox2):
     #    bb1 : dict
@@ -72,10 +77,12 @@ def bbox_overlap(bbox1, bbox2):
     assert iou <= 1.0
     return iou
 
+
 def bbox1_contain_bbox2(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
     return (x2 > x1) and (y2 > y1) and (x2+w2 < x1+w1) and (y2+h2 < y1+h1)
+
 
 def is_bbox_being_tracked(live_trackers, bbox):
     # MG: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
@@ -88,12 +95,14 @@ def is_bbox_being_tracked(live_trackers, bbox):
 
     return False
 
+
 def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
 
     params.minRepeatability = 2
-    params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)  # 5% of the width of the image
+    # 5% of the width of the image
+    params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)
     params.minThreshold = 3
     params.filterByArea = 1
     params.filterByColor = 0
@@ -106,7 +115,8 @@ def perform_blob_detection(frame, sensitivity):
     elif sensitivity == 3:  # Detects large objects
         params.minArea = 25
     else:
-        raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
+        raise Exception(
+            f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 
     detector = cv2.SimpleBlobDetector_create(params)
     # params.write('params.json')
@@ -117,8 +127,10 @@ def perform_blob_detection(frame, sensitivity):
     # print("ran detect")
     return keypoints
 
+
 def scale_image(img, max_size_h_or_w):
     return scale_image_to(img, max_size_h_or_w, max_size_h_or_w)
+
 
 def scale_image_to(img, w, h):
     if img.shape[0] > h or img.shape[1] > w:
@@ -130,29 +142,45 @@ def scale_image_to(img, w, h):
         # calc the scaled width and height
         scaled_width = int(img.shape[1] * scale_percent / 100)
         scaled_height = int(img.shape[0] * scale_percent / 100)
-        #resize the image
+        # resize the image
         return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
     else:
         return img
 
+# mask_pct - The percentage of the fisheye you want to mask
 def apply_fisheye_mask(frame, mask_pct):
-    mask_radius = mask_pct/100.0/2.0
+    mask_height = (100-mask_pct)/100.0
+    mask_radius = mask_height/2.0
     shape = frame.shape[:2]
-    # print(f'shape: {shape}')
+    height = shape[0]
+    width = shape[1]
+    new_width = int(mask_height * width)
+    new_height = int(mask_height * height)
     mask = np.zeros(shape, dtype="uint8")
-    cv2.circle(mask, (int(shape[1] / 2), int(shape[0] / 2)), int(min(shape[0], shape[1]) * mask_radius), 255, -1)
-    return cv2.bitwise_and(frame, frame, mask=mask)
+    cv2.circle(mask, (int(width / 2), int(height / 2)),
+               int(min(height, width) * mask_radius), 255, -1)
+    masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
+    clipped_masked_frame = clip_at_center(
+        masked_frame,
+        (int(width/2), int(height/2)),
+        width,
+        height,
+        new_width,
+        new_height)
+    return clipped_masked_frame
 
-def apply_background_subtraction(frame_gray, background_subtractor, mask_pct):
-    masked_frame = apply_fisheye_mask(frame_gray, mask_pct)
-    foreground_mask = background_subtractor.apply(masked_frame)
-    return masked_frame, cv2.bitwise_and(masked_frame, masked_frame, mask=foreground_mask)
+def apply_background_subtraction(frame_gray, background_subtractor):
+    foreground_mask = background_subtractor.apply(frame_gray)
+    return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
+
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
-    cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+    cv2.putText(frame, str(tracker_id),
+                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
+
 
 def convert_to_gray(src, dst=None):
     weight = 1.0 / 3.0
@@ -160,24 +188,62 @@ def convert_to_gray(src, dst=None):
     return cv2.transform(src, m, dst)
 
 
-# Takes a frame and returns a smaller one 
+# Takes a frame and returns a smaller one
 # (size divided by zoom level) centered on center
 def zoom_and_clip(frame, center, zoom_level):
-        x,y=center
-        height, width, _channels = frame.shape
+    height, width, _channels = frame.shape
 
-        new_height=int(height/zoom_level)
-        new_width=int(width/zoom_level)
+    new_height = int(height/zoom_level)
+    new_width = int(width/zoom_level)
 
-        half_width=int(new_width/2)
-        half_height=int(new_height/2)
+    return clip_at_center(frame, center, width, height, new_width, new_height)
 
-        left=max(0,x-half_width)
-        right=min(x+half_width,width)
-        right=max(new_width,right)
-        
-        top=max(0,y-half_height)
-        bottom=min(y+half_height,height)
-        bottom=max(new_height,bottom)
 
-        return frame[top:bottom, left:right]
+def clip_at_center(frame, center, width, height, new_width, new_height):
+    x, y = center
+    half_width = int(new_width/2)
+    half_height = int(new_height/2)
+
+    left = max(0, x-half_width)
+    right = min(x+half_width, width)
+    right = max(new_width, right)
+
+    top = max(0, y-half_height)
+    bottom = min(y+half_height, height)
+    bottom = max(new_height, bottom)
+
+    return frame[top:bottom, left:right]
+
+
+def combine_frames_2x2(top_left, top_right, bottom_left, bottom_right):
+    im_h1 = cv2.hconcat([top_left, top_right])
+    im_h2 = cv2.hconcat([bottom_left, bottom_right])
+    return cv2.vconcat([im_h1, im_h2])
+
+
+def stamp_original_frame(frame, font_size, font_color):
+    cv2.putText(frame, 'Original Frame (Sky360)', (100, 200),
+                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+
+
+def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
+    msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
+    print(msg)
+    cv2.putText(frame, msg, (100, 200),
+                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+    cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
+        100, 300), cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+
+
+def display_frame(processed_frame, max_display_dim):
+    print(
+        f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
+    # Display result, resize it to a standard size
+    if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
+        # MG: scale the image to something that is of a reasonable viewing size
+        frame_scaled = scale_image(
+            processed_frame, max_display_dim)
+        print(f"{frame_scaled.shape}")
+        cv2.imshow("Tracking", frame_scaled)
+    else:
+        cv2.imshow("Tracking", processed_frame)
