@@ -7,7 +7,6 @@ import getopt
 import sys
 import cv2
 
-from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
@@ -32,7 +31,7 @@ def _setup_controller(media, events, detection_mode):
         events,
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
-        blur=settings.VideoTracker.get('blur', False),
+        noise_reduction=settings.VideoTracker.get('noise_reduction', False),
         normalise_video=settings.VideoTracker.get('normalize', False)
     )
 
@@ -48,7 +47,6 @@ def _get_visualizer(detection_mode):
 
     visualizers = {
         'none': None,
-        'default': DefaultVisualiser,
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
     }

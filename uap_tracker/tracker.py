@@ -19,7 +19,8 @@ class Tracker():
         self.id = id
         self.cv2_tracker = TrackerFactory.create(tracker_type)
         self.cv2_tracker.init(frame, bbox)
-        self.bbox_0 = bbox
+        self.bbox_start = bbox
+        # self.bbox_slide = bbox
         self.bboxes = [bbox]
         self.frame_stationary_check = 0
         self.tracking_state = Tracker.PROVISIONARY_TARGET
@@ -43,19 +44,26 @@ class Tracker():
                 stationary_check_thold = 4
                 stationary_check_max = 5
 
-                if len(self.bboxes) > 10:
-                    if self.tracking_state == Tracker.PROVISIONARY_TARGET:
-                        self.tracking_state = Tracker.ACTIVE_TARGET
+                # MG: Default to yellow as it needs to prove itself as a target first
+                if len(self.bboxes) <= 10:
+                    # self.bbox_color = (25, 175, 175)
+                    self.tracking_state = Tracker.PROVISIONARY_TARGET
+                    # print(f'>> updating tracker {self.id} state to PROVISIONARY_TARGET')
+                elif len(self.bboxes) > 10:
 
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
-                    if utils.bbox_overlap(self.bbox_0, bbox) == 0.0:
-                        self.trackable = True
+                    if utils.bbox_overlap(self.bbox_start, bbox) == 0.0:
+                        # self.bbox_color = self.font_color
+                        if self.tracking_state != Tracker.ACTIVE_TARGET:
+                            self.tracking_state = Tracker.ACTIVE_TARGET
+                            # print(f'>> updating tracker {self.id} state to ACTIVE_TARGET')
+                            self.bbox_start = bbox
 
                     mod = float(len(self.bboxes) % 5)
                     if mod == 0:
-                        # print(f'10 X --> tracker {self.id}, total length: {len(self.bboxes)}')
-                        bbox_2 = self.bboxes[-9]
-                        if utils.bbox_overlap(self.bbox_0, bbox_2) > 0:
+                        # print(f'5 X --> tracker {self.id}, total length: {len(self.bboxes)}')
+                        bbox_2 = self.bboxes[-5]
+                        if utils.bbox_overlap(self.bbox_start, bbox_2) > 0:
                             # MG: this bounding box has remained pretty static, its now closer to getting scavenged
                             self.frame_stationary_check += 1
                         else:
@@ -63,14 +71,16 @@ class Tracker():
 
                 if stationary_check_thold <= self.frame_stationary_check < stationary_check_max:
                     # MG: If its not moved enough then mark it as red for potential scavenging
+                    # self.bbox_color = (50, 50, 225)
                     self.tracking_state = Tracker.LOST_TARGET
+                    # print(f'>> updating tracker {self.id} state to LOST_TARGET')
                 elif self.frame_stationary_check >= stationary_check_max:
                     print(f'Scavenging tracker {self.id}')
                     ok = False
 
         return ok, bbox
 
-    def is_trackable(self):
+    def is_tracking(self):
         return self.tracking_state == Tracker.ACTIVE_TARGET
 
     def does_bbx_overlap(self, bbox):
@@ -82,8 +92,9 @@ class Tracker():
         return utils.bbox1_contain_bbox2(self.bboxes[-1], bbox)
 
     def bbox_color(self):
-        return {
-            Tracker.PROVISIONARY_TARGET: (25, 175, 175),
-            Tracker.ACTIVE_TARGET: (50, 170, 50),
-            Tracker.LOST_TARGET: (50, 50, 225)
-        }[self.tracking_state]
+        if self.tracking_state == Tracker.PROVISIONARY_TARGET:
+            return (25, 175, 175)
+        elif self.tracking_state == Tracker.LOST_TARGET:
+            return (50, 50, 225)
+        else:
+            return (50, 170, 50)

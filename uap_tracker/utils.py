@@ -12,8 +12,11 @@ def get_cv_version():
     return (cv2.__version__).split('.')
 
 
-def normalize_frame(frame, w, h):
-    return scale_image_to(frame, w, h)
+def normalize_frame(normalize, frame, w, h):
+    normalised_frame = frame
+    if normalize:
+        normalised_frame = scale_image_to(frame, w, h)
+    return normalised_frame
 
 
 def get_writer(output_filename, width, height):
@@ -233,7 +236,7 @@ def stamp_original_frame(frame, font_size, font_color):
 
 
 def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
-    msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
+    msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
     print(msg)
     cv2.putText(frame, msg, (100, 200),
                 cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
@@ -242,14 +245,20 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
 
 
 def display_frame(processed_frame, max_display_dim):
-    print(
-        f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
+    # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
     # Display result, resize it to a standard size
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
         # MG: scale the image to something that is of a reasonable viewing size
         frame_scaled = scale_image(
             processed_frame, max_display_dim)
-        print(f"{frame_scaled.shape}")
+        # print(f"{frame_scaled.shape}")
         cv2.imshow("Tracking", frame_scaled)
     else:
         cv2.imshow("Tracking", processed_frame)
+
+def noise_reduction(noise_reduction, frame, blur_radius):
+    noise_reduced_frame = frame
+    if noise_reduction:
+        noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
+        # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
+    return noise_reduced_frame

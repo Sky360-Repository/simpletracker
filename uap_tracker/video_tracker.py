@@ -16,10 +16,10 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, blur=True, normalise_video=True):
+    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, noise_reduction=True, normalise_video=True):
 
         print(
-            f"Initializing Tracker:\n  normalize:{normalise_video}\n  blur: {blur}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
+            f"Initializing Tracker:\n  normalize:{normalise_video}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -36,7 +36,7 @@ class VideoTracker():
         self.max_active_trackers = 10
         self.mask_pct = mask_pct
 
-        self.blur = blur
+        self.noise_reduction = noise_reduction
         self.normalise_video = normalise_video
         self.tracker_type = None
         self.background_subtractor_type = None
@@ -61,7 +61,7 @@ class VideoTracker():
         return len(self.live_trackers) > 0
 
     def active_trackers(self):
-        trackers = filter(lambda x: x.is_trackable(), self.live_trackers)
+        trackers = filter(lambda x: x.is_tracking(), self.live_trackers)
         if trackers is None:
             return []
         else:
@@ -120,23 +120,17 @@ class VideoTracker():
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
     def process_frame(self, frame, frame_count, fps):
-        print(f"fps:{int(fps)}")
+        # print(f"fps:{int(fps)}")
         self.fps = fps
         self.frame_count = frame_count
 
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-        if self.normalise_video:
-            frame = utils.normalize_frame(
-                frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        frame = utils.normalize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # Blur image
-        if self.blur:
-            frame_gray = cv2.GaussianBlur(
-                frame_gray, (self.blur_radius, self.blur_radius), 0)
-            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
+        frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
 
         self.frames = {
             'original': frame,
@@ -199,15 +193,17 @@ class VideoTracker():
 
     # called from listeners / visualizers
     # returns annotated image for current frame
-    def get_annotated_image(self):
+    def get_annotated_image(self, active_trackers_only=True):
         annotated_frame = self.frames.get('annotated_image', None)
         if annotated_frame is None:
             annotated_frame = self.frames['original'].copy()
-            for tracker in self.active_trackers():
-                utils.add_bbox_to_image(
-                    tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
+            if active_trackers_only:
+                for tracker in self.active_trackers():
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+            else:
+                for tracker in self.live_trackers:
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
             self.frames['annotated_image'] = annotated_frame
-
         return self.frames['annotated_image']
 
     # called from listeners / visualizers

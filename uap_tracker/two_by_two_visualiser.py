@@ -9,7 +9,7 @@ class TwoByTwoVisualiser(Visualizer):
     def visualise_frame(self, video_tracker):
         frame_input = video_tracker.get_image('original')
         frame_masked_background = video_tracker.get_image('masked_background')
-        frame_output = video_tracker.get_annotated_image()
+        frame_output = video_tracker.get_annotated_image(active_trackers_only=False)
 
         key_points = video_tracker.get_keypoints()
         fps = video_tracker.get_fps()
