@@ -29,3 +29,10 @@ detection_mode='background_subtraction'
 
 camera_mode = 'rtsp'
 # N.B. place camera_uri in secrets.toml
+
+[Platform]
+
+# Supported platforms (pc, nano)
+platform='pc'
+# Supported backends (cpu, cuda)
+backend='cpu'
