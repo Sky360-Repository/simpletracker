@@ -1,0 +1,46 @@
+
+# [Multiple,Single] Object Tracking
+#   one of: ['none', 'mot_stf','sot_stf']
+output_format = 'mot_stf'
+
+input_dir = 'input'
+output_dir = 'output'
+
+# Options
+#  video = video playback
+#  camera = camera stream
+controller = 'video'
+
+[Visualizer]
+
+# Options
+#  none = No visualisation at all, best performance
+#  simple = Displays single image with annotations, annotations are also in console output
+#  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
+#    are also in console output
+format = 'two_by_two'
+max_display_dim = 1080
+
+
+[VideoTracker]
+
+mask_pct=20
+sensitivity=1
+normalize=false
+noise_reduction=false
+
+# Detection Mode
+#   one of: 'background_subtraction', 'optical_flow'
+detection_mode='background_subtraction'
+
+[Camera]
+
+camera_mode = 'rtsp'
+# N.B. place camera_uri in secrets.toml
+
+[Platform]
+
+# Supported platforms (pc, nano)
+platform='pc'
+# Supported backends (cpu, cuda)
+backend='cpu'
