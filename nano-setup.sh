@@ -14,3 +14,4 @@ cd ~
 mkdir Sky360-Repository
 cd Sky360-Repository
 git clone https://github.com/Sky360-Repository/simpletracker.git
+cd simpletracker

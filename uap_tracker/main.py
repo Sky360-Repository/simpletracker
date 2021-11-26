@@ -18,8 +18,10 @@ from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListe
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
+import uap_tracker.utils as utils
 
-USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
+
+USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
 
 def _setup_controller(media, events, detection_mode):
@@ -114,6 +116,13 @@ def _setup_listener(video, root_name, output_dir):
 
 
 def main(argv):
+    # the current version of OpenCV supported on JetPack 4.6 is 4.1.1
+    print(f"Open CV Version: {cv2.__version__}")
+
+    if not utils.is_cv_version_supported():
+        print(f"Unfortunately OpenCV v{cv2.__version__} is not supported, we support v4.1.1 and above.")
+        sys.exit(1)
+
     try:
         opts, args = getopt.getopt(argv, "hf:", [])
     except getopt.GetoptError:
@@ -127,8 +136,9 @@ def main(argv):
             sys.exit()
         if opt == '-f':
             cmdline_filename = arg
+
     print(f"cmdline_filename: {cmdline_filename}")
-    print('Settings are ', settings.as_dict())
+    print("'Settings are ", settings.as_dict())
 
     #cv2.namedWindow("Tracking", cv2.WINDOW_AUTOSIZE)
 

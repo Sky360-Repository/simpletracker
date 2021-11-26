@@ -1,6 +1,12 @@
 import cv2
 import numpy as np
 
+def is_cv_version_supported():
+    (major_ver, minor_ver, subminor_ver) = get_cv_version()
+    if int(major_ver) >= 4 and int(minor_ver) >= 1 and int(subminor_ver) >=1:
+        return True
+    return False
+
 
 def get_cv_version():
     return (cv2.__version__).split('.')
