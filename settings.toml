@@ -26,8 +26,8 @@ max_display_dim = 1080
 
 mask_pct=20
 sensitivity=1
-normalize=true
-noise_reduction=true
+normalize=false
+noise_reduction=false
 
 # Detection Mode
 #   one of: 'background_subtraction', 'optical_flow'
