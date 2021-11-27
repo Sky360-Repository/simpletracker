@@ -40,7 +40,7 @@ Where:
 
 * SKY360_CONTROLLER Determines the input source type: \[camera, video\] 
 * SKY360_VISUALIZER Determines the display output to screen: [two_by_two, simple, none] 
-* SKY360_DETECTION_MODE Determines the method used as basis for object detection: [background_subtraction, optical_flow] 
+* SKY360_DETECTION_MODE Determines the method used as basis for object detection: [background_subtraction]
 * SKY360_OUTPUT_FORMAT Determines the MultipleObjectTracking or SingleObjectTracking file output mode: [mot_stf, sot_stf, none] 
 
 Other settings can be found in the [settings.toml](https://github.com/Sky360-Repository/simpletracker/blob/master/settings.toml) file. Environemnt variables override settings.toml ones.
@@ -55,7 +55,7 @@ The output for the STF formatter is in this directory structure
    annotations.json                    # Annotations file
    video.mp4                           # Original video transcoded to mp4 and split for this section
    images/       
-     <frame_id:06>.{image_name>.jpg    # Images generated during detection such as 'original', 'grey', 'background_subtraction'
+     <frame_id:06>.{image_name>.jpg    # Images generated during detection such as 'original', 'grey', 'background_subtraction', 'optical_flow'
 ```
 
 ```

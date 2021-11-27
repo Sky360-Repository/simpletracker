@@ -22,8 +22,10 @@ normalize=false
 blur=false
 
 # Detection Mode
-#   one of: 'background_subtraction', 'optical_flow'
+#   one of: 'background_subtraction'
 detection_mode='background_subtraction'
+
+calculate_optical_flow=true
 
 [Camera]
 
