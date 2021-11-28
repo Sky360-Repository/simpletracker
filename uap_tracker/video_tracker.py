@@ -128,13 +128,16 @@ class VideoTracker():
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
         if self.normalise_video:
-            frame = utils.normalize_frame(
+            print(
+                f"Applying Scaling to {self.normalised_w_h[0]}, {self.normalised_w_h[1]}")
+            frame = utils.scale_image_to(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Blur image
         if self.blur:
+            print(f"Applying blue radius:{self.blur_radius}")
             frame_gray = cv2.GaussianBlur(
                 frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
