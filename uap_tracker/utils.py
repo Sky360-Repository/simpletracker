@@ -3,7 +3,7 @@ import numpy as np
 
 def is_cv_version_supported():
     (major_ver, minor_ver, subminor_ver) = get_cv_version()
-    if int(major_ver) >= 4 and int(minor_ver) >= 1 and int(subminor_ver) >=1:
+    if int(major_ver) >= 4 and int(minor_ver) >= 1:
         return True
     return False
 
@@ -12,12 +12,12 @@ def get_cv_version():
     return (cv2.__version__).split('.')
 
 
-def normalize_frame(normalize, frame, w, h):
-    normalised_frame = frame
-    if normalize:
-        print(f"Applying Scaling to {w}, {h}")
-        normalised_frame = scale_image_to(frame, w, h)
-    return normalised_frame
+def resize_frame(resize, frame, w, h):
+    resized_frame = frame
+    if resize:
+        #print(f"Applying Scaling to {w}, {h}")
+        resized_frame = scale_image_to(frame, w, h)
+    return resized_frame
 
 
 def get_writer(output_filename, width, height):
@@ -241,7 +241,6 @@ def stamp_original_frame(frame, font_size, font_color):
 
 def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
     msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
-    print(msg)
     cv2.putText(frame, msg, (100, 200),
                 cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
@@ -263,7 +262,7 @@ def display_frame(processed_frame, max_display_dim):
 def noise_reduction(noise_reduction, frame, blur_radius):
     noise_reduced_frame = frame
     if noise_reduction:
-        print(f"Applying noise reduction, blur radius:{self.blur_radius}")
+        #print(f"Applying noise reduction, blur radius:{blur_radius}")
         noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
         # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
     return noise_reduced_frame

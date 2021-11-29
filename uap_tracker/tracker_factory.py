@@ -26,9 +26,7 @@ class TrackerFactory():
         if tracker_type == 'MOSSE':
             tracker = cv2.TrackerMOSSE_create()
         if tracker_type == "CSRT":
-            if int(minor_ver) == 1:
-                tracker = cv2.TrackerCSRT_create()
-            elif  int(minor_ver) > 1:
+            if int(major_ver) >= 4 and int(minor_ver) >= 5 and int(subminor_ver) > 0:
                 param_handler = cv2.TrackerCSRT_Params()
                 param_handler.use_gray = True
                 # print(f"psr_threshold: {param_handler.psr_threshold}")
@@ -38,6 +36,8 @@ class TrackerFactory():
                 # fs.release()
                 # param_handler.use_gray=True
                 tracker = cv2.TrackerCSRT_create(param_handler)
+            else:
+                tracker = cv2.TrackerCSRT_create()
         if tracker_type == 'DASIAMRPN':
             tracker = cv2.TrackerDaSiamRPN_create()
 

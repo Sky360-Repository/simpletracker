@@ -8,6 +8,7 @@ import sys
 import cv2
 
 from uap_tracker.event_publisher import EventPublisher
+from uap_tracker.no_op_visualiser import NoOpVisualiser
 from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
@@ -48,6 +49,7 @@ def _get_visualizer(detection_mode):
 
     visualizers = {
         'none': None,
+        'noop': NoOpVisualiser,
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
     }
@@ -115,11 +117,11 @@ def _setup_listener(video, root_name, output_dir):
 
 
 def main(argv):
-    # the current version of OpenCV supported on JetPack 4.6 is 4.1.1
+
     print(f"Open CV Version: {cv2.__version__}")
 
     if not utils.is_cv_version_supported():
-        print(f"Unfortunately OpenCV v{cv2.__version__} is not supported, we support v4.1.1 and above.")
+        print(f"Unfortunately OpenCV v{cv2.__version__} is not supported, we support v4.1 and above.")
         sys.exit(1)
 
     try:

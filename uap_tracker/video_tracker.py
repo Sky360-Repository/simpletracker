@@ -127,7 +127,7 @@ class VideoTracker():
 
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-        frame = utils.normalize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        frame = utils.resize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -208,7 +208,7 @@ class VideoTracker():
         return self.frames
 
     def get_fps(self):
-        return self.fps
+        return int(self.fps)
 
     def get_frame_count(self):
         return self.frame_count

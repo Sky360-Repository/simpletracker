@@ -92,9 +92,8 @@ class Tracker():
         return utils.bbox1_contain_bbox2(self.bboxes[-1], bbox)
 
     def bbox_color(self):
-        if self.tracking_state == Tracker.PROVISIONARY_TARGET:
-            return (25, 175, 175)
-        elif self.tracking_state == Tracker.LOST_TARGET:
-            return (50, 50, 225)
-        else:
-            return (50, 170, 50)
+        return {
+            Tracker.PROVISIONARY_TARGET: (25, 175, 175),
+            Tracker.ACTIVE_TARGET: (50, 170, 50),
+            Tracker.LOST_TARGET: (50, 50, 225)
+        }[self.tracking_state]
