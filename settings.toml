@@ -25,10 +25,8 @@ max_display_dim = 1080
 [VideoTracker]
 
 mask_pct=20
-
 # Detects small, medium and large objects
 sensitivity=1
-
 normalize=false
 noise_reduction=false
 
