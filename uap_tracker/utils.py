@@ -157,6 +157,8 @@ def scale_image_to(img, w, h):
         return img
 
 # mask_pct - The percentage of the fisheye you want to mask
+
+
 def apply_fisheye_mask(frame, mask_pct):
     mask_height = (100-mask_pct)/100.0
     mask_radius = mask_height/2.0
@@ -177,6 +179,7 @@ def apply_fisheye_mask(frame, mask_pct):
         new_width,
         new_height)
     return clipped_masked_frame
+
 
 def apply_background_subtraction(frame_gray, background_subtractor):
     foreground_mask = background_subtractor.apply(frame_gray)

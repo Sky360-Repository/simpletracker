@@ -32,7 +32,8 @@ def _setup_controller(media, events, detection_mode):
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
-        normalise_video=settings.VideoTracker.get('normalize', False)
+        normalise_video=settings.VideoTracker.get('normalize', False),
+        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
     )
 
     return controller_clz(media, video_tracker)
@@ -136,7 +137,7 @@ def main(argv):
             cmdline_filename = arg
 
     print(f"cmdline_filename: {cmdline_filename}")
-    print("'Settings are ", settings.as_dict())
+    print("Settings are ", settings.as_dict())
 
     #cv2.namedWindow("Tracking", cv2.WINDOW_AUTOSIZE)
 
