@@ -15,7 +15,8 @@ cd ~
 git clone https://github.com/Sky360-Repository/simpletracker.git
 git clone https://github.com/dusty-nv/jetson-inference.git
 
-#cd simpletracker
+cd simpletracker
+git checkout nano_optimisation
 
 #sudo docker run \
 #      --runtime nvidia \
