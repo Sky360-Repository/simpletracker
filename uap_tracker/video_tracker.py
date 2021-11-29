@@ -16,7 +16,7 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, blur=True, normalise_video=True):
+    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, blur=True, normalise_video=True, calculate_optical_flow=True):
 
         print(
             f"Initializing Tracker:\n  normalize:{normalise_video}\n  blur: {blur}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
@@ -35,6 +35,7 @@ class VideoTracker():
         self.blur_radius = 3
         self.max_active_trackers = 10
         self.mask_pct = mask_pct
+        self.calculate_optical_flow = calculate_optical_flow
 
         self.blur = blur
         self.normalise_video = normalise_video
@@ -127,13 +128,16 @@ class VideoTracker():
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
         if self.normalise_video:
-            frame = utils.normalize_frame(
+            print(
+                f"Applying Scaling to {self.normalised_w_h[0]}, {self.normalised_w_h[1]}")
+            frame = utils.scale_image_to(
                 frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Blur image
         if self.blur:
+            print(f"Applying blue radius:{self.blur_radius}")
             frame_gray = cv2.GaussianBlur(
                 frame_gray, (self.blur_radius, self.blur_radius), 0)
             # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
@@ -150,11 +154,8 @@ class VideoTracker():
                 return
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
-        elif self.detection_mode == 'optical_flow':
-            keypoints, optical_flow_frame = self.keypoints_from_optical_flow(
-                frame_gray)
-            self.frames['optical_flow'] = optical_flow_frame
-            bboxes = []
+            if self.calculate_optical_flow:
+                self.frames['optical_flow'] = self.optical_flow(frame_gray)
         else:
             print('Detection Mode None')
             bboxes = []
@@ -169,13 +170,10 @@ class VideoTracker():
         if self.events is not None:
             self.events.publish_process_frame(self)
 
-    def keypoints_from_optical_flow(self, frame_gray):
+    def optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
         height, width = frame_gray.shape
-        optical_flow_frame = cv2.resize(dof_frame, (width, height))
-        # TODO Key Points
-
-        return [], optical_flow_frame
+        return cv2.resize(dof_frame, (width, height))
 
     def keypoints_from_bg_subtraction(self, frame_gray):
         # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster

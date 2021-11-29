@@ -31,7 +31,8 @@ def _setup_controller(media, events, detection_mode):
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         blur=settings.VideoTracker.get('blur', False),
-        normalise_video=settings.VideoTracker.get('normalize', False)
+        normalise_video=settings.VideoTracker.get('normalize', False),
+        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
     )
 
     return controller_clz(media, video_tracker)

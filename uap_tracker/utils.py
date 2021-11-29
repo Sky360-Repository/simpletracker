@@ -6,10 +6,6 @@ def get_cv_version():
     return (cv2.__version__).split('.')
 
 
-def normalize_frame(frame, w, h):
-    return scale_image_to(frame, w, h)
-
-
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
@@ -148,6 +144,8 @@ def scale_image_to(img, w, h):
         return img
 
 # mask_pct - The percentage of the fisheye you want to mask
+
+
 def apply_fisheye_mask(frame, mask_pct):
     mask_height = (100-mask_pct)/100.0
     mask_radius = mask_height/2.0
@@ -168,6 +166,7 @@ def apply_fisheye_mask(frame, mask_pct):
         new_width,
         new_height)
     return clipped_masked_frame
+
 
 def apply_background_subtraction(frame_gray, background_subtractor):
     foreground_mask = background_subtractor.apply(frame_gray)
