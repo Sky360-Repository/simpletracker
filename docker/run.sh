@@ -1,10 +1,7 @@
 #!/bin/bash
 
-cd ~/simpletracker
-git checkout nano_optimisation
-
-mv ./settings.toml ./settings.toml.bak
-mv ./settings.mike.toml ./settings.toml
+rm ../settings.toml
+cp ../settings.mike.toml ../settings.toml
 
 sudo docker run \
       --runtime nvidia \

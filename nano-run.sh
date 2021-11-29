@@ -5,6 +5,4 @@
 
 pip3 install dynaconf
 
-python3 -c 'import cv2; print(cv2.__version__)'
-
 ./run.sh
