@@ -6,11 +6,11 @@ from datetime import timedelta
 
 class CameraStreamController():
 
-    def __init__(self, camera, video_tracker):
+    def __init__(self, camera, video_tracker, minute_interval=10):
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.minute_interval = 5
+        self.minute_interval = minute_interval
         self.running = False
 
     def run(self):

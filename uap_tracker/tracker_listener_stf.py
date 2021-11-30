@@ -138,13 +138,14 @@ class STFWriter():
         with open(filename, 'w') as outfile:
             json.dump(self.annotations, outfile, indent=2)
 
-    def close(self):
-        print(f"close segment called on {self.final_video_dir} {self.writer}")
+    def close(self, min_annotations=25):
+        print(
+            f"close segment called on {self.final_video_dir} {self.writer}, min_annotations:{min_annotations}")
         if self.writer:
             self._close_video_writers()
             # only save if >= 5 frames
             print(self.annotations)
-            if len(self.annotations['frames']) >= 25:
+            if len(self.annotations['frames']) >= min_annotations:
                 self._close_annotations()
             else:
                 shutil.rmtree(self.final_video_dir)
