@@ -121,7 +121,7 @@ class VideoTracker():
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
     def process_frame(self, frame, frame_count, fps):
-        print(f"fps:{int(fps)}")
+        print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
 
@@ -157,7 +157,6 @@ class VideoTracker():
             if self.calculate_optical_flow:
                 self.frames['optical_flow'] = self.optical_flow(frame_gray)
         else:
-            print('Detection Mode None')
             bboxes = []
             keypoints = []
 

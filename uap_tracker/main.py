@@ -18,6 +18,7 @@ from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListe
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
+from video_formatter import VideoFormatter
 
 USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
@@ -106,7 +107,8 @@ def _setup_listener(video, root_name, output_dir):
     formatters = {
         'none': None,
         'mot_stf': TrackerListenerMOTStf,
-        'sot_stf': TrackerListenerSOTStf
+        'sot_stf': TrackerListenerSOTStf,
+        'video': VideoFormatter
     }
     print(f"Initilaizing {settings.output_format}")
     formatter_clz = formatters[settings.output_format]
@@ -163,7 +165,7 @@ def _create_output_dir():
     if not os.path.isdir(settings.output_dir):
         os.mkdir(settings.output_dir)
 
-    time_based_dir = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    time_based_dir = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
     output_dir = os.path.join(settings.output_dir, time_based_dir)
     os.mkdir(output_dir)
     return output_dir
