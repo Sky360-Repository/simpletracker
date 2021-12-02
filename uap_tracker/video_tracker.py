@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
@@ -125,19 +126,30 @@ class VideoTracker():
         self.fps = fps
         self.frame_count = frame_count
 
+        tic1 = time.perf_counter()
+
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+        tic2 = time.perf_counter()
+        print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
         frame = utils.resize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        tic3 = time.perf_counter()
+        print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        tic4 = time.perf_counter()
+        print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
 
         frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
+        tic5 = time.perf_counter()
+        print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
 
         self.frames = {
             'original': frame,
             'grey': frame_gray
         }
         if self.detection_mode == 'background_subtraction':
+            tic6 = time.perf_counter()
             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
                 frame_gray)
             if frame_count < 5:
@@ -145,20 +157,31 @@ class VideoTracker():
                 return
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+            tic7 = time.perf_counter()
+            print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+
             if self.calculate_optical_flow:
                 self.frames['optical_flow'] = self.optical_flow(frame_gray)
+                tic8 = time.perf_counter()
+                print(f"{frame_count}: Calculating opticalflow {tic8 - tic7:0.4f} seconds")
         else:
             bboxes = []
             keypoints = []
 
         self.keypoints = keypoints
+        tic9 = time.perf_counter()
 
         self.update_trackers(self.tracker_type, bboxes, frame)
+        tic10 = time.perf_counter()
+        print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
 
         frame_count + 1
 
         if self.events is not None:
             self.events.publish_process_frame(self)
+
+        tic11 = time.perf_counter()
+        print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
 
     def optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
