@@ -90,24 +90,35 @@ class VideoTracker():
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, bboxes, frame):
-
+        tic1 = time.perf_counter()
         unmatched_bboxes = bboxes.copy()
+        tic2 = time.perf_counter()
+        print(f"  Copying bboxes {tic2 - tic1:0.4f} seconds")
+
         failed_trackers = []
         for tracker in self.live_trackers:
 
             # Update tracker
+            tic3 = time.perf_counter()
             ok, bbox = tracker.update(frame)
+            tic4 = time.perf_counter()
+            print(f"  Updating tracker {tracker.id} took {tic4 - tic3:0.4f} seconds")
+
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
 
             # Try to match the new detections with this tracker
+            #if ok:
+            tic5 = time.perf_counter()
             for new_bbox in bboxes:
                 if new_bbox in unmatched_bboxes:
                     overlap = utils.bbox_overlap(bbox, new_bbox)
                     # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
                     if overlap > 0.2:
                         unmatched_bboxes.remove(new_bbox)
+            tic6 = time.perf_counter()
+            print(f"  Matching new detections took {tic6 - tic5:0.4f} seconds")
 
         # remove failed trackers from live tracking
         for tracker in failed_trackers:
@@ -115,11 +126,14 @@ class VideoTracker():
             self.total_trackers_finished += 1
 
         # Add new detections to live tracker
+        tic7 = time.perf_counter()
         for new_bbox in unmatched_bboxes:
             # Hit max trackers?
             if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
+        tic8 = time.perf_counter()
+        print(f"  Check max trackers and overlap took {tic8 - tic7:0.4f} seconds")
 
     def process_frame(self, frame, frame_count, fps):
         # print(f" fps:{int(fps)}", end='\r')
