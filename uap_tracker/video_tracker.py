@@ -90,6 +90,38 @@ class VideoTracker():
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
+    def update_trackers_old(self, tracker_type, bboxes, frame):
+
+        unmatched_bboxes = bboxes.copy()
+        failed_trackers = []
+        for tracker in self.live_trackers:
+
+            # Update tracker
+            ok, bbox = tracker.update(frame)
+            if not ok:
+                # Tracking failure
+                failed_trackers.append(tracker)
+
+            # Try to match the new detections with this tracker
+            for new_bbox in bboxes:
+                if new_bbox in unmatched_bboxes:
+                    overlap = utils.bbox_overlap(bbox, new_bbox)
+                    # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
+                    if overlap > 0.2:
+                        unmatched_bboxes.remove(new_bbox)
+
+        # remove failed trackers from live tracking
+        for tracker in failed_trackers:
+            self.live_trackers.remove(tracker)
+            self.total_trackers_finished += 1
+
+        # Add new detections to live tracker
+        for new_bbox in unmatched_bboxes:
+            # Hit max trackers?
+            if len(self.live_trackers) < self.max_active_trackers:
+                if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
+                    self.create_and_add_tracker(tracker_type, frame, new_bbox)
+
     def update_trackers(self, tracker_type, bboxes, frame):
 
         unmatched_bboxes = bboxes.copy()
@@ -146,19 +178,19 @@ class VideoTracker():
 
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
         tic2 = time.perf_counter()
-        print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
+        #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
         frame = utils.resize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
         tic3 = time.perf_counter()
-        print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
+        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         tic4 = time.perf_counter()
-        print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
+        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
 
         frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
         tic5 = time.perf_counter()
-        print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
+        #print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
 
         self.frames = {
             'original': frame,
@@ -175,7 +207,7 @@ class VideoTracker():
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
             tic7 = time.perf_counter()
-            print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+            #print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
 
             if self.calculate_optical_flow:
                 # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
@@ -192,7 +224,7 @@ class VideoTracker():
 
         self.update_trackers(self.tracker_type, bboxes, frame)
         tic10 = time.perf_counter()
-        print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
+        #print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
 
         frame_count + 1
 
@@ -204,7 +236,7 @@ class VideoTracker():
             self.events.publish_process_frame(self)
 
         tic11 = time.perf_counter()
-        print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
+        #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
         print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
@@ -273,4 +305,4 @@ class VideoTracker():
     def perform_optical_flow_task(self, frame_count, frame_gray, tic):
         self.frames['optical_flow'] = self.optical_flow(frame_gray)
         toc = time.perf_counter()
-        print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")
+        #print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")
