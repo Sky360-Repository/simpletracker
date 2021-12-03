@@ -144,6 +144,11 @@ def scale_image(img, max_size_h_or_w):
 
 def scale_image_to(img, w, h):
     if img.shape[0] > h or img.shape[1] > w:
+
+        # push image to the gpu for resizing
+        # gpu_frame = cv2.cuda_GpuMat()
+        # gpu_frame.upload(img)
+
         # calculate the width and height percent of original size
         width = int((w / img.shape[1]) * 100)
         height = int((h / img.shape[0]) * 100)
@@ -152,8 +157,13 @@ def scale_image_to(img, w, h):
         # calc the scaled width and height
         scaled_width = int(img.shape[1] * scale_percent / 100)
         scaled_height = int(img.shape[0] * scale_percent / 100)
-        # resize the image
+
         return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+
+        # resize the image using the GPU
+        # gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+        # frame = gpu_frame.download()
+        # return frame
     else:
         return img
 

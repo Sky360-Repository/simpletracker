@@ -43,5 +43,5 @@ camera_mode = 'rtsp'
 
 [Platform]
 
-# Supported platforms (pc, nano)
+# Supported platforms (pc, jetson)
 platform='pc'
