@@ -90,38 +90,6 @@ class VideoTracker():
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
-    def update_trackers_old(self, tracker_type, bboxes, frame):
-
-        unmatched_bboxes = bboxes.copy()
-        failed_trackers = []
-        for tracker in self.live_trackers:
-
-            # Update tracker
-            ok, bbox = tracker.update(frame)
-            if not ok:
-                # Tracking failure
-                failed_trackers.append(tracker)
-
-            # Try to match the new detections with this tracker
-            for new_bbox in bboxes:
-                if new_bbox in unmatched_bboxes:
-                    overlap = utils.bbox_overlap(bbox, new_bbox)
-                    # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
-                    if overlap > 0.2:
-                        unmatched_bboxes.remove(new_bbox)
-
-        # remove failed trackers from live tracking
-        for tracker in failed_trackers:
-            self.live_trackers.remove(tracker)
-            self.total_trackers_finished += 1
-
-        # Add new detections to live tracker
-        for new_bbox in unmatched_bboxes:
-            # Hit max trackers?
-            if len(self.live_trackers) < self.max_active_trackers:
-                if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
-                    self.create_and_add_tracker(tracker_type, frame, new_bbox)
-
     def update_trackers(self, tracker_type, bboxes, frame):
 
         unmatched_bboxes = bboxes.copy()
@@ -237,7 +205,7 @@ class VideoTracker():
 
         tic11 = time.perf_counter()
         #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
-        print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
+        #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
