@@ -18,16 +18,17 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, noise_reduction=True, normalise_video=True, calculate_optical_flow=True):
+    def __init__(self, detection_mode, events, enable_cuda=False, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True):
 
         print(
-            f"Initializing Tracker:\n  normalize:{normalise_video}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
+            f"Initializing Tracker:\n  enable_cuda:{enable_cuda}\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
             raise Exception(
                 f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
 
+        self.enable_cuda = enable_cuda
         self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
@@ -40,7 +41,7 @@ class VideoTracker():
         self.calculate_optical_flow = calculate_optical_flow
 
         self.noise_reduction = noise_reduction
-        self.normalise_video = normalise_video
+        self.resize_frame = resize_frame
         self.tracker_type = None
         self.background_subtractor_type = None
         self.background_subtractor = None
@@ -148,7 +149,7 @@ class VideoTracker():
         tic2 = time.perf_counter()
         #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
-        frame = utils.resize_frame(self.normalise_video, frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        frame = utils.resize_frame(self.resize_frame, frame, self.enable_cuda, self.normalised_w_h[0], self.normalised_w_h[1])
         tic3 = time.perf_counter()
         #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 

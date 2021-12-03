@@ -31,10 +31,11 @@ def _setup_controller(media, events, detection_mode):
     video_tracker = VideoTracker(
         detection_mode,
         events,
+        enable_cuda=settings.VideoTracker.get('enable_cuda', False),
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
-        normalise_video=settings.VideoTracker.get('normalize', False),
+        resize_frame=settings.VideoTracker.get('resize_frame', False),
         calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
     )
 

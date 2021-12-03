@@ -20,9 +20,8 @@ class EventPublisher():
             listener_thread.start()
             listener_threads.append(listener_thread)
 
-        # Mike: TODO: Do we need to wait for the threads to join or can they complete in the background?
-        #for listener_thread in listener_threads:
-        #    listener_thread.join()
+        for listener_thread in listener_threads:
+            listener_thread.join()
 
     def publish_finalise(self, total_trackers_started, total_trackers_finished):
         listener_threads = []
@@ -31,9 +30,8 @@ class EventPublisher():
             listener_thread.start()
             listener_threads.append(listener_thread)
 
-        # Mike: TODO: Do we need to wait for the threads to join or can they complete in the background?
-        #for listener_thread in listener_threads:
-        #    listener_thread.join()
+        for listener_thread in listener_threads:
+            listener_thread.join()
 
     def _publish_process_frame_task(self, listener, video_tracker):
         listener.trackers_updated_callback(video_tracker)

@@ -28,7 +28,7 @@ max_display_dim = 1080
 mask_pct=20
 # Detects small, medium and large objects
 sensitivity=1
-normalize=true
+resize_frame=true
 noise_reduction=true
 
 # Detection Mode
@@ -37,12 +37,9 @@ detection_mode='background_subtraction'
 
 calculate_optical_flow=true
 
+enable_cuda=false
+
 [Camera]
 
 camera_mode = 'rtsp'
 # N.B. place camera_uri in secrets.toml
-
-[Platform]
-
-# Supported platforms (pc, jetson)
-platform='pc'

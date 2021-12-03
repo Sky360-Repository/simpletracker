@@ -15,6 +15,7 @@ controller = 'video'
 
 # Options
 #  none = No visualisation at all, best performance
+#  noop = No visualisation at all, just a console entry
 #  simple = Displays single image with annotations, annotations are also in console output
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
@@ -27,7 +28,7 @@ max_display_dim = 1080
 mask_pct=20
 # Detects small, medium and large objects
 sensitivity=1
-normalize=false
+resize_frame=false
 noise_reduction=false
 
 # Detection Mode
@@ -36,12 +37,9 @@ detection_mode='background_subtraction'
 
 calculate_optical_flow=true
 
+enable_cuda=false
+
 [Camera]
 
 camera_mode = 'rtsp'
 # N.B. place camera_uri in secrets.toml
-
-[Platform]
-
-# Supported platforms (pc, jetson)
-platform='pc'
