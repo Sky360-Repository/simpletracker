@@ -161,7 +161,7 @@ def scale_image_to(frame, use_cuda, w, h):
         scaled_height = int(frame.shape[0] * scale_percent / 100)
 
         if gpu_frame is None:
-            return cv2.resize(frame, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+            return cv2.resize(frame, (scaled_width, scaled_height))
         else:
             gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
             return gpu_frame.download()
