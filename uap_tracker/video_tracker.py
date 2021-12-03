@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import time
+from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
@@ -90,35 +91,38 @@ class VideoTracker():
         self.live_trackers.append(tracker)
 
     def update_trackers(self, tracker_type, bboxes, frame):
-        tic1 = time.perf_counter()
+
         unmatched_bboxes = bboxes.copy()
-        tic2 = time.perf_counter()
-        print(f"  Copying bboxes {tic2 - tic1:0.4f} seconds")
-
         failed_trackers = []
-        for tracker in self.live_trackers:
+        tracker_count = len(self.live_trackers)
+        threads = [None] * tracker_count
+        results = [None] * tracker_count
 
-            # Update tracker
-            tic3 = time.perf_counter()
-            ok, bbox = tracker.update(frame)
-            tic4 = time.perf_counter()
-            print(f"  Updating tracker {tracker.id} took {tic4 - tic3:0.4f} seconds")
+        # Mike: We can do the tracker updates in parallel
+        for i in range(tracker_count):
+            tracker = self.live_trackers[i]
+            threads[i] = Thread(target=self.update_tracker_task, args=(tracker, frame, results, i))
+            threads[i].start()
 
+        # Mike: We got to wait for the threads to join before we proceed
+        for i in range(tracker_count):
+            threads[i].join()
+
+        for i in range(tracker_count):
+            tracker = self.live_trackers[i]
+            ok, bbox = results[i]
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
 
             # Try to match the new detections with this tracker
             #if ok:
-            tic5 = time.perf_counter()
             for new_bbox in bboxes:
                 if new_bbox in unmatched_bboxes:
                     overlap = utils.bbox_overlap(bbox, new_bbox)
                     # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
                     if overlap > 0.2:
                         unmatched_bboxes.remove(new_bbox)
-            tic6 = time.perf_counter()
-            print(f"  Matching new detections took {tic6 - tic5:0.4f} seconds")
 
         # remove failed trackers from live tracking
         for tracker in failed_trackers:
@@ -126,19 +130,17 @@ class VideoTracker():
             self.total_trackers_finished += 1
 
         # Add new detections to live tracker
-        tic7 = time.perf_counter()
         for new_bbox in unmatched_bboxes:
             # Hit max trackers?
             if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
-        tic8 = time.perf_counter()
-        print(f"  Check max trackers and overlap took {tic8 - tic7:0.4f} seconds")
 
     def process_frame(self, frame, frame_count, fps):
         # print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
+        worker_threads = []
 
         tic1 = time.perf_counter()
 
@@ -162,10 +164,11 @@ class VideoTracker():
             'original': frame,
             'grey': frame_gray
         }
+
         if self.detection_mode == 'background_subtraction':
+
             tic6 = time.perf_counter()
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
-                frame_gray)
+            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
                 return
@@ -175,9 +178,11 @@ class VideoTracker():
             print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
 
             if self.calculate_optical_flow:
-                self.frames['optical_flow'] = self.optical_flow(frame_gray)
-                tic8 = time.perf_counter()
-                print(f"{frame_count}: Calculating opticalflow {tic8 - tic7:0.4f} seconds")
+                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
+                # to perform on a different thread
+                optical_flow_thread = Thread(target=self.perform_optical_flow_task, args=(frame_count, frame_gray, tic7))
+                optical_flow_thread.start()
+                worker_threads.append(optical_flow_thread)
         else:
             bboxes = []
             keypoints = []
@@ -191,11 +196,16 @@ class VideoTracker():
 
         frame_count + 1
 
+        # Mike: Wait for worker threads to join before publishing events as their results might be required
+        for worker_thread in worker_threads:
+            worker_thread.join()
+
         if self.events is not None:
             self.events.publish_process_frame(self)
 
         tic11 = time.perf_counter()
         print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
+        print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
@@ -255,3 +265,12 @@ class VideoTracker():
 
     def get_keypoints(self):
         return self.keypoints
+
+    # Mike: Identifying tasks that can be called on seperate threads to try and speed this sucker up
+    def update_tracker_task(self, tracker, frame, results, index):
+        results[index] = tracker.update(frame)
+
+    def perform_optical_flow_task(self, frame_count, frame_gray, tic):
+        self.frames['optical_flow'] = self.optical_flow(frame_gray)
+        toc = time.perf_counter()
+        print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")
