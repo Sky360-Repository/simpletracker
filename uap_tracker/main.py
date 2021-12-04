@@ -43,6 +43,7 @@ def _get_visualizer(detection_mode):
     two_by_two_mode_visualizers = {
         'background_subtraction': TwoByTwoVisualiser,
         'optical_flow': TwoByTwoOpticalFlowVisualiser,
+        'mldetector': TwoByTwoOpticalFlowVisualiser,
         'none': None
     }
 
@@ -76,11 +77,13 @@ def _get_detection_mode():
     detection_mode = settings.VideoTracker.get(
         'detection_mode', None)
 
-    detection_modes = ['background_subtraction', 'optical_flow', 'none']
+    detection_modes = ['background_subtraction',
+                       'mldetector',
+                       'none']
 
     if not detection_mode:
         print(
-            f"Please set detection_mode in the config or use the SKY360_DETECTION_MODE env var: {detection_modes}")
+            f"Please set detection_mode in the config or use the SKY360_VIDEOTRACKER__DETECTION_MODE env var: {detection_modes}")
         sys.exit(1)
     else:
         print(f"Detection Mode: {detection_mode}")

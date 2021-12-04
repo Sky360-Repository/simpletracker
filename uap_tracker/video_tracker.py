@@ -4,6 +4,7 @@ import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
+from mldetector.model import Model
 
 #
 # Tracks multiple objects in a video
@@ -56,6 +57,8 @@ class VideoTracker():
 
         self.background_subtractor = BackgroundSubtractorFactory.create(
             self.background_subtractor_type, self.detection_sensitivity)
+
+        self.mldetector = None
 
     @property
     def is_tracking(self):
@@ -146,6 +149,7 @@ class VideoTracker():
             'original': frame,
             'grey': frame_gray
         }
+        # TODO externalize detector and pass in to tracker
         if self.detection_mode == 'background_subtraction':
             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
                 frame_gray)
@@ -156,6 +160,31 @@ class VideoTracker():
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
             if self.calculate_optical_flow:
                 self.frames['optical_flow'] = self.optical_flow(frame_gray)
+        elif self.detection_mode == 'mldetector':
+            if not self.mldetector:
+                num_classes = 2
+                input_channels = 6
+                self.mldetector = Model(input_channels, num_classes)
+                checkpoint = self.mldetector.get_checkpoint("checkpoint.pth")
+                self.mldetector.resume(checkpoint["model"])
+            self.frames['optical_flow'] = self.optical_flow(frame_gray)
+            labels = self.mldetector.detect(frame, self.frames['optical_flow'])
+            print(labels)
+            np_bboxes = labels[0]['boxes'].detach().numpy()
+            bboxes = []
+            for np_box in np_bboxes:
+                x1 = int(np_box[0])
+                y1 = int(np_box[1])
+                x2 = int(np_box[2])
+                y2 = int(np_box[3])
+
+                bboxes.append([
+                    x1,
+                    y1,
+                    x2-x1,
+                    y2-y1])
+            print(f"bboxes: {bboxes}")
+            keypoints = []
         else:
             bboxes = []
             keypoints = []
