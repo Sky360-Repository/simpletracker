@@ -1,9 +1,23 @@
 import cv2
 import numpy as np
 
+def is_cv_version_supported():
+    (major_ver, minor_ver, subminor_ver) = get_cv_version()
+    if int(major_ver) >= 4 and int(minor_ver) >= 1:
+        return True
+    return False
+
 
 def get_cv_version():
     return (cv2.__version__).split('.')
+
+
+def resize_frame(resize, frame, use_cuda, w, h):
+    resized_frame = frame
+    if resize:
+        #print(f"Applying Scaling to {w}, {h}")
+        resized_frame = scale_image_to(frame, use_cuda, w, h)
+    return resized_frame
 
 
 def get_writer(output_filename, width, height):
@@ -124,24 +138,35 @@ def perform_blob_detection(frame, sensitivity):
     return keypoints
 
 
-def scale_image(img, max_size_h_or_w):
-    return scale_image_to(img, max_size_h_or_w, max_size_h_or_w)
+def scale_image(frame, use_cuda, max_size_h_or_w):
+    return scale_image_to(frame, use_cuda, max_size_h_or_w, max_size_h_or_w)
 
 
-def scale_image_to(img, w, h):
-    if img.shape[0] > h or img.shape[1] > w:
+def scale_image_to(frame, use_cuda, w, h):
+
+    if frame.shape[0] > h or frame.shape[1] > w:
+        gpu_frame = None
+        if use_cuda:
+            # push image to the gpu for resizing
+            gpu_frame = cv2.cuda_GpuMat()
+            gpu_frame.upload(frame)
+
         # calculate the width and height percent of original size
-        width = int((w / img.shape[1]) * 100)
-        height = int((h / img.shape[0]) * 100)
+        width = int((w / frame.shape[1]) * 100)
+        height = int((h / frame.shape[0]) * 100)
         # pick the largest of the two
         scale_percent = max(width, height)
         # calc the scaled width and height
-        scaled_width = int(img.shape[1] * scale_percent / 100)
-        scaled_height = int(img.shape[0] * scale_percent / 100)
-        # resize the image
-        return cv2.resize(img, (scaled_width, scaled_height), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
+        scaled_width = int(frame.shape[1] * scale_percent / 100)
+        scaled_height = int(frame.shape[0] * scale_percent / 100)
+
+        if gpu_frame is None:
+            return cv2.resize(frame, (scaled_width, scaled_height))
+        else:
+            gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+            return gpu_frame.download()
     else:
-        return img
+        return frame
 
 # mask_pct - The percentage of the fisheye you want to mask
 
@@ -226,8 +251,7 @@ def stamp_original_frame(frame, font_size, font_color):
 
 
 def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
-    msg = f"Trackers: trackable:{sum(map(lambda x: x.is_trackable(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
-    print(msg)
+    msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
     cv2.putText(frame, msg, (100, 200),
                 cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
@@ -235,14 +259,21 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
 
 
 def display_frame(processed_frame, max_display_dim):
-    print(
-        f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
+    # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
     # Display result, resize it to a standard size
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
         # MG: scale the image to something that is of a reasonable viewing size
         frame_scaled = scale_image(
-            processed_frame, max_display_dim)
-        print(f"{frame_scaled.shape}")
+            processed_frame, False, max_display_dim)
+        # print(f"{frame_scaled.shape}")
         cv2.imshow("Tracking", frame_scaled)
     else:
         cv2.imshow("Tracking", processed_frame)
+
+def noise_reduction(noise_reduction, frame, blur_radius):
+    noise_reduced_frame = frame
+    if noise_reduction:
+        #print(f"Applying noise reduction, blur radius:{blur_radius}")
+        noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
+        # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
+    return noise_reduced_frame

@@ -7,8 +7,8 @@ import getopt
 import sys
 import cv2
 
-from uap_tracker.default_visualiser import DefaultVisualiser
 from uap_tracker.event_publisher import EventPublisher
+from uap_tracker.no_op_visualiser import NoOpVisualiser
 from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
@@ -19,8 +19,10 @@ from config import settings
 from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
 from video_formatter import VideoFormatter
+import uap_tracker.utils as utils
 
-USAGE = 'python uap_tracker/stage1.py\n settings are handled in the setttings.toml file or overridden in the ENV'
+
+USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
 
 def _setup_controller(media, events, detection_mode):
@@ -29,10 +31,11 @@ def _setup_controller(media, events, detection_mode):
     video_tracker = VideoTracker(
         detection_mode,
         events,
+        enable_cuda=settings.VideoTracker.get('enable_cuda', False),
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
-        blur=settings.VideoTracker.get('blur', False),
-        normalise_video=settings.VideoTracker.get('normalize', False),
+        noise_reduction=settings.VideoTracker.get('noise_reduction', False),
+        resize_frame=settings.VideoTracker.get('resize_frame', False),
         calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
     )
 
@@ -49,7 +52,7 @@ def _get_visualizer(detection_mode):
 
     visualizers = {
         'none': None,
-        'default': DefaultVisualiser,
+        'noop': NoOpVisualiser,
         'simple': SimpleVisualiser,
         'two_by_two': two_by_two_mode_visualizers[detection_mode]
     }
@@ -120,6 +123,13 @@ def _setup_listener(video, root_name, output_dir):
 
 
 def main(argv):
+
+    print(f"Open CV Version: {cv2.__version__}")
+
+    if not utils.is_cv_version_supported():
+        print(f"Unfortunately OpenCV v{cv2.__version__} is not supported, we support v4.1 and above.")
+        sys.exit(1)
+
     try:
         opts, args = getopt.getopt(argv, "hf:", [])
     except getopt.GetoptError:
@@ -133,6 +143,7 @@ def main(argv):
             sys.exit()
         if opt == '-f':
             cmdline_filename = arg
+
     print(f"cmdline_filename: {cmdline_filename}")
     print('Settings are ', settings.as_dict())
 

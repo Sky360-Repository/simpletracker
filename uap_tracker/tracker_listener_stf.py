@@ -191,14 +191,14 @@ class TrackerListenerMOTStf(TrackerListenerStf):
         frame_id = video_tracker.get_frame_count()
         alive_trackers = video_tracker.get_live_trackers()
         frame = video_tracker.get_image('original')
-        high_quality_trackers = map(lambda x: x.is_trackable(), alive_trackers)
+        high_quality_trackers = map(lambda x: x.is_tracking(), alive_trackers)
         if sum(high_quality_trackers) > 0:
 
             if self.stf_writer is None:
                 self.stf_writer = self._create_stf_writer()
 
             annotated_frame = video_tracker.get_annotated_image()
-            for tracker in filter(lambda x: x.is_trackable(), alive_trackers):
+            for tracker in filter(lambda x: x.is_tracking(), alive_trackers):
                 self.stf_writer.add_bbox(frame_id, tracker)
 
             self.stf_writer.write_original_frame(frame)
@@ -239,7 +239,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
         frame_id = video_tracker.get_frame_count()
         alive_trackers = video_tracker.get_live_trackers()
         alive_trackers_to_process = set(
-            filter(lambda x: x.is_trackable(), alive_trackers))
+            filter(lambda x: x.is_tracking(), alive_trackers))
         processed = set()
         newly_closed = []
         for tracker, writer in self.open_writers.items():
