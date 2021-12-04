@@ -138,6 +138,8 @@ class VideoTracker():
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
     def process_frame(self, frame, frame_count, fps):
+
+        # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
         # print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
