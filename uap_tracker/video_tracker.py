@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import time
+from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
@@ -16,16 +18,17 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, blur=True, normalise_video=True, calculate_optical_flow=True):
+    def __init__(self, detection_mode, events, enable_cuda=False, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True):
 
         print(
-            f"Initializing Tracker:\n  normalize:{normalise_video}\n  blur: {blur}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
+            f"Initializing Tracker:\n  enable_cuda:{enable_cuda}\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
             raise Exception(
                 f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
 
+        self.enable_cuda = enable_cuda
         self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
@@ -37,8 +40,8 @@ class VideoTracker():
         self.mask_pct = mask_pct
         self.calculate_optical_flow = calculate_optical_flow
 
-        self.blur = blur
-        self.normalise_video = normalise_video
+        self.noise_reduction = noise_reduction
+        self.resize_frame = resize_frame
         self.tracker_type = None
         self.background_subtractor_type = None
         self.background_subtractor = None
@@ -62,7 +65,7 @@ class VideoTracker():
         return len(self.live_trackers) > 0
 
     def active_trackers(self):
-        trackers = filter(lambda x: x.is_trackable(), self.live_trackers)
+        trackers = filter(lambda x: x.is_tracking(), self.live_trackers)
         if trackers is None:
             return []
         else:
@@ -92,15 +95,29 @@ class VideoTracker():
 
         unmatched_bboxes = bboxes.copy()
         failed_trackers = []
-        for tracker in self.live_trackers:
+        tracker_count = len(self.live_trackers)
+        threads = [None] * tracker_count
+        results = [None] * tracker_count
 
-            # Update tracker
-            ok, bbox = tracker.update(frame)
+        # Mike: We can do the tracker updates in parallel
+        for i in range(tracker_count):
+            tracker = self.live_trackers[i]
+            threads[i] = Thread(target=self.update_tracker_task, args=(tracker, frame, results, i))
+            threads[i].start()
+
+        # Mike: We got to wait for the threads to join before we proceed
+        for i in range(tracker_count):
+            threads[i].join()
+
+        for i in range(tracker_count):
+            tracker = self.live_trackers[i]
+            ok, bbox = results[i]
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
 
             # Try to match the new detections with this tracker
+            #if ok:
             for new_bbox in bboxes:
                 if new_bbox in unmatched_bboxes:
                     overlap = utils.bbox_overlap(bbox, new_bbox)
@@ -121,53 +138,77 @@ class VideoTracker():
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
     def process_frame(self, frame, frame_count, fps):
-        print(f" fps:{int(fps)}", end='\r')
+
+        # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
+        # print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
+        worker_threads = []
+
+        tic1 = time.perf_counter()
 
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+        tic2 = time.perf_counter()
+        #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
-        if self.normalise_video:
-            print(
-                f"Applying Scaling to {self.normalised_w_h[0]}, {self.normalised_w_h[1]}")
-            frame = utils.scale_image_to(
-                frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        frame = utils.resize_frame(self.resize_frame, frame, self.enable_cuda, self.normalised_w_h[0], self.normalised_w_h[1])
+        tic3 = time.perf_counter()
+        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        tic4 = time.perf_counter()
+        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
 
-        # Blur image
-        if self.blur:
-            print(f"Applying blue radius:{self.blur_radius}")
-            frame_gray = cv2.GaussianBlur(
-                frame_gray, (self.blur_radius, self.blur_radius), 0)
-            # frame_gray = cv2.medianBlur(frame_gray, self.blur_radius)
+        frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
+        tic5 = time.perf_counter()
+        #print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
 
         self.frames = {
             'original': frame,
             'grey': frame_gray
         }
+
         if self.detection_mode == 'background_subtraction':
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(
-                frame_gray)
+
+            tic6 = time.perf_counter()
+            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
                 return
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+            tic7 = time.perf_counter()
+            #print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+
             if self.calculate_optical_flow:
-                self.frames['optical_flow'] = self.optical_flow(frame_gray)
+                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
+                # to perform on a different thread
+                optical_flow_thread = Thread(target=self.perform_optical_flow_task, args=(frame_count, frame_gray, tic7))
+                optical_flow_thread.start()
+                worker_threads.append(optical_flow_thread)
         else:
             bboxes = []
             keypoints = []
 
         self.keypoints = keypoints
+        tic9 = time.perf_counter()
 
         self.update_trackers(self.tracker_type, bboxes, frame)
+        tic10 = time.perf_counter()
+        #print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
 
         frame_count + 1
 
+        # Mike: Wait for worker threads to join before publishing events as their results might be required
+        for worker_thread in worker_threads:
+            worker_thread.join()
+
         if self.events is not None:
             self.events.publish_process_frame(self)
+
+        tic11 = time.perf_counter()
+        #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
+        #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
         dof_frame = self.dof.process_grey_frame(frame_gray)
@@ -196,13 +237,16 @@ class VideoTracker():
 
     # called from listeners / visualizers
     # returns annotated image for current frame
-    def get_annotated_image(self):
+    def get_annotated_image(self, active_trackers_only=True):
         annotated_frame = self.frames.get('annotated_image', None)
         if annotated_frame is None:
             annotated_frame = self.frames['original'].copy()
-            for tracker in self.active_trackers():
-                utils.add_bbox_to_image(
-                    tracker.get_bbox(), annotated_frame, tracker.id, 1, (0, 255, 0))
+            if active_trackers_only:
+                for tracker in self.active_trackers():
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+            else:
+                for tracker in self.live_trackers:
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
             self.frames['annotated_image'] = annotated_frame
 
         return self.frames['annotated_image']
@@ -214,7 +258,7 @@ class VideoTracker():
         return self.frames
 
     def get_fps(self):
-        return self.fps
+        return int(self.fps)
 
     def get_frame_count(self):
         return self.frame_count
@@ -224,3 +268,12 @@ class VideoTracker():
 
     def get_keypoints(self):
         return self.keypoints
+
+    # Mike: Identifying tasks that can be called on seperate threads to try and speed this sucker up
+    def update_tracker_task(self, tracker, frame, results, index):
+        results[index] = tracker.update(frame)
+
+    def perform_optical_flow_task(self, frame_count, frame_gray, tic):
+        self.frames['optical_flow'] = self.optical_flow(frame_gray)
+        toc = time.perf_counter()
+        #print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")

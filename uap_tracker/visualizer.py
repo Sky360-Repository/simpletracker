@@ -15,9 +15,11 @@ class Visualizer():
     # Event Listener API
 
     def trackers_updated_callback(self, video_tracker):
+        msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished}, {video_tracker.get_fps()}fps (Sky360)"
+        print(msg)
         frame_output = self.visualise_frame(video_tracker)
-
-        self.display(frame_output)
+        if frame_output is not None:
+            self.display(frame_output)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         pass
