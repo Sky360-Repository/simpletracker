@@ -44,13 +44,7 @@ class Tracker():
                 stationary_check_thold = 4
                 stationary_check_max = 5
 
-                # MG: Default to yellow as it needs to prove itself as a target first
-                if len(self.bboxes) <= 10:
-                    # self.bbox_color = (25, 175, 175)
-                    self.tracking_state = Tracker.PROVISIONARY_TARGET
-                    # print(f'>> updating tracker {self.id} state to PROVISIONARY_TARGET')
-                elif len(self.bboxes) > 10:
-
+                if len(self.bboxes) > 10:
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
                     if utils.bbox_overlap(self.bbox_start, bbox) == 0.0:
                         # self.bbox_color = self.font_color
