@@ -10,6 +10,7 @@ class TwoByTwoOpticalFlowVisualiser(Visualizer):
 
         frame_input = video_tracker.get_image('original')
         optical_flow_frame = video_tracker.get_image('optical_flow')
+        detections_frame = video_tracker.get_image('detections')
         frame_output = video_tracker.get_annotated_image()
         fps = video_tracker.get_fps()
 
@@ -20,7 +21,7 @@ class TwoByTwoOpticalFlowVisualiser(Visualizer):
             video_tracker, frame_output, self.font_size, self.font_colour, fps)
 
         bottom_left_frame = optical_flow_frame
-        bottom_right_frame = optical_flow_frame
+        bottom_right_frame = detections_frame
 
         return utils.combine_frames_2x2(
             frame_input, frame_output, bottom_left_frame, bottom_right_frame

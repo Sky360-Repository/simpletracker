@@ -185,6 +185,12 @@ class VideoTracker():
                     y2-y1])
             print(f"bboxes: {bboxes}")
             keypoints = []
+            detections_frame = frame.copy()
+            for box in bboxes:
+                utils.add_bbox_to_image(
+                    box, detections_frame, 0, 1, (0, 0, 255))
+            self.frames['detections'] = detections_frame
+
         else:
             bboxes = []
             keypoints = []
