@@ -174,7 +174,7 @@ class VideoTracker():
             np_scores = labels[0]['scores'].detach().numpy()
             bboxes = []
             for np_box, np_score in zip(np_bboxes, np_scores):
-                if np_score > 0.25:
+                if np_score > 0.5:
                     x1 = int(np_box[0])
                     y1 = int(np_box[1])
                     x2 = int(np_box[2])
