@@ -31,6 +31,7 @@ class TrackerFactory():
                 param_handler = cv2.TrackerCSRT_Params()
                 param_handler.use_gray = True
                 # print(f"psr_threshold: {param_handler.psr_threshold}")
+                #https: // answers.opencv.org/question/212076/csrt-tracker-psr_threshold-meaning-and-usage/
                 param_handler.psr_threshold = 0.06
                 # fs = cv2.FileStorage("csrt_defaults.json", cv2.FileStorage_WRITE)
                 # param_handler.write(fs)
