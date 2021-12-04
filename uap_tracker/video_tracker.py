@@ -48,7 +48,7 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
 
-        self.dof = DenseOpticalFlow(480, 480, enable_cuda)
+        self.dof = DenseOpticalFlow(480, 480)
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
                          'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']

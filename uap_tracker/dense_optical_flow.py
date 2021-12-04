@@ -3,11 +3,10 @@ import numpy as np
 
 
 class DenseOpticalFlow():
-    def __init__(self, width, height, enable_cuda):
+    def __init__(self, width, height):
         self.previous_frame = None
         self.width = width
         self.height = height
-        self.enable_cuda = enable_cuda
 
         # create hsv output for optical flow
         self.hsv = np.zeros((self.height, self.width, 3), np.float32)
