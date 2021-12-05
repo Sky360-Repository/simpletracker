@@ -204,11 +204,11 @@ class VideoTracker():
             self.frames['optical_flow'] = self.optical_flow(frame_gray)
             labels = self.mldetector.detect(frame, self.frames['optical_flow'])
             print(labels)
-            np_bboxes = labels[0]['boxes'].detach().numpy()
-            np_scores = labels[0]['scores'].detach().numpy()
+            np_bboxes = labels[0]['boxes'].detach().cpu().numpy()
+            np_scores = labels[0]['scores'].detach().cpu().numpy()
             bboxes = []
             for np_box, np_score in zip(np_bboxes, np_scores):
-                if np_score > 0.5:
+                if np_score > 0.25:
                     x1 = int(np_box[0])
                     y1 = int(np_box[1])
                     x2 = int(np_box[2])
