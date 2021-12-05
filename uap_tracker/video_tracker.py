@@ -6,6 +6,7 @@ import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
+from uap_tracker.dense_optical_flow_cuda import DenseOpticalFlowCuda
 
 #
 # Tracks multiple objects in a video
@@ -48,7 +49,7 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
 
-        self.dof = DenseOpticalFlow(480, 480)
+        self.dof = DenseOpticalFlowCuda(480, 480) if enable_cuda else DenseOpticalFlow(480, 480)
 
         tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
                          'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
@@ -151,7 +152,7 @@ class VideoTracker():
         tic2 = time.perf_counter()
         #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
-        frame = utils.resize_frame(self.resize_frame, frame, self.enable_cuda, self.normalised_w_h[0], self.normalised_w_h[1])
+        frame = utils.resize_frame(self.resize_frame, frame, self.normalised_w_h[0], self.normalised_w_h[1])
         tic3 = time.perf_counter()
         #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
@@ -211,9 +212,17 @@ class VideoTracker():
         #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
-        dof_frame = self.dof.process_grey_frame(frame_gray)
         height, width = frame_gray.shape
-        return cv2.resize(dof_frame, (width, height))
+        if self.enable_cuda:
+            gpu_frame_gray = cv2.cuda_GpuMat()
+            gpu_frame_gray.upload(frame_gray)
+            gpu_dof_frame = self.dof.process_grey_frame(gpu_frame_gray)
+            cv2.cuda.resize(gpu_dof_frame, (width, height))
+            return gpu_dof_frame.download()
+        else:
+            dof_frame = self.dof.process_grey_frame(frame_gray)
+            height, width = frame_gray.shape
+            return cv2.resize(dof_frame, (width, height))
 
     def keypoints_from_bg_subtraction(self, frame_gray):
         # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster

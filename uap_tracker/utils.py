@@ -12,12 +12,17 @@ def get_cv_version():
     return (cv2.__version__).split('.')
 
 
-def resize_frame(resize, frame, use_cuda, w, h):
-    resized_frame = frame
+def resize_frame(resize, frame, w, h):
     if resize:
         #print(f"Applying Scaling to {w}, {h}")
-        resized_frame = scale_image_to(frame, use_cuda, w, h)
-    return resized_frame
+        return scale_image_to(frame, w, h)
+    return frame
+
+def resize_frame_cuda(resize, gpu_frame, w, h):
+    if resize:
+        #print(f"Applying Scaling to {w}, {h}")
+        return scale_image_to_cuda(gpu_frame, w, h)
+    return gpu_frame
 
 
 def get_writer(output_filename, width, height):
@@ -138,19 +143,15 @@ def perform_blob_detection(frame, sensitivity):
     return keypoints
 
 
-def scale_image(frame, use_cuda, max_size_h_or_w):
-    return scale_image_to(frame, use_cuda, max_size_h_or_w, max_size_h_or_w)
+def scale_image(frame, max_size_h_or_w):
+    return scale_image_to(frame, max_size_h_or_w, max_size_h_or_w)
 
+def scale_image_cuda(gpu_frame, max_size_h_or_w):
+    return scale_image_to_cuda(gpu_frame, max_size_h_or_w, max_size_h_or_w)
 
-def scale_image_to(frame, use_cuda, w, h):
+def scale_image_to(frame, w, h):
 
     if frame.shape[0] > h or frame.shape[1] > w:
-        gpu_frame = None
-        if use_cuda:
-            # push image to the gpu for resizing
-            gpu_frame = cv2.cuda_GpuMat()
-            gpu_frame.upload(frame)
-
         # calculate the width and height percent of original size
         width = int((w / frame.shape[1]) * 100)
         height = int((h / frame.shape[0]) * 100)
@@ -159,14 +160,24 @@ def scale_image_to(frame, use_cuda, w, h):
         # calc the scaled width and height
         scaled_width = int(frame.shape[1] * scale_percent / 100)
         scaled_height = int(frame.shape[0] * scale_percent / 100)
-
-        if gpu_frame is None:
-            return cv2.resize(frame, (scaled_width, scaled_height))
-        else:
-            gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
-            return gpu_frame.download()
+        return cv2.resize(frame, (scaled_width, scaled_height))
     else:
         return frame
+
+def scale_image_to_cuda(gpu_frame, w, h):
+
+    if gpu_frame.shape[0] > h or gpu_frame.shape[1] > w:
+        # calculate the width and height percent of original size
+        width = int((w / frame.shape[1]) * 100)
+        height = int((h / frame.shape[0]) * 100)
+        # pick the largest of the two
+        scale_percent = max(width, height)
+        # calc the scaled width and height
+        scaled_width = int(frame.shape[1] * scale_percent / 100)
+        scaled_height = int(frame.shape[0] * scale_percent / 100)
+        return cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+    else:
+        return gpu_frame
 
 # mask_pct - The percentage of the fisheye you want to mask
 
@@ -264,7 +275,7 @@ def display_frame(processed_frame, max_display_dim):
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
         # MG: scale the image to something that is of a reasonable viewing size
         frame_scaled = scale_image(
-            processed_frame, False, max_display_dim)
+            processed_frame, max_display_dim)
         # print(f"{frame_scaled.shape}")
         cv2.imshow("Tracking", frame_scaled)
     else:
