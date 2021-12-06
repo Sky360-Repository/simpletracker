@@ -144,7 +144,7 @@ class VideoTracker():
     def process_frame(self, frame, frame_count, fps):
 
         # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
-        # print(f" fps:{int(fps)}", end='\r')
+        print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
         worker_threads = []
@@ -203,12 +203,12 @@ class VideoTracker():
                 self.mldetector.resume(checkpoint["model"])
             self.frames['optical_flow'] = self.optical_flow(frame_gray)
             labels = self.mldetector.detect(frame, self.frames['optical_flow'])
-            print(labels)
+            #print(labels)
             np_bboxes = labels[0]['boxes'].detach().cpu().numpy()
             np_scores = labels[0]['scores'].detach().cpu().numpy()
             bboxes = []
             for np_box, np_score in zip(np_bboxes, np_scores):
-                if np_score > 0.25:
+                if np_score > 0.10:
                     x1 = int(np_box[0])
                     y1 = int(np_box[1])
                     x2 = int(np_box[2])
@@ -219,7 +219,7 @@ class VideoTracker():
                         y1,
                         x2-x1,
                         y2-y1])
-            print(f"bboxes: {bboxes}")
+            #print(f"bboxes: {bboxes}")
             keypoints = []
             detections_frame = frame.copy()
             for box in bboxes:

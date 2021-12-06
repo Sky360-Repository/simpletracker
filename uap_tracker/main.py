@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import getopt
 import sys
+from pathlib import Path
 import cv2
 
 from uap_tracker.event_publisher import EventPublisher
@@ -131,20 +132,24 @@ def main(argv):
         sys.exit(1)
 
     try:
-        opts, args = getopt.getopt(argv, "hf:", [])
+        opts, args = getopt.getopt(argv, "hf:d:", [])
     except getopt.GetoptError:
         print(USAGE)
         sys.exit(2)
 
     cmdline_filename = None
+    cmdline_dirname = None
     for opt, arg in opts:
         if opt == '-h':
             print(USAGE)
             sys.exit()
         if opt == '-f':
             cmdline_filename = arg
+        if opt == '-d':
+            cmdline_dirname = arg
 
     print(f"cmdline_filename: {cmdline_filename}")
+    print(f"cmdline_dirname: {cmdline_dirname}")
     print('Settings are ', settings.as_dict())
 
     #cv2.namedWindow("Tracking", cv2.WINDOW_AUTOSIZE)
@@ -160,6 +165,10 @@ def main(argv):
     # If a video was passed in on commandline, run that and ignore other sources
     if cmdline_filename:
         process_file(controller, visualizer, cmdline_filename,
+                     output_dir, detection_mode)
+    elif cmdline_dirname:
+        for mp4 in sorted(Path(cmdline_dirname).rglob('video.mp4')):
+            process_file(controller, visualizer, str(mp4),
                      output_dir, detection_mode)
     else:
         if controller == VideoPlaybackController:
