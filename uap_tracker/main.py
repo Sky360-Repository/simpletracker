@@ -36,7 +36,8 @@ def _setup_controller(media, events, detection_mode):
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
         resize_frame=settings.VideoTracker.get('resize_frame', False),
-        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
+        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow,
+        max_active_trackers=settings.VideoTracker.max_active_trackers,
     )
 
     return controller_clz(media, video_tracker)

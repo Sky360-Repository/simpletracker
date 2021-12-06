@@ -20,10 +20,10 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, enable_cuda=False, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True):
+    def __init__(self, detection_mode, events, enable_cuda=False, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True, max_active_trackers=10):
 
         print(
-            f"Initializing Tracker:\n  enable_cuda:{enable_cuda}\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}")
+            f"Initializing Tracker:\n  enable_cuda:{enable_cuda}\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -38,7 +38,7 @@ class VideoTracker():
         self.events = events
         self.normalised_w_h = (1024, 1024)
         self.blur_radius = 3
-        self.max_active_trackers = 10
+        self.max_active_trackers = max_active_trackers
         self.mask_pct = mask_pct
         self.calculate_optical_flow = calculate_optical_flow
 

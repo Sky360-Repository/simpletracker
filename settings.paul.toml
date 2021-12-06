@@ -31,6 +31,9 @@ sensitivity=1
 resize_frame=false
 noise_reduction=false
 
+# The max number of concurrent active trackers
+max_active_trackers=10
+
 # Detection Mode
 #   one of: 'background_subtraction'
 detection_mode='background_subtraction'
