@@ -18,10 +18,10 @@ def resize_frame(resize, frame, w, h):
         return scale_image_to(frame, w, h)
     return frame
 
-def resize_frame_cuda(resize, gpu_frame, w, h):
+def resize_frame_cuda(resize, gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
     if resize:
         #print(f"Applying Scaling to {w}, {h}")
-        return scale_image_to_cuda(gpu_frame, w, h)
+        return scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h)
     return gpu_frame
 
 
@@ -146,11 +146,10 @@ def perform_blob_detection(frame, sensitivity):
 def scale_image(frame, max_size_h_or_w):
     return scale_image_to(frame, max_size_h_or_w, max_size_h_or_w)
 
-def scale_image_cuda(gpu_frame, max_size_h_or_w):
-    return scale_image_to_cuda(gpu_frame, max_size_h_or_w, max_size_h_or_w)
+def scale_image_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, max_size_h_or_w):
+    return scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, max_size_h_or_w, max_size_h_or_w)
 
 def scale_image_to(frame, w, h):
-
     if frame.shape[0] > h or frame.shape[1] > w:
         # calculate the width and height percent of original size
         width = int((w / frame.shape[1]) * 100)
@@ -164,17 +163,16 @@ def scale_image_to(frame, w, h):
     else:
         return frame
 
-def scale_image_to_cuda(gpu_frame, w, h):
-
-    if gpu_frame.shape[0] > h or gpu_frame.shape[1] > w:
+def scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
+    if gpu_frame_h > h or gpu_frame_w > w:
         # calculate the width and height percent of original size
-        width = int((w / frame.shape[1]) * 100)
-        height = int((h / frame.shape[0]) * 100)
+        width = int((w / gpu_frame_w) * 100)
+        height = int((h / gpu_frame_h) * 100)
         # pick the largest of the two
         scale_percent = max(width, height)
         # calc the scaled width and height
-        scaled_width = int(frame.shape[1] * scale_percent / 100)
-        scaled_height = int(frame.shape[0] * scale_percent / 100)
+        scaled_width = int(gpu_frame_w * scale_percent / 100)
+        scaled_height = int(gpu_frame_h * scale_percent / 100)
         return cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
     else:
         return gpu_frame

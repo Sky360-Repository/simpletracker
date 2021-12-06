@@ -158,6 +158,8 @@ class VideoTracker():
         # print(f" fps:{int(fps)}", end='\r')
         self.fps = fps
         self.frame_count = frame_count
+        frame_w = frame.shape[0]
+        frame_h = frame.shape[1]
         worker_threads = []
 
         tic1 = time.perf_counter()
@@ -171,7 +173,8 @@ class VideoTracker():
             gpu_frame = cv2.cuda_GpuMat()
             gpu_frame.upload(frame)
 
-            gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, self.normalised_w_h[0], self.normalised_w_h[1])
+            gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
+                                                self.normalised_w_h[0], self.normalised_w_h[1])
             tic3 = time.perf_counter()
             #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
