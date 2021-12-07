@@ -2,30 +2,9 @@ import cv2
 import sys
 import datetime
 from datetime import timedelta
+from uap_tracker.camera_stream_controller import CameraStreamController
 
-
-class CameraStreamControllerCuda():
-
-    def __init__(self, camera, video_tracker, minute_interval=10):
-
-        self.camera = camera
-        self.video_tracker = video_tracker
-        self.minute_interval = minute_interval
-        self.running = False
-
-    def run(self):
-        print("Running Camera")
-        success, _ = self.camera.read()
-        if not success:
-            print(f"Could not open camera video stream")
-            sys.exit()
-
-        self.running = True
-
-        while self.running:
-            iteration_period = timedelta(minutes=self.minute_interval)
-            self.process_iteration((datetime.datetime.now(
-            ) + iteration_period))
+class CameraStreamControllerCuda(CameraStreamController):
 
     def process_iteration(self, iteration_period):
 

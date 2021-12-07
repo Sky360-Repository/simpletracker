@@ -1,13 +1,8 @@
 import cv2
 import sys
+from uap_tracker.video_playback_controller import VideoPlaybackController
 
-
-class VideoPlaybackControllerCuda():
-
-    def __init__(self, capture, video_tracker):
-
-        self.capture = capture
-        self.video_tracker = video_tracker
+class VideoPlaybackControllerCuda(VideoPlaybackController):
 
     def run(self):
 
