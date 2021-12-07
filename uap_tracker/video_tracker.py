@@ -245,7 +245,7 @@ class VideoTracker():
         # Mike: Not able to offload to CUDA
         frame = utils.apply_fisheye_mask(frame, self.mask_pct)
         tic2 = time.perf_counter()
-        #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
         gpu_frame = cv2.cuda_GpuMat()
         gpu_frame.upload(frame)
@@ -253,18 +253,18 @@ class VideoTracker():
         gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
                                             self.normalised_w_h[0], self.normalised_w_h[1])
         tic3 = time.perf_counter()
-        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Resizing frame {tic3 - tic2:0.4f} seconds")
 
         # Mike: Able to offload to CUDA
         gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
         frame_gray = gpu_frame_gray.download()
         tic4 = time.perf_counter()
-        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Converting to gray scale {tic4 - tic3:0.4f} seconds")
 
         # Mike: Not able to offload to CUDA
         frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
         tic5 = time.perf_counter()
-        #print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Reducing noise {tic5 - tic4:0.4f} seconds")
 
         self.frames = {
             'original': frame,
@@ -282,7 +282,7 @@ class VideoTracker():
             self.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
             tic7 = time.perf_counter()
-            #print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+            #print(f"{frame_count}: CUDA Background subtraction {tic7 - tic6:0.4f} seconds")
 
             if self.calculate_optical_flow:
                 # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
@@ -301,7 +301,7 @@ class VideoTracker():
 
         self.update_trackers(self.tracker_type, bboxes, frame)
         tic10 = time.perf_counter()
-        #print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Updating trackers {tic10 - tic9:0.4f} seconds")
 
         frame_count + 1
 
@@ -313,8 +313,8 @@ class VideoTracker():
             self.events.publish_process_frame(self)
 
         tic11 = time.perf_counter()
-        #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
-        #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
+        #print(f"{frame_count}: CUDA Publishing process frame event {tic11 - tic10:0.4f} seconds")
+        #print(f"CUDA Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
 
     def optical_flow(self, frame_gray):
         height, width = frame_gray.shape
@@ -391,12 +391,12 @@ class VideoTracker():
     def perform_optical_flow_task(self, frame_count, frame_gray, tic):
         self.frames['optical_flow'] = self.optical_flow(frame_gray)
         toc = time.perf_counter()
-        #print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")
+        #print(f"{frame_count}: Calculating dense optical flow {toc - tic:0.4f} seconds")
 
     def perform_optical_flow_cuda_task(self, frame_count, frame_gray, tic):
         self.frames['optical_flow'] = self.optical_flow_cuda(frame_gray)
         toc = time.perf_counter()
-        #print(f"{frame_count}: Calculating opticalflow {toc - tic:0.4f} seconds")
+        #print(f"{frame_count}: CUDA Calculating dense optical flow {toc - tic:0.4f} seconds")
 
 #def update_tracker_task_2(tuple):
 #    (tracker, frame, results) = tuple
