@@ -13,7 +13,9 @@ from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
+from uap_tracker.video_playback_controller_cuda import VideoPlaybackControllerCuda
 from uap_tracker.camera_stream_controller import CameraStreamController
+from uap_tracker.camera_stream_controller_cuda import CameraStreamControllerCuda
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
@@ -31,7 +33,6 @@ def _setup_controller(media, events, detection_mode):
     video_tracker = VideoTracker(
         detection_mode,
         events,
-        enable_cuda=settings.VideoTracker.get('enable_cuda', False),
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
@@ -94,7 +95,9 @@ def _get_detection_mode():
 def _get_controller():
     controllers = {
         'video': VideoPlaybackController,
-        'camera': CameraStreamController
+        'video_cuda': VideoPlaybackControllerCuda,
+        'camera': CameraStreamController,
+        'camera_cuda': CameraStreamControllerCuda
     }
     controller_setting = settings.get('controller', None)
 

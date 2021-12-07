@@ -20,17 +20,16 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, enable_cuda=False, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True, max_active_trackers=10):
+    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True, calculate_optical_flow=True, max_active_trackers=10):
 
         print(
-            f"Initializing Tracker:\n  enable_cuda:{enable_cuda}\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}")
+            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
             raise Exception(
                 f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
 
-        self.enable_cuda = enable_cuda
         self.detection_sensitivity = detection_sensitivity
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
@@ -169,27 +168,13 @@ class VideoTracker():
         tic2 = time.perf_counter()
         #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
 
-        if self.enable_cuda:
-            gpu_frame = cv2.cuda_GpuMat()
-            gpu_frame.upload(frame)
+        frame = utils.resize_frame(self.resize_frame, frame, self.normalised_w_h[0], self.normalised_w_h[1])
+        tic3 = time.perf_counter()
+        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
 
-            gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
-                                                self.normalised_w_h[0], self.normalised_w_h[1])
-            tic3 = time.perf_counter()
-            #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
-
-            gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
-            frame_gray = gpu_frame_gray.download()
-            tic4 = time.perf_counter()
-            #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
-        else:
-            frame = utils.resize_frame(self.resize_frame, frame, self.normalised_w_h[0], self.normalised_w_h[1])
-            tic3 = time.perf_counter()
-            #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
-
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            tic4 = time.perf_counter()
-            #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        tic4 = time.perf_counter()
+        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
 
         # Mike: Not able to offload to CUDA
         frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
@@ -217,16 +202,96 @@ class VideoTracker():
             if self.calculate_optical_flow:
                 # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
                 # to perform on a different thread
-                if self.enable_cuda:
-                    optical_flow_cuda_thread = Thread(target=self.perform_optical_flow_cuda_task,
-                                                 args=(frame_count, frame_gray, tic7))
-                    optical_flow_cuda_thread.start()
-                    worker_threads.append(optical_flow_cuda_thread)
-                else:
-                    optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                                 args=(frame_count, frame_gray, tic7))
-                    optical_flow_thread.start()
-                    worker_threads.append(optical_flow_thread)
+                optical_flow_thread = Thread(target=self.perform_optical_flow_task,
+                                             args=(frame_count, frame_gray, tic7))
+                optical_flow_thread.start()
+                worker_threads.append(optical_flow_thread)
+        else:
+            bboxes = []
+            keypoints = []
+
+        self.keypoints = keypoints
+        tic9 = time.perf_counter()
+
+        self.update_trackers(self.tracker_type, bboxes, frame)
+        tic10 = time.perf_counter()
+        #print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
+
+        frame_count + 1
+
+        # Mike: Wait for worker threads to join before publishing events as their results might be required
+        for worker_thread in worker_threads:
+            worker_thread.join()
+
+        if self.events is not None:
+            self.events.publish_process_frame(self)
+
+        tic11 = time.perf_counter()
+        #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
+        #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
+
+    def process_frame_cuda(self, frame, frame_count, fps):
+
+        # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
+        # print(f" fps:{int(fps)}", end='\r')
+        self.fps = fps
+        self.frame_count = frame_count
+        frame_w = frame.shape[0]
+        frame_h = frame.shape[1]
+        worker_threads = []
+
+        tic1 = time.perf_counter()
+
+        # Mike: Not able to offload to CUDA
+        frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+        tic2 = time.perf_counter()
+        #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
+
+        gpu_frame = cv2.cuda_GpuMat()
+        gpu_frame.upload(frame)
+
+        gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
+                                            self.normalised_w_h[0], self.normalised_w_h[1])
+        tic3 = time.perf_counter()
+        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
+
+        # Mike: Able to offload to CUDA
+        gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
+        frame_gray = gpu_frame_gray.download()
+        tic4 = time.perf_counter()
+        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
+
+        # Mike: Not able to offload to CUDA
+        frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
+        tic5 = time.perf_counter()
+        #print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
+
+        self.frames = {
+            'original': frame,
+            'grey': frame_gray
+        }
+
+        if self.detection_mode == 'background_subtraction':
+
+            # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
+            tic6 = time.perf_counter()
+            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
+            if frame_count < 5:
+                # Need 5 frames to get the background subtractor initialised
+                return
+            self.frames['masked_background'] = frame_masked_background
+            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+            tic7 = time.perf_counter()
+            #print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+
+            if self.calculate_optical_flow:
+                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
+                # to perform on a different thread
+                optical_flow_cuda_thread = Thread(target=self.perform_optical_flow_cuda_task,
+                                             args=(frame_count, frame_gray, tic7))
+                optical_flow_cuda_thread.start()
+                worker_threads.append(optical_flow_cuda_thread)
+
         else:
             bboxes = []
             keypoints = []
@@ -259,12 +324,11 @@ class VideoTracker():
 
     def optical_flow_cuda(self, frame_gray):
         height, width = frame_gray.shape
-        if self.enable_cuda:
-            gpu_frame_gray = cv2.cuda_GpuMat()
-            gpu_frame_gray.upload(frame_gray)
-            gpu_dof_frame = self.dof_cuda.process_grey_frame(gpu_frame_gray)
-            cv2.cuda.resize(gpu_dof_frame, (width, height))
-            return gpu_dof_frame.download()
+        gpu_frame_gray = cv2.cuda_GpuMat()
+        gpu_frame_gray.upload(frame_gray)
+        gpu_dof_frame = self.dof_cuda.process_grey_frame(gpu_frame_gray)
+        cv2.cuda.resize(gpu_dof_frame, (width, height))
+        return gpu_dof_frame.download()
 
     def keypoints_from_bg_subtraction(self, frame_gray):
         # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster

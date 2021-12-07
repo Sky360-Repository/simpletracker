@@ -8,7 +8,9 @@ output_dir = 'output'
 
 # Options
 #  video = video playback
+#  video_cuda = video playback with cuda support
 #  camera = camera stream
+#  camera_cuda = camera stream with cuda support
 controller = 'video'
 
 [Visualizer]
@@ -39,8 +41,6 @@ max_active_trackers=5
 detection_mode='background_subtraction'
 
 calculate_optical_flow=true
-
-enable_cuda=false
 
 [Camera]
 

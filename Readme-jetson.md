@@ -1,4 +1,5 @@
 ##Installing jtop:
+
 1. Launch the terminal
 2. Change directory to simpletracker/scripts: ```cd ~/simpletracker/scripts```
 3. Run the jtop installation script: ```./install-jtop.sh``` **NOTE:** The script needs to reboot your Jetson device for the installation to complete
@@ -32,4 +33,13 @@ The run.sh file located in the docker folder will remove the settings.toml file 
 If you want setting changes to persist change both the settings.toml as well as the settings.mike.toml files. 
 You can also create your own settings file and update the run.sh file in the docker folder to replace the settings.toml file with your settings file. 
 1. Turning off the OpticalFlow  calcs by setting the ```calculate_optical_flow=``` to false (all lowercase)
-2. Enable CUDA by setting the ```enable_cuda=``` to true. At the time writing only image resize uses CUDA.
+
+##Enabling CUDA support
+
+CUDA support is managed by the type of controller you would like to use. There are 2 main controller options at present, 
+namely the Video Playback Controller and the Camera Controller. Both of these have CUDA support however this is still 
+under active development. 
+
+The main driver for which controller is used is driven by the *controller* setting in the setting.toml file. If you do 
+not require CUDA support for e.g. video playback select the "video" option. If you are able to utilise CUDA then select the 
+"video_cuda" option. There are further options but for these you need to review the comments in the settings.toml file.
