@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
-import time
+#import time
 from threading import Thread
-import multiprocessing
+from uap_tracker.stopwatch import Stopwatch
+#import multiprocessing
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
@@ -153,168 +154,128 @@ class VideoTracker():
 
     def process_frame(self, frame, frame_count, fps):
 
-        # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
-        # print(f" fps:{int(fps)}", end='\r')
-        self.fps = fps
-        self.frame_count = frame_count
-        frame_w = frame.shape[0]
-        frame_h = frame.shape[1]
-        worker_threads = []
+        with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
+            # print(f" fps:{int(fps)}", end='\r')
+            self.fps = fps
+            self.frame_count = frame_count
+            frame_w = frame.shape[0]
+            frame_h = frame.shape[1]
+            worker_threads = []
 
-        tic1 = time.perf_counter()
+            # Mike: Not able to offload to CUDA
+            frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-        # Mike: Not able to offload to CUDA
-        frame = utils.apply_fisheye_mask(frame, self.mask_pct)
-        tic2 = time.perf_counter()
-        #print(f"{frame_count}: Applying fisheye mask {tic2 - tic1:0.4f} seconds")
+            frame = utils.resize_frame(self.resize_frame, frame, self.normalised_w_h[0], self.normalised_w_h[1])
 
-        frame = utils.resize_frame(self.resize_frame, frame, self.normalised_w_h[0], self.normalised_w_h[1])
-        tic3 = time.perf_counter()
-        #print(f"{frame_count}: Resizing frame {tic3 - tic2:0.4f} seconds")
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        tic4 = time.perf_counter()
-        #print(f"{frame_count}: Converting to gray scale {tic4 - tic3:0.4f} seconds")
+            # Mike: Not able to offload to CUDA
+            frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
 
-        # Mike: Not able to offload to CUDA
-        frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
-        tic5 = time.perf_counter()
-        #print(f"{frame_count}: Reducing noise {tic5 - tic4:0.4f} seconds")
+            self.frames = {
+                'original': frame,
+                'grey': frame_gray
+            }
 
-        self.frames = {
-            'original': frame,
-            'grey': frame_gray
-        }
+            if self.detection_mode == 'background_subtraction':
 
-        if self.detection_mode == 'background_subtraction':
+                # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
+                keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
+                if frame_count < 5:
+                    # Need 5 frames to get the background subtractor initialised
+                    return
+                self.frames['masked_background'] = frame_masked_background
+                bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
-            # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
-            tic6 = time.perf_counter()
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
-            if frame_count < 5:
-                # Need 5 frames to get the background subtractor initialised
-                return
-            self.frames['masked_background'] = frame_masked_background
-            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
-            tic7 = time.perf_counter()
-            #print(f"{frame_count}: Background subtraction {tic7 - tic6:0.4f} seconds")
+                if self.calculate_optical_flow:
+                    # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
+                    # to perform on a different thread
+                    optical_flow_thread = Thread(target=self.perform_optical_flow_task,
+                                                 args=(frame_count, frame_gray))
+                    optical_flow_thread.start()
+                    worker_threads.append(optical_flow_thread)
+            else:
+                bboxes = []
+                keypoints = []
 
-            if self.calculate_optical_flow:
-                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                # to perform on a different thread
-                optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                             args=(frame_count, frame_gray, tic7))
-                optical_flow_thread.start()
-                worker_threads.append(optical_flow_thread)
-        else:
-            bboxes = []
-            keypoints = []
+            self.keypoints = keypoints
 
-        self.keypoints = keypoints
-        tic9 = time.perf_counter()
+            self.update_trackers(self.tracker_type, bboxes, frame)
 
-        self.update_trackers(self.tracker_type, bboxes, frame)
-        tic10 = time.perf_counter()
-        #print(f"{frame_count}: Updating trackers {tic10 - tic9:0.4f} seconds")
+            frame_count + 1
 
-        frame_count + 1
+            # Mike: Wait for worker threads to join before publishing events as their results might be required
+            for worker_thread in worker_threads:
+                worker_thread.join()
 
-        # Mike: Wait for worker threads to join before publishing events as their results might be required
-        for worker_thread in worker_threads:
-            worker_thread.join()
-
-        if self.events is not None:
-            self.events.publish_process_frame(self)
-
-        tic11 = time.perf_counter()
-        #print(f"{frame_count}: Publishing process frame event {tic11 - tic10:0.4f} seconds")
-        #print(f"Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
+            if self.events is not None:
+                self.events.publish_process_frame(self)
 
     def process_frame_cuda(self, frame, frame_count, fps):
 
-        # TODO: Mike change to using https://stackoverflow.com/questions/33987060/python-context-manager-that-measures-time for timings
-        # print(f" fps:{int(fps)}", end='\r')
-        self.fps = fps
-        self.frame_count = frame_count
-        frame_w = frame.shape[0]
-        frame_h = frame.shape[1]
-        worker_threads = []
+        with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
+            # print(f" fps:{int(fps)}", end='\r')
+            self.fps = fps
+            self.frame_count = frame_count
+            frame_w = frame.shape[0]
+            frame_h = frame.shape[1]
+            worker_threads = []
 
-        tic1 = time.perf_counter()
+            # Mike: Not able to offload to CUDA
+            frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-        # Mike: Not able to offload to CUDA
-        frame = utils.apply_fisheye_mask(frame, self.mask_pct)
-        tic2 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Applying fisheye mask {tic2 - tic1:0.4f} seconds")
+            gpu_frame = cv2.cuda_GpuMat()
+            gpu_frame.upload(frame)
 
-        gpu_frame = cv2.cuda_GpuMat()
-        gpu_frame.upload(frame)
+            gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
+                                                self.normalised_w_h[0], self.normalised_w_h[1])
 
-        gpu_frame = utils.resize_frame_cuda(self.resize_frame, gpu_frame, frame_w, frame_h,
-                                            self.normalised_w_h[0], self.normalised_w_h[1])
-        tic3 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Resizing frame {tic3 - tic2:0.4f} seconds")
+            # Mike: Able to offload to CUDA
+            gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
+            frame_gray = gpu_frame_gray.download()
 
-        # Mike: Able to offload to CUDA
-        gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
-        frame_gray = gpu_frame_gray.download()
-        tic4 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Converting to gray scale {tic4 - tic3:0.4f} seconds")
+            # Mike: Not able to offload to CUDA
+            frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
 
-        # Mike: Not able to offload to CUDA
-        frame_gray = utils.noise_reduction(self.noise_reduction, frame_gray, self.blur_radius)
-        tic5 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Reducing noise {tic5 - tic4:0.4f} seconds")
+            self.frames = {
+                'original': frame,
+                'grey': frame_gray
+            }
 
-        self.frames = {
-            'original': frame,
-            'grey': frame_gray
-        }
+            if self.detection_mode == 'background_subtraction':
 
-        if self.detection_mode == 'background_subtraction':
+                # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
+                keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
+                if frame_count < 5:
+                    # Need 5 frames to get the background subtractor initialised
+                    return
+                self.frames['masked_background'] = frame_masked_background
+                bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
-            # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
-            tic6 = time.perf_counter()
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
-            if frame_count < 5:
-                # Need 5 frames to get the background subtractor initialised
-                return
-            self.frames['masked_background'] = frame_masked_background
-            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
-            tic7 = time.perf_counter()
-            #print(f"{frame_count}: CUDA Background subtraction {tic7 - tic6:0.4f} seconds")
+                if self.calculate_optical_flow:
+                    # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
+                    # to perform on a different thread
+                    optical_flow_cuda_thread = Thread(target=self.perform_optical_flow_cuda_task,
+                                                 args=(frame_count, frame_gray))
+                    optical_flow_cuda_thread.start()
+                    worker_threads.append(optical_flow_cuda_thread)
 
-            if self.calculate_optical_flow:
-                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                # to perform on a different thread
-                optical_flow_cuda_thread = Thread(target=self.perform_optical_flow_cuda_task,
-                                             args=(frame_count, frame_gray, tic7))
-                optical_flow_cuda_thread.start()
-                worker_threads.append(optical_flow_cuda_thread)
+            else:
+                bboxes = []
+                keypoints = []
 
-        else:
-            bboxes = []
-            keypoints = []
+            self.keypoints = keypoints
 
-        self.keypoints = keypoints
-        tic9 = time.perf_counter()
+            self.update_trackers(self.tracker_type, bboxes, frame)
 
-        self.update_trackers(self.tracker_type, bboxes, frame)
-        tic10 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Updating trackers {tic10 - tic9:0.4f} seconds")
+            frame_count + 1
 
-        frame_count + 1
+            # Mike: Wait for worker threads to join before publishing events as their results might be required
+            for worker_thread in worker_threads:
+                worker_thread.join()
 
-        # Mike: Wait for worker threads to join before publishing events as their results might be required
-        for worker_thread in worker_threads:
-            worker_thread.join()
-
-        if self.events is not None:
-            self.events.publish_process_frame(self)
-
-        tic11 = time.perf_counter()
-        #print(f"{frame_count}: CUDA Publishing process frame event {tic11 - tic10:0.4f} seconds")
-        #print(f"CUDA Frame {frame_count}: Took {tic11 - tic1:0.4f} seconds to process")
+            if self.events is not None:
+                self.events.publish_process_frame(self)
 
     def optical_flow(self, frame_gray):
         height, width = frame_gray.shape
@@ -388,15 +349,11 @@ class VideoTracker():
     def update_tracker_task(self, tracker, frame, results, index):
         results[index] = tracker.update(frame)
 
-    def perform_optical_flow_task(self, frame_count, frame_gray, tic):
+    def perform_optical_flow_task(self, frame_count, frame_gray):
         self.frames['optical_flow'] = self.optical_flow(frame_gray)
-        toc = time.perf_counter()
-        #print(f"{frame_count}: Calculating dense optical flow {toc - tic:0.4f} seconds")
 
-    def perform_optical_flow_cuda_task(self, frame_count, frame_gray, tic):
+    def perform_optical_flow_cuda_task(self, frame_count, frame_gray):
         self.frames['optical_flow'] = self.optical_flow_cuda(frame_gray)
-        toc = time.perf_counter()
-        #print(f"{frame_count}: CUDA Calculating dense optical flow {toc - tic:0.4f} seconds")
 
 #def update_tracker_task_2(tuple):
 #    (tracker, frame, results) = tuple
