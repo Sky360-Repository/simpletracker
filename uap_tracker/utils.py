@@ -212,8 +212,8 @@ def apply_background_subtraction(frame_gray, background_subtractor):
     foreground_mask = background_subtractor.apply(frame_gray)
     return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
 
-def apply_background_subtraction_cuda(gpu_frame_gray, background_subtractor):
-    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray, learningRate=0.05, stream=cv2.cuda.Stream_Null())
+def apply_background_subtraction_cuda(gpu_frame_gray, background_subtractor, stream):
+    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray, learningRate=0.05, stream=stream)
     return cv2.cuda.bitwise_and(gpu_frame_gray, gpu_frame_gray, mask=gpu_foreground_mask)
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):

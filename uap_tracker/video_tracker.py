@@ -233,23 +233,25 @@ class VideoTracker():
             # Mike: Able to offload to CUDA
             gpu_frame_gray = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
 
-            # Mike: Not able to offload to CUDA
+            # Mike: Able to offload to CUDA
             gpu_frame_gray = utils.noise_reduction_cuda(self.noise_reduction, gpu_frame_gray, self.blur_radius)
 
             self.frames['original'] = gpu_frame.download()
-            self.frames['grey'] = gpu_frame_gray.download()
+            frame_gray = gpu_frame_gray.download()
+            self.frames['grey'] = frame_gray
 
             if self.detection_mode == 'background_subtraction':
 
-                # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
+                # Mike: Able to offload some of this to CUDA
                 if self.background_subtractor_type == 'MOG2_CUDA':
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_gray)
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_gray, cv2.cuda.Stream_Null())
                 else:
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(self.frames['grey'])
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
 
                 if frame_count < 5:
                     # Need 5 frames to get the background subtractor initialised
                     return
+
                 self.frames['masked_background'] = frame_masked_background
                 bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
@@ -303,10 +305,10 @@ class VideoTracker():
             frame_masked_background, self.detection_sensitivity)
         return key_points, frame_masked_background
 
-    def keypoints_from_bg_subtraction_cuda(self, gpu_frame_gray):
+    def keypoints_from_bg_subtraction_cuda(self, gpu_frame_gray, stream):
         # MG: This needs to be done on an 8 bit gray scale image, the colour image is causing a detection cluster
         gpu_frame_masked_background = utils.apply_background_subtraction_cuda(
-            gpu_frame_gray, self.background_subtractor)
+            gpu_frame_gray, self.background_subtractor, stream)
 
         frame_masked_background = gpu_frame_masked_background.download()
 
