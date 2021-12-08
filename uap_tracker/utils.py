@@ -163,19 +163,25 @@ def scale_image_to(frame, w, h):
     else:
         return frame
 
-def scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
-    if gpu_frame_h > h or gpu_frame_w > w:
+def calc_image_scale(frame_w, frame_h, to_w, to_h):
+    if frame_h > to_h or frame_w > to_w:
         # calculate the width and height percent of original size
-        width = int((w / gpu_frame_w) * 100)
-        height = int((h / gpu_frame_h) * 100)
+        width = int((to_w / frame_w) * 100)
+        height = int((to_h / frame_h) * 100)
         # pick the largest of the two
         scale_percent = max(width, height)
         # calc the scaled width and height
-        scaled_width = int(gpu_frame_w * scale_percent / 100)
-        scaled_height = int(gpu_frame_h * scale_percent / 100)
-        return cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+        scaled_width = int(frame_w * scale_percent / 100)
+        scaled_height = int(frame_h * scale_percent / 100)
+        return (True, scaled_width, scaled_height)
     else:
-        return gpu_frame
+        return (False,  frame_w, frame_h)
+
+def scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
+    scale, scaled_height, scaled_width = calc_image_scale_cuda(gpu_frame_w, gpu_frame_h, w, h)
+    if scale:
+        gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+    return gpu_frame
 
 # mask_pct - The percentage of the fisheye you want to mask
 
@@ -206,6 +212,9 @@ def apply_background_subtraction(frame_gray, background_subtractor):
     foreground_mask = background_subtractor.apply(frame_gray)
     return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
 
+def apply_background_subtraction_cuda(gpu_frame_gray, background_subtractor):
+    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray)
+    return cv2.cuda.bitwise_and(gpu_frame_gray, gpu_frame_gray, mask=gpu_foreground_mask)
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
@@ -285,4 +294,12 @@ def noise_reduction(noise_reduction, frame, blur_radius):
         #print(f"Applying noise reduction, blur radius:{blur_radius}")
         noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
         # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
+    return noise_reduced_frame
+
+def noise_reduction_cuda(noise_reduction, gpu_frame, blur_radius):
+    gpu_noise_reduced_frame = gpu_frame
+    if noise_reduction:
+        #print(f"CUDA Applying noise reduction, blur radius:{blur_radius}")
+        gpuFilter = cv2.cuda.createGaussianFilter(cv2.CV_8UC1, cv2.CV_8UC1, (blur_radius, blur_radius), 0)
+        gpu_noise_reduced_frame = cv2.cuda_Filter.apply(gpuFilter, gpu_frame)
     return noise_reduced_frame

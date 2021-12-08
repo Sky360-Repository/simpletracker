@@ -39,6 +39,8 @@ def _setup_controller(media, events, detection_mode):
         resize_frame=settings.VideoTracker.get('resize_frame', False),
         calculate_optical_flow=settings.VideoTracker.calculate_optical_flow,
         max_active_trackers=settings.VideoTracker.max_active_trackers,
+        tracker_type=settings.VideoTracker.get('tracker_type', 'CSRT'),
+        background_subtractor_type=settings.get('background_subtractor_type', 'KNN'),
     )
 
     return controller_clz(media, video_tracker)

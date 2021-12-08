@@ -34,7 +34,23 @@ class BackgroundSubtractorFactory():
                 background_subtractor.setDist2Threshold(5000)
             else:
                 raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
-        else:
-            raise Exception('Only the KNN Background Subtractor is currently supported')
+
+        if type == 'MOG2':
+            background_subtractor = cv2.createBackgroundSubtractorMOG2()
+            background_subtractor.setHistory(1)  # large gets many detections
+            #if sensitivity == 1:  # Detects small, medium and large objects
+            #elif sensitivity == 2:  # Detects medium and large objects
+            #elif sensitivity == 3:  # Detects large objects
+            #else:
+            #    raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
+
+        if type == 'MOG2_CUDA':
+            background_subtractor = cv2.cv.cuda.createBackgroundSubtractorMOG2()
+            background_subtractor.setHistory(1)  # large gets many detections
+            #if sensitivity == 1:  # Detects small, medium and large objects
+            #elif sensitivity == 2:  # Detects medium and large objects
+            #elif sensitivity == 3:  # Detects large objects
+            #else:
+            #    raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 
         return background_subtractor
