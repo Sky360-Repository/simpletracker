@@ -211,10 +211,6 @@ class VideoTracker():
 
     def process_frame_cuda(self, frame, frame_count, fps):
 
-        if self.background_subtractor_type is not 'MOG2CUDA':
-            print(f"Note: background subtractor {self.background_subtractor_type} is not supported in CUDA mode, reverting to MOG2_CUDA")
-            self.background_subtractor = BackgroundSubtractorFactory.create('MOG2_CUDA', self.detection_sensitivity)
-
         with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
             # print(f" fps:{int(fps)}", end='\r')
             self.fps = fps
@@ -222,6 +218,7 @@ class VideoTracker():
             frame_w = frame.shape[0]
             frame_h = frame.shape[1]
             worker_threads = []
+            self.frames = {}
 
             # Mike: Not able to offload to CUDA
             frame = utils.apply_fisheye_mask(frame, self.mask_pct)
@@ -239,15 +236,17 @@ class VideoTracker():
             # Mike: Not able to offload to CUDA
             gpu_frame_gray = utils.noise_reduction_cuda(self.noise_reduction, gpu_frame_gray, self.blur_radius)
 
-            #self.frames = {
-            #    'original': frame.download(),
-            #    'grey': frame_gray
-            #}
+            self.frames['original'] = gpu_frame.download()
+            self.frames['grey'] = gpu_frame_gray.download()
 
             if self.detection_mode == 'background_subtraction':
 
                 # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
-                keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_gray)
+                if self.background_subtractor_type == 'MOG2_CUDA':
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_gray)
+                else:
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(self.frames['grey'])
+
                 if frame_count < 5:
                     # Need 5 frames to get the background subtractor initialised
                     return
@@ -268,15 +267,7 @@ class VideoTracker():
 
             self.keypoints = keypoints
 
-            frame = gpu_frame.download()
-            frame_gray = gpu_frame_gray.download()
-
-            self.frames = {
-                'original': frame,
-                'grey': frame_gray
-            }
-
-            self.update_trackers(self.tracker_type, bboxes, frame)
+            self.update_trackers(self.tracker_type, bboxes, gpu_frame.download())
 
             frame_count + 1
 

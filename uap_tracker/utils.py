@@ -213,7 +213,7 @@ def apply_background_subtraction(frame_gray, background_subtractor):
     return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
 
 def apply_background_subtraction_cuda(gpu_frame_gray, background_subtractor):
-    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray)
+    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray, learningRate=0.05, stream=cv2.cuda.Stream_Null())
     return cv2.cuda.bitwise_and(gpu_frame_gray, gpu_frame_gray, mask=gpu_foreground_mask)
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
@@ -302,4 +302,4 @@ def noise_reduction_cuda(noise_reduction, gpu_frame, blur_radius):
         #print(f"CUDA Applying noise reduction, blur radius:{blur_radius}")
         gpuFilter = cv2.cuda.createGaussianFilter(cv2.CV_8UC1, cv2.CV_8UC1, (blur_radius, blur_radius), 0)
         gpu_noise_reduced_frame = cv2.cuda_Filter.apply(gpuFilter, gpu_frame)
-    return noise_reduced_frame
+    return gpu_noise_reduced_frame

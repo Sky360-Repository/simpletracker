@@ -38,7 +38,7 @@ noise_reduction=true
 tracker_type='CSRT'
 
 # Options
-# KNN, MOG2, MOG2CUDA
+# KNN, MOG2, MOG2_CUDA
 # Note: MOG2_CUDA is currently the only supported option for cuda and if not set it will default to that
 background_subtractor_type='KNN'
 
