@@ -7,6 +7,7 @@ class BackgroundSubtractorFactory():
 
     @staticmethod
     def create(type, sensitivity):
+        background_subtractor = None
         if type == 'KNN':
             # defaults: samples:2, dist2Threshold:400.0, history: 500
             background_subtractor = cv2.createBackgroundSubtractorKNN()
@@ -52,5 +53,8 @@ class BackgroundSubtractorFactory():
             #elif sensitivity == 3:  # Detects large objects
             #else:
             #    raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
+
+        if background_subtractor is None:
+            raise Exception(f"Unknown background subtractor type ({type}).")
 
         return background_subtractor

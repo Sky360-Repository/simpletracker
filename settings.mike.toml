@@ -39,7 +39,7 @@ tracker_type='CSRT'
 
 # Options
 # KNN, MOG2, MOG2CUDA
-# Note: MOG2CUDA is currently the only supported option for cuda and if not set it will default to that
+# Note: MOG2_CUDA is currently the only supported option for cuda and if not set it will default to that
 background_subtractor_type='KNN'
 
 # The max number of concurrent active trackers

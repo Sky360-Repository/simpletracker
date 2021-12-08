@@ -54,7 +54,7 @@ class VideoTracker():
         self.dof_cuda = DenseOpticalFlowCuda(480, 480)
 
         #tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
-        #background_subtractor_types = ['KNN', 'MOG2', 'MOG2CUDA']
+        #background_subtractor_types = ['KNN', 'MOG2', 'MOG2_CUDA']
 
         self.tracker_type = tracker_type
         self.background_subtractor_type = background_subtractor_type
@@ -211,9 +211,9 @@ class VideoTracker():
 
     def process_frame_cuda(self, frame, frame_count, fps):
 
-        if background_subtractor_type is not 'MOG2CUDA':
-            print(f"Note: background subtractor {background_subtractor_type} is not supported in CUDA mode, reverting to MOG2CUDA")
-            self.background_subtractor = BackgroundSubtractorFactory.create('MOG2CUDA', self.detection_sensitivity)
+        if self.background_subtractor_type is not 'MOG2CUDA':
+            print(f"Note: background subtractor {self.background_subtractor_type} is not supported in CUDA mode, reverting to MOG2_CUDA")
+            self.background_subtractor = BackgroundSubtractorFactory.create('MOG2_CUDA', self.detection_sensitivity)
 
         with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
             # print(f" fps:{int(fps)}", end='\r')
