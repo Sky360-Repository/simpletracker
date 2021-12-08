@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-#import time
 from threading import Thread
 from uap_tracker.stopwatch import Stopwatch
 #import multiprocessing
@@ -104,11 +103,11 @@ class VideoTracker():
         #results = []
 
         #for i in range(tracker_count):
-        #    task_args.append((self.live_trackers[i], frame, results))
+        #    task_args.append((i, frame, results))
 
         # Mike: We can do the tracker updates in parallel
         #with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-        #    pool.starmap(update_tracker_task_2, task_args)
+        #    pool.starmap(self.update_tracker_task_2, task_args)
 
         threads = [None] * tracker_count
         results = [None] * tracker_count
@@ -126,7 +125,6 @@ class VideoTracker():
         for i in range(tracker_count):
             tracker = self.live_trackers[i]
             ok, bbox = results[i]
-            #tracker, ok, bbox = results[i]
             if not ok:
                 # Tracking failure
                 failed_trackers.append(tracker)
@@ -355,7 +353,7 @@ class VideoTracker():
     def perform_optical_flow_cuda_task(self, frame_count, frame_gray):
         self.frames['optical_flow'] = self.optical_flow_cuda(frame_gray)
 
-#def update_tracker_task_2(tuple):
-#    (tracker, frame, results) = tuple
-#    ok, bbox = tracker.update(frame)
-#    results[index] = (tracker, ok, bbox)
+    #def update_tracker_task_2(self, tuple):
+    #    (index, frame, results) = tuple
+    #    tracker = self.live_trackers[index]
+    #    results[index] = tracker.update(frame)
