@@ -177,11 +177,18 @@ class VideoTracker():
 
             if self.detection_mode == 'background_subtraction':
 
-                # Mike: Not able to offload to CUDA as CUDA does not have a KNN Background Subtractor impl
-                keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
+                # Mike: Able to offload some of this to CUDA
+                if self.background_subtractor_type == 'MOG2_CUDA':
+                    gpu_frame_gray = cv2.cuda_GpuMat()
+                    gpu_frame_gray.upload(frame_gray)
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_gray, cv2.cuda.Stream_Null())
+                else:
+                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_gray)
+
                 if frame_count < 5:
                     # Need 5 frames to get the background subtractor initialised
                     return
+
                 self.frames['masked_background'] = frame_masked_background
                 bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 

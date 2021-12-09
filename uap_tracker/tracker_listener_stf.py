@@ -33,7 +33,8 @@ class STFWriter():
                  video_file_root_name,
                  source_width,
                  source_height,
-                 movement_alpha=True):
+                 movement_alpha=True,
+                 video_name='video.mp4'):
 
         self.video_id = self._get_and_increment_video_count()
 
@@ -63,7 +64,7 @@ class STFWriter():
         self.images_dir = os.path.join(self.final_video_dir, 'images')
         os.mkdir(self.images_dir)
 
-        self.video_filename = os.path.join(self.final_video_dir, 'video.mp4')
+        self.video_filename = os.path.join(self.final_video_dir, video_name)
         self.annotated_video_filename = os.path.join(
             self.final_video_dir, 'annotated_video.mp4')
 
