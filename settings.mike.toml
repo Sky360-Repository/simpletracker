@@ -1,7 +1,7 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['none', 'mot_stf','sot_stf']
-output_format = 'mot_stf'
+output_format = 'none'
 
 # The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']

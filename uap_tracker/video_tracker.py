@@ -20,7 +20,7 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
-    def __init__(self, detection_mode, events, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
+    def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
                  calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT', background_subtractor_type='KNN'):
 
         print(
@@ -36,6 +36,7 @@ class VideoTracker():
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
+        self.visualizer = visualizer
         self.normalised_w_h = (1024, 1024)
         self.blur_radius = 3
         self.max_active_trackers = max_active_trackers
@@ -216,6 +217,9 @@ class VideoTracker():
             if self.events is not None:
                 self.events.publish_process_frame(self)
 
+            if self.visualizer is not None:
+                self.visualizer.Visualize(self)
+
     def process_frame_cuda(self, frame, frame_count, fps):
 
         with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
@@ -286,6 +290,9 @@ class VideoTracker():
 
             if self.events is not None:
                 self.events.publish_process_frame(self)
+
+            if self.visualizer is not None:
+                self.visualizer.Visualize(self)
 
     def optical_flow(self, frame_gray):
         height, width = frame_gray.shape

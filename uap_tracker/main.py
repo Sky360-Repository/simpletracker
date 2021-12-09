@@ -27,12 +27,13 @@ import uap_tracker.utils as utils
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
-def _setup_controller(media, events, detection_mode):
+def _setup_controller(media, events, visualizer, detection_mode):
     controller_clz = _get_controller()
 
     video_tracker = VideoTracker(
         detection_mode,
         events,
+        visualizer,
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
@@ -199,9 +200,9 @@ def main(argv):
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
             if dumpers is not None:
-                _run(controller, [listener, visualizer] + dumpers, camera, detection_mode)
+                _run(controller, [listener] + dumpers, visualizer, camera, detection_mode)
             else:
-                _run(controller, [listener, visualizer], video, detection_mode)
+                _run(controller, [listener], visualizer, camera, detection_mode)
 
 
 def _create_output_dir():
@@ -229,12 +230,12 @@ def process_file(controller, visualizer, full_path, output_dir, detection_mode):
     listener = _setup_listener(video, root_name, output_dir)
     dumpers = _setup_dumpers(video, root_name, output_dir)
     if dumpers is not None:
-        _run(controller, [listener, visualizer] + dumpers, video, detection_mode)
+        _run(controller, [listener] + dumpers, visualizer, video, detection_mode)
     else:
-        _run(controller, [listener, visualizer], video, detection_mode)
+        _run(controller, [listener], visualizer, video, detection_mode)
 
 
-def _run(controller, listeners, media, detection_mode):
+def _run(controller, listeners, visualizer, media, detection_mode):
 
     events = EventPublisher()
 
@@ -242,7 +243,7 @@ def _run(controller, listeners, media, detection_mode):
         if listener:
             events.listen(listener)
 
-    controller = _setup_controller(media, events, detection_mode)
+    controller = _setup_controller(media, events, visualizer, detection_mode)
     controller.run()
 
 
