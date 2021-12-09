@@ -3,7 +3,7 @@
 #   one of: ['none', 'mot_stf','sot_stf']
 # The following writers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background']
-output_format = 'dump_original'
+output_format = 'none'
 
 input_dir = 'input'
 output_dir = 'output'
