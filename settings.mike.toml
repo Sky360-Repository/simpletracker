@@ -18,7 +18,6 @@ controller = 'video'
 [Visualizer]
 
 # Options
-#  none = No visualisation at all, best performance
 #  noop = No visualisation at all, just a console entry
 #  simple = Displays single image with annotations, annotations are also in console output
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
