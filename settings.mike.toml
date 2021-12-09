@@ -1,9 +1,11 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['none', 'mot_stf','sot_stf']
-# The following writers give the ability to dump out video frames, mainly used for debugging purposes
-#   ['dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background']
-output_format = 'none'
+output_format = 'mot_stf'
+
+# The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
+#   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']
+frame_dumpers = 'none'
 
 input_dir = 'input'
 output_dir = 'output'

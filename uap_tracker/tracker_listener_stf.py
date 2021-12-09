@@ -50,7 +50,9 @@ class STFWriter():
 
         self.final_video_dir = os.path.join(
             stf_output_dir, f"{video_file_root_name}_{self.video_id:06}")
-        os.mkdir(self.final_video_dir)
+
+        if not os.path.isdir(self.final_video_dir):
+            os.mkdir(self.final_video_dir)
 
         self.annotations = {
             'track_labels': {},

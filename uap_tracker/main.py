@@ -27,7 +27,6 @@ import uap_tracker.utils as utils
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
-
 def _setup_controller(media, events, detection_mode):
     controller_clz = _get_controller()
 
@@ -119,16 +118,33 @@ def _setup_listener(video, root_name, output_dir):
         'mot_stf': TrackerListenerMOTStf,
         'sot_stf': TrackerListenerSOTStf,
         'video': VideoFormatter,
+    }
+    print(f"Initilaizing {settings.output_format}")
+    formatter_clz = formatters[settings.output_format]
+    if formatter_clz:
+        return formatter_clz(video, root_name, output_dir)
+
+
+def _setup_dumpers(video, root_name, output_dir):
+    dumpers = {
+        'none': None,
         'dump_original': OriginalFrameDumper,
         'dump_grey': GreyFrameDumper,
         'dump_optical_flow': OpticalFlowFrameDumper,
         'dump_annotated': AnnotatedFrameDumper,
         'dump_masked_background': MaskedBackgroundFrameDumper,
     }
-    print(f"Initilaizing {settings.output_format}")
-    formatter_clz = formatters[settings.output_format]
-    if formatter_clz:
-        return formatter_clz(video, root_name, output_dir)
+    print(f"Dumpers {settings.frame_dumpers}")
+    if settings.frame_dumpers == 'all':
+        return [OriginalFrameDumper(video, root_name, output_dir),
+                GreyFrameDumper(video, root_name, output_dir),
+                OpticalFlowFrameDumper(video, root_name, output_dir),
+                AnnotatedFrameDumper(video, root_name, output_dir),
+                MaskedBackgroundFrameDumper(video, root_name, output_dir)]
+    else:
+        dumper_clz = dumpers[settings.frame_dumpers]
+        if dumper_clz:
+            return [dumper_clz(video, root_name, output_dir)]
 
 
 def main(argv):
@@ -181,7 +197,11 @@ def main(argv):
         elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
-            _run(controller, [listener, visualizer], camera, detection_mode)
+            dumpers = _setup_dumpers(camera, 'capture', output_dir)
+            if dumpers is not None:
+                _run(controller, [listener, visualizer] + dumpers, camera, detection_mode)
+            else:
+                _run(controller, [listener, visualizer], video, detection_mode)
 
 
 def _create_output_dir():
@@ -207,8 +227,11 @@ def process_file(controller, visualizer, full_path, output_dir, detection_mode):
 
     events = EventPublisher()
     listener = _setup_listener(video, root_name, output_dir)
-
-    _run(controller, [listener, visualizer], video, detection_mode)
+    dumpers = _setup_dumpers(video, root_name, output_dir)
+    if dumpers is not None:
+        _run(controller, [listener, visualizer] + dumpers, video, detection_mode)
+    else:
+        _run(controller, [listener, visualizer], video, detection_mode)
 
 
 def _run(controller, listeners, media, detection_mode):
