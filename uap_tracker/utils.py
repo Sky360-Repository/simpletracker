@@ -208,13 +208,13 @@ def apply_fisheye_mask(frame, mask_pct):
     return clipped_masked_frame
 
 
-def apply_background_subtraction(frame_gray, background_subtractor):
-    foreground_mask = background_subtractor.apply(frame_gray)
-    return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
+def apply_background_subtraction(frame_grey, background_subtractor):
+    foreground_mask = background_subtractor.apply(frame_grey)
+    return cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
-def apply_background_subtraction_cuda(gpu_frame_gray, background_subtractor, stream):
-    gpu_foreground_mask = background_subtractor.apply(gpu_frame_gray, learningRate=0.05, stream=stream)
-    return cv2.cuda.bitwise_and(gpu_frame_gray, gpu_frame_gray, mask=gpu_foreground_mask)
+def apply_background_subtraction_cuda(gpu_frame_grey, background_subtractor, stream):
+    gpu_foreground_mask = background_subtractor.apply(gpu_frame_grey, learningRate=0.05, stream=stream)
+    return cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask)
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
@@ -224,7 +224,7 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
                 (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
 
 
-def convert_to_gray(src, dst=None):
+def convert_to_grey(src, dst=None):
     weight = 1.0 / 3.0
     m = np.array([[weight, weight, weight]], np.float32)
     return cv2.transform(src, m, dst)
@@ -293,7 +293,7 @@ def noise_reduction(noise_reduction, frame, blur_radius):
     if noise_reduction:
         #print(f"Applying noise reduction, blur radius:{blur_radius}")
         noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
-        # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
+        # frame_grey = cv2.medianBlur(frame_grey, blur_radius)
     return noise_reduced_frame
 
 def noise_reduction_cuda(noise_reduction, gpu_frame, blur_radius):

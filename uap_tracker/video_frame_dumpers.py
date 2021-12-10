@@ -85,7 +85,7 @@ class OriginalFrameDumper(DumpFormatter):
 
     def _create_dumper(self):
         width, height = self._source_video_width_height()
-        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='original_frames.mp4')
+        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='original_frames_dump.mp4')
 
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
@@ -100,7 +100,7 @@ class GreyFrameDumper(DumpFormatter):
 
     def _create_dumper(self):
         width, height = self._source_video_width_height()
-        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='grey_frames.mp4')
+        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='grey_frames_dump.mp4')
 
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
@@ -115,7 +115,7 @@ class OpticalFlowFrameDumper(DumpFormatter):
 
     def _create_dumper(self):
         width, height = self._source_video_width_height()
-        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='optical_flow_frames.mp4')
+        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='optical_flow_frames_dump.mp4')
 
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
@@ -130,7 +130,7 @@ class AnnotatedFrameDumper(DumpFormatter):
 
     def _create_dumper(self):
         width, height = self._source_video_width_height()
-        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='annotated_frames.mp4')
+        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='annotated_frames_dump.mp4')
 
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
@@ -145,7 +145,7 @@ class MaskedBackgroundFrameDumper(DumpFormatter):
 
     def _create_dumper(self):
         width, height = self._source_video_width_height()
-        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='masked_background_frames.mp4')
+        return FrameDumper(self.output_dir, self.file_name, width, height, video_name='masked_background_frames_dump.mp4')
 
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
