@@ -36,10 +36,8 @@ class VideoFormatter():
         return STFWriter(self.output_dir, self.file_name, width, height)
 
     def trackers_updated_callback(self, video_tracker):
-
         if not self.writer:
             self._start_video()
-
         self.writer.write_original_frame(video_tracker.get_image('original'))
 
     def finish(self, total_trackers_started, total_trackers_finished):

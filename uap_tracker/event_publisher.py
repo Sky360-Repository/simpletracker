@@ -16,6 +16,7 @@ class EventPublisher():
     def publish_process_frame(self, video_tracker):
         listener_threads = []
         for listener in self.listeners:
+            # self._publish_process_frame_task(listener, video_tracker)
             listener_thread = Thread(target=self._publish_process_frame_task, args=(listener, video_tracker))
             listener_thread.start()
             listener_threads.append(listener_thread)
@@ -26,6 +27,7 @@ class EventPublisher():
     def publish_finalise(self, total_trackers_started, total_trackers_finished):
         listener_threads = []
         for listener in self.listeners:
+            # self._publish_finalise_task(listener, total_trackers_started, total_trackers_finished)
             listener_thread = Thread(target=self._publish_finalise_task, args=(listener, total_trackers_started, total_trackers_finished))
             listener_thread.start()
             listener_threads.append(listener_thread)

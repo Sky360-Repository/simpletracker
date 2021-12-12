@@ -13,8 +13,11 @@ from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
+from uap_tracker.video_playback_controller_cuda import VideoPlaybackControllerCuda
 from uap_tracker.camera_stream_controller import CameraStreamController
+from uap_tracker.camera_stream_controller_cuda import CameraStreamControllerCuda
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
+from uap_tracker.video_frame_dumpers import OriginalFrameDumper, GreyFrameDumper, OpticalFlowFrameDumper, AnnotatedFrameDumper, MaskedBackgroundFrameDumper
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
@@ -24,19 +27,21 @@ import uap_tracker.utils as utils
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
-
-def _setup_controller(media, events, detection_mode):
+def _setup_controller(media, events, visualizer, detection_mode):
     controller_clz = _get_controller()
 
     video_tracker = VideoTracker(
         detection_mode,
         events,
-        enable_cuda=settings.VideoTracker.get('enable_cuda', False),
+        visualizer,
         detection_sensitivity=settings.VideoTracker.sensitivity,
         mask_pct=settings.VideoTracker.mask_pct,
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
         resize_frame=settings.VideoTracker.get('resize_frame', False),
-        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow
+        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow,
+        max_active_trackers=settings.VideoTracker.max_active_trackers,
+        tracker_type=settings.VideoTracker.get('tracker_type', 'CSRT'),
+        background_subtractor_type=settings.VideoTracker.get('background_subtractor_type', 'KNN'),
     )
 
     return controller_clz(media, video_tracker)
@@ -93,7 +98,9 @@ def _get_detection_mode():
 def _get_controller():
     controllers = {
         'video': VideoPlaybackController,
-        'camera': CameraStreamController
+        'video_cuda': VideoPlaybackControllerCuda,
+        'camera': CameraStreamController,
+        'camera_cuda': CameraStreamControllerCuda
     }
     controller_setting = settings.get('controller', None)
 
@@ -111,12 +118,34 @@ def _setup_listener(video, root_name, output_dir):
         'none': None,
         'mot_stf': TrackerListenerMOTStf,
         'sot_stf': TrackerListenerSOTStf,
-        'video': VideoFormatter
+        'video': VideoFormatter,
     }
     print(f"Initilaizing {settings.output_format}")
     formatter_clz = formatters[settings.output_format]
     if formatter_clz:
         return formatter_clz(video, root_name, output_dir)
+
+
+def _setup_dumpers(video, root_name, output_dir):
+    dumpers = {
+        'none': None,
+        'dump_original': OriginalFrameDumper,
+        'dump_grey': GreyFrameDumper,
+        'dump_optical_flow': OpticalFlowFrameDumper,
+        'dump_annotated': AnnotatedFrameDumper,
+        'dump_masked_background': MaskedBackgroundFrameDumper,
+    }
+    print(f"Dumpers {settings.frame_dumpers}")
+    if settings.frame_dumpers == 'all':
+        return [OriginalFrameDumper(video, root_name, output_dir),
+                GreyFrameDumper(video, root_name, output_dir),
+                OpticalFlowFrameDumper(video, root_name, output_dir),
+                AnnotatedFrameDumper(video, root_name, output_dir),
+                MaskedBackgroundFrameDumper(video, root_name, output_dir)]
+    else:
+        dumper_clz = dumpers[settings.frame_dumpers]
+        if dumper_clz:
+            return [dumper_clz(video, root_name, output_dir)]
 
 
 def main(argv):
@@ -169,7 +198,11 @@ def main(argv):
         elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
-            _run(controller, [listener, visualizer], camera, detection_mode)
+            dumpers = _setup_dumpers(camera, 'capture', output_dir)
+            if dumpers is not None:
+                _run(controller, [listener] + dumpers, visualizer, camera, detection_mode)
+            else:
+                _run(controller, [listener], visualizer, camera, detection_mode)
 
 
 def _create_output_dir():
@@ -195,11 +228,14 @@ def process_file(controller, visualizer, full_path, output_dir, detection_mode):
 
     events = EventPublisher()
     listener = _setup_listener(video, root_name, output_dir)
+    dumpers = _setup_dumpers(video, root_name, output_dir)
+    if dumpers is not None:
+        _run(controller, [listener] + dumpers, visualizer, video, detection_mode)
+    else:
+        _run(controller, [listener], visualizer, video, detection_mode)
 
-    _run(controller, [listener, visualizer], video, detection_mode)
 
-
-def _run(controller, listeners, media, detection_mode):
+def _run(controller, listeners, visualizer, media, detection_mode):
 
     events = EventPublisher()
 
@@ -207,7 +243,7 @@ def _run(controller, listeners, media, detection_mode):
         if listener:
             events.listen(listener)
 
-    controller = _setup_controller(media, events, detection_mode)
+    controller = _setup_controller(media, events, visualizer, detection_mode)
     controller.run()
 
 
