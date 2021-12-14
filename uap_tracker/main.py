@@ -188,14 +188,14 @@ def main(argv):
         process_file(controller, visualizer, cmdline_filename,
                      output_dir, detection_mode)
     else:
-        if controller == VideoPlaybackController:
+        if (controller == VideoPlaybackController) or (controller == VideoPlaybackControllerCuda):
 
             for filename in os.listdir(settings.input_dir):
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
 
-        elif controller == CameraStreamController:
+        elif (controller == CameraStreamController) or (controller == CameraStreamControllerCuda):
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
