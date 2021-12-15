@@ -22,8 +22,10 @@ class STFWriter():
                  movement_alpha=True,
                  annotate=True):
 
-        self.video_id = self._get_and_increment_video_count()
         self.annotate = annotate
+        self.video_id = -1
+        if annotate:
+            self.video_id = self._get_and_increment_video_count()
 
         self.writer = None
         self.annotated_writer = None
