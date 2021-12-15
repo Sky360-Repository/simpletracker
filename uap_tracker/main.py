@@ -17,7 +17,7 @@ from uap_tracker.video_playback_controller_cuda import VideoPlaybackControllerCu
 from uap_tracker.camera_stream_controller import CameraStreamController
 from uap_tracker.camera_stream_controller_cuda import CameraStreamControllerCuda
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
-from uap_tracker.video_frame_dumpers import OriginalFrameDumper, GreyFrameDumper, OpticalFlowFrameDumper, AnnotatedFrameDumper, MaskedBackgroundFrameDumper
+from uap_tracker.video_frame_dumpers import OriginalFrameVideoWriter, GreyFrameVideoWriter, OpticalFlowFrameVideoWriter, AnnotatedFrameVideoWriter, MaskedBackgroundFrameVideoWriter
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
@@ -129,19 +129,19 @@ def _setup_listener(video, root_name, output_dir):
 def _setup_dumpers(video, root_name, output_dir):
     dumpers = {
         'none': None,
-        'dump_original': OriginalFrameDumper,
-        'dump_grey': GreyFrameDumper,
-        'dump_optical_flow': OpticalFlowFrameDumper,
-        'dump_annotated': AnnotatedFrameDumper,
-        'dump_masked_background': MaskedBackgroundFrameDumper,
+        'dump_original': OriginalFrameVideoWriter,
+        'dump_grey': GreyFrameVideoWriter,
+        'dump_optical_flow': OpticalFlowFrameVideoWriter,
+        'dump_annotated': AnnotatedFrameVideoWriter,
+        'dump_masked_background': MaskedBackgroundFrameVideoWriter,
     }
     print(f"Dumpers {settings.frame_dumpers}")
     if settings.frame_dumpers == 'all':
-        return [OriginalFrameDumper(video, root_name, output_dir),
-                GreyFrameDumper(video, root_name, output_dir),
-                OpticalFlowFrameDumper(video, root_name, output_dir),
-                AnnotatedFrameDumper(video, root_name, output_dir),
-                MaskedBackgroundFrameDumper(video, root_name, output_dir)]
+        return [OriginalFrameVideoWriter(video, root_name, output_dir),
+                GreyFrameVideoWriter(video, root_name, output_dir),
+                OpticalFlowFrameVideoWriter(video, root_name, output_dir),
+                AnnotatedFrameVideoWriter(video, root_name, output_dir),
+                MaskedBackgroundFrameVideoWriter(video, root_name, output_dir)]
     else:
         dumper_clz = dumpers[settings.frame_dumpers]
         if dumper_clz:

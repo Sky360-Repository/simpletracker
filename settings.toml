@@ -5,7 +5,7 @@ output_format = 'mot_stf'
 
 # The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']
-frame_dumpers = 'none'
+frame_dumpers = 'all'
 
 input_dir = 'input'
 output_dir = 'output'
@@ -24,7 +24,7 @@ controller = 'video'
 #  simple = Displays single image with annotations, annotations are also in console output
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
-format = 'two_by_two'
+format = 'noop'
 max_display_dim = 1080
 
 
@@ -33,8 +33,8 @@ max_display_dim = 1080
 mask_pct=20
 # Detects small, medium and large objects
 sensitivity=1
-resize_frame=false
-noise_reduction=false
+resize_frame=true
+noise_reduction=true
 
 # Options
 # BOOSTING, MIL, KCF, TLD, MEDIANFLOW, GOTURN, MOSSE, CSRT, DASIAMRPN
