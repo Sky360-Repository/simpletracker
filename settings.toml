@@ -24,7 +24,7 @@ controller = 'video'
 #  simple = Displays single image with annotations, annotations are also in console output
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
-format = 'noop'
+format = 'simple'
 max_display_dim = 1080
 
 
