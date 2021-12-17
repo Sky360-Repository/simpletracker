@@ -195,7 +195,7 @@ def main(argv):
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
 
-        elif controller == CameraStreamController:
+        elif (controller in [CameraStreamController,CameraStreamControllerCuda]):
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
