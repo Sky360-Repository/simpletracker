@@ -33,7 +33,7 @@ class DenseOpticalFlowCuda():
             # set saturation to 1
             self.gpu_s_channel.upload(np.ones_like(gpu_frame.download(), np.float32))
 
-            gpu_bgr_frame.upload(np.zeros((self.height, self.width), np.uint8))
+            gpu_bgr_frame.upload(np.zeros((self.height, self.width, 3), np.uint8))
 
             return gpu_bgr_frame
 

@@ -8,6 +8,7 @@ from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
 from uap_tracker.dense_optical_flow_cuda import DenseOpticalFlowCuda
+from uap_tracker.frame_processor import  FrameProcessor, CpuFrameProcessor, GpuFrameProcessor
 
 #
 # Tracks multiple objects in a video
@@ -164,9 +165,16 @@ class VideoTracker():
             # Mike: Not able to offload to CUDA
             frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-            scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
-            if scale:
-                frame = cv2.resize(frame, (scaled_width, scaled_height))
+            #with FrameProcessor.CPU(frame) as processor:
+            #    processor.resize_frame(None, None, None)
+            #    processor.process_optical_flow(None, None, None)
+            #    processor.noise_reduction(None, None)
+            #    processor.keypoints_from_bg_subtraction(None, None)
+
+            if resize_frame:
+                scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
+                if scale:
+                    frame = cv2.resize(frame, (scaled_width, scaled_height))
 
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -236,12 +244,16 @@ class VideoTracker():
             # Mike: Not able to offload to CUDA
             frame = utils.apply_fisheye_mask(frame, self.mask_pct)
 
-            gpu_frame = cv2.cuda_GpuMat()
-            gpu_frame.upload(frame)
+            #with FrameProcessor.GPU(frame) as processor:
+            #    processor.resize_frame(None, None, None)
+            #    processor.process_optical_flow(None, None, None)
+            #    processor.noise_reduction(None, None)
+            #    processor.keypoints_from_bg_subtraction(None, None)
 
-            scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
-            if scale:
-                gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+            if resize_frame:
+                scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
+                if scale:
+                    gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
 
             # Mike: Able to offload to CUDA
             gpu_frame_grey = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
@@ -302,7 +314,7 @@ class VideoTracker():
 
     def optical_flow_cuda(self, gpu_frame_grey, frame_w, frame_h):
         gpu_dof_frame = self.dof_cuda.process_grey_frame(gpu_frame_grey)
-        cv2.cuda.resize(gpu_dof_frame, (frame_w, frame_h))
+        gpu_dof_frame = cv2.cuda.resize(gpu_dof_frame, (frame_w, frame_h))
         return gpu_dof_frame
 
     def keypoints_from_bg_subtraction(self, frame_grey):
