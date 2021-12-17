@@ -12,12 +12,17 @@ def get_cv_version():
     return (cv2.__version__).split('.')
 
 
-def resize_frame(resize, frame, use_cuda, w, h):
-    resized_frame = frame
+def resize_frame(resize, frame, w, h):
     if resize:
         #print(f"Applying Scaling to {w}, {h}")
-        resized_frame = scale_image_to(frame, use_cuda, w, h)
-    return resized_frame
+        return scale_image_to(frame, w, h)
+    return frame
+
+def resize_frame_cuda(resize, gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
+    if resize:
+        #print(f"Applying Scaling to {w}, {h}")
+        return scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h)
+    return gpu_frame
 
 
 def get_writer(output_filename, width, height):
@@ -138,19 +143,14 @@ def perform_blob_detection(frame, sensitivity):
     return keypoints
 
 
-def scale_image(frame, use_cuda, max_size_h_or_w):
-    return scale_image_to(frame, use_cuda, max_size_h_or_w, max_size_h_or_w)
+def scale_image(frame, max_size_h_or_w):
+    return scale_image_to(frame, max_size_h_or_w, max_size_h_or_w)
 
+def scale_image_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, max_size_h_or_w):
+    return scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, max_size_h_or_w, max_size_h_or_w)
 
-def scale_image_to(frame, use_cuda, w, h):
-
+def scale_image_to(frame, w, h):
     if frame.shape[0] > h or frame.shape[1] > w:
-        gpu_frame = None
-        if use_cuda:
-            # push image to the gpu for resizing
-            gpu_frame = cv2.cuda_GpuMat()
-            gpu_frame.upload(frame)
-
         # calculate the width and height percent of original size
         width = int((w / frame.shape[1]) * 100)
         height = int((h / frame.shape[0]) * 100)
@@ -159,14 +159,29 @@ def scale_image_to(frame, use_cuda, w, h):
         # calc the scaled width and height
         scaled_width = int(frame.shape[1] * scale_percent / 100)
         scaled_height = int(frame.shape[0] * scale_percent / 100)
-
-        if gpu_frame is None:
-            return cv2.resize(frame, (scaled_width, scaled_height))
-        else:
-            gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
-            return gpu_frame.download()
+        return cv2.resize(frame, (scaled_width, scaled_height))
     else:
         return frame
+
+def calc_image_scale(frame_w, frame_h, to_w, to_h):
+    if frame_h > to_h or frame_w > to_w:
+        # calculate the width and height percent of original size
+        width = int((to_w / frame_w) * 100)
+        height = int((to_h / frame_h) * 100)
+        # pick the largest of the two
+        scale_percent = max(width, height)
+        # calc the scaled width and height
+        scaled_width = int(frame_w * scale_percent / 100)
+        scaled_height = int(frame_h * scale_percent / 100)
+        return (True, scaled_width, scaled_height)
+    else:
+        return (False,  frame_w, frame_h)
+
+def scale_image_to_cuda(gpu_frame, gpu_frame_w, gpu_frame_h, w, h):
+    scale, scaled_height, scaled_width = calc_image_scale_cuda(gpu_frame_w, gpu_frame_h, w, h)
+    if scale:
+        gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+    return gpu_frame
 
 # mask_pct - The percentage of the fisheye you want to mask
 
@@ -193,10 +208,13 @@ def apply_fisheye_mask(frame, mask_pct):
     return clipped_masked_frame
 
 
-def apply_background_subtraction(frame_gray, background_subtractor):
-    foreground_mask = background_subtractor.apply(frame_gray)
-    return cv2.bitwise_and(frame_gray, frame_gray, mask=foreground_mask)
+def apply_background_subtraction(frame_grey, background_subtractor):
+    foreground_mask = background_subtractor.apply(frame_grey)
+    return cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
+def apply_background_subtraction_cuda(gpu_frame_grey, background_subtractor, stream):
+    gpu_foreground_mask = background_subtractor.apply(gpu_frame_grey, learningRate=0.05, stream=stream)
+    return cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask)
 
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
@@ -206,7 +224,7 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
                 (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
 
 
-def convert_to_gray(src, dst=None):
+def convert_to_grey(src, dst=None):
     weight = 1.0 / 3.0
     m = np.array([[weight, weight, weight]], np.float32)
     return cv2.transform(src, m, dst)
@@ -264,7 +282,7 @@ def display_frame(processed_frame, max_display_dim):
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
         # MG: scale the image to something that is of a reasonable viewing size
         frame_scaled = scale_image(
-            processed_frame, False, max_display_dim)
+            processed_frame, max_display_dim)
         # print(f"{frame_scaled.shape}")
         cv2.imshow("Tracking", frame_scaled)
     else:
@@ -275,5 +293,13 @@ def noise_reduction(noise_reduction, frame, blur_radius):
     if noise_reduction:
         #print(f"Applying noise reduction, blur radius:{blur_radius}")
         noise_reduced_frame = cv2.GaussianBlur(frame, (blur_radius, blur_radius), 0)
-        # frame_gray = cv2.medianBlur(frame_gray, blur_radius)
+        # frame_grey = cv2.medianBlur(frame_grey, blur_radius)
     return noise_reduced_frame
+
+def noise_reduction_cuda(noise_reduction, gpu_frame, blur_radius):
+    gpu_noise_reduced_frame = gpu_frame
+    if noise_reduction:
+        #print(f"CUDA Applying noise reduction, blur radius:{blur_radius}")
+        gpuFilter = cv2.cuda.createGaussianFilter(cv2.CV_8UC1, cv2.CV_8UC1, (blur_radius, blur_radius), 0)
+        gpu_noise_reduced_frame = cv2.cuda_Filter.apply(gpuFilter, gpu_frame)
+    return gpu_noise_reduced_frame

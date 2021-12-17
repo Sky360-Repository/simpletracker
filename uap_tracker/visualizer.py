@@ -12,16 +12,9 @@ class Visualizer():
         # Display result, resize it to a standard size
         utils.display_frame(frame, self.max_display_dim)
 
-    # Event Listener API
-
-    def trackers_updated_callback(self, video_tracker):
+    def Visualize(self, video_tracker):
         msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished}, {video_tracker.get_fps()}fps (Sky360)"
         print(msg)
         frame_output = self.visualise_frame(video_tracker)
         if frame_output is not None:
             self.display(frame_output)
-
-    def finish(self, total_trackers_started, total_trackers_finished):
-        pass
-
-    # End Event Listener API
