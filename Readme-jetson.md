@@ -17,7 +17,7 @@ More info on jtop can be found here: https://github.com/rbonghi/jetson_stats
    1.Select "Yes" to the docker restart prompt 
 6. Clone the git repository using the following command: ```git clone https://github.com/Sky360-Repository/simpletracker.git```
 7. Change directory to simpletracker/docker: ```cd ./simpletracker/docker```
-8. Run the run file: ```./run.sh``` - **NOTE:** This will take a while to run the first time as it needs to download all the required container layers
+8. Run the run file: ```./run-jetson-container.sh``` - **NOTE:** This will take a while to run the first time as it needs to download all the required container layers
 9. Once you have a running command prompt type: ```cd /home/simpletracker```
 10. Run the jetson run file: ```./jetson-run.sh```
     1. If you want output the results to a log file run the file using: ```./jetson-run.sh >> timings_nano_cuda_perf_test.txt``` where ***timings_nano_cuda_perf_test.txt*** is the name of the file containing the output.   
