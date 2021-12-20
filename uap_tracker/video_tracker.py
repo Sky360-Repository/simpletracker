@@ -159,7 +159,6 @@ class VideoTracker():
             frame_h = frame.shape[1]
             worker_threads = []
 
-            # Mike: Not able to offload to CUDA
             frame = frame_proc.apply_fisheye_mask(frame, self.mask_pct)
 
             if self.resize_frame:
@@ -244,10 +243,8 @@ class VideoTracker():
                 if scale:
                     gpu_frame = frame_proc.resize_frame(gpu_frame, scaled_width, scaled_height)
 
-            # Mike: Able to offload to CUDA
             gpu_frame_grey = frame_proc.convert_to_grey(gpu_frame)
 
-            # Mike: Able to offload to CUDA
             if self.noise_reduction:
                 gpu_frame_grey = frame_proc.noise_reduction(gpu_frame_grey, self.blur_radius)
 

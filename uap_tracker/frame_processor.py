@@ -6,7 +6,7 @@ class FrameProcessor():
 
     def __init__(self, frame, dof):
         self.frame = frame
-        self.frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #self.frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         self.dof = dof
 
     @staticmethod
@@ -104,10 +104,10 @@ class GpuFrameProcessor(FrameProcessor):
 
     def __init__(self, frame, dof):
         super().__init__(frame, dof)
-        self.gpu_frame_grey = cv2.cuda_GpuMat()
+        #self.gpu_frame_grey = cv2.cuda_GpuMat()
 
     def __enter__(self):
-        self.gpu_frame_grey.upload(self.frame_grey)
+        #self.gpu_frame_grey.upload(self.frame_grey)
         #print('GPU.__enter__')
         return self
 
