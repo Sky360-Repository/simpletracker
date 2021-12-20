@@ -1,6 +1,7 @@
 import cv2
 import sys
-
+from uap_tracker.frame_processor import FrameProcessor
+from uap_tracker.dense_optical_flow import DenseOpticalFlow
 
 class VideoPlaybackController():
 
@@ -23,7 +24,8 @@ class VideoPlaybackController():
 
                 timer = cv2.getTickCount()
 
-                self.video_tracker.process_frame(frame, frame_count, fps)
+                with FrameProcessor.CPU(frame, self.video_tracker.dof) as processor:
+                    self.video_tracker.process_frame(processor, frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)

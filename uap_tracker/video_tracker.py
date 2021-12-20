@@ -55,9 +55,6 @@ class VideoTracker():
         self.dof = DenseOpticalFlow(480, 480)
         self.dof_cuda = DenseOpticalFlowCuda(480, 480)
 
-        #tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT', 'DASIAMRPN']
-        #background_subtractor_types = ['KNN', 'MOG2', 'MOG2_CUDA']
-
         self.tracker_type = tracker_type
         self.background_subtractor_type = background_subtractor_type
 
@@ -152,7 +149,7 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def process_frame(self, frame, frame_count, fps):
+    def process_frame(self, frame_proc, frame, frame_count, fps):
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
             # print(f" fps:{int(fps)}", end='\r')
@@ -163,23 +160,18 @@ class VideoTracker():
             worker_threads = []
 
             # Mike: Not able to offload to CUDA
-            frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+            frame = frame_proc.apply_fisheye_mask(frame, self.mask_pct)
 
-            #with FrameProcessor.CPU(frame) as processor:
-            #    processor.resize_frame(None, None, None)
-            #    processor.process_optical_flow(None, None, None)
-            #    processor.noise_reduction(None, None)
-            #    processor.keypoints_from_bg_subtraction(None, None)
-
-            if resize_frame:
+            if self.resize_frame:
                 scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
                 if scale:
-                    frame = cv2.resize(frame, (scaled_width, scaled_height))
+                    frame = frame_proc.resize_frame(frame, scaled_width, scaled_height)
 
-            frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_grey = frame_proc.convert_to_grey(frame)
 
             # Mike: Not able to offload to CUDA
-            frame_grey = utils.noise_reduction(self.noise_reduction, frame_grey, self.blur_radius)
+            if self.noise_reduction:
+                frame_grey = frame_proc.noise_reduction(frame_grey, self.blur_radius)
 
             self.frames = {
                 'original': frame,
@@ -230,7 +222,7 @@ class VideoTracker():
             if self.visualizer is not None:
                 self.visualizer.Visualize(self)
 
-    def process_frame_cuda(self, frame, frame_count, fps):
+    def process_frame_cuda(self, frame_proc, frame, frame_count, fps):
 
         with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
             # print(f" fps:{int(fps)}", end='\r')
@@ -242,24 +234,22 @@ class VideoTracker():
             self.frames = {}
 
             # Mike: Not able to offload to CUDA
-            frame = utils.apply_fisheye_mask(frame, self.mask_pct)
+            frame = frame_proc.apply_fisheye_mask(frame, self.mask_pct)
 
-            #with FrameProcessor.GPU(frame) as processor:
-            #    processor.resize_frame(None, None, None)
-            #    processor.process_optical_flow(None, None, None)
-            #    processor.noise_reduction(None, None)
-            #    processor.keypoints_from_bg_subtraction(None, None)
+            gpu_frame = cv2.cuda_GpuMat()
+            gpu_frame.upload(frame)
 
-            if resize_frame:
+            if self.resize_frame:
                 scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
                 if scale:
-                    gpu_frame = cv2.cuda.resize(gpu_frame, (scaled_width, scaled_height))
+                    gpu_frame = frame_proc.resize_frame(gpu_frame, scaled_width, scaled_height)
 
             # Mike: Able to offload to CUDA
-            gpu_frame_grey = cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY)
+            gpu_frame_grey = frame_proc.convert_to_grey(gpu_frame)
 
             # Mike: Able to offload to CUDA
-            gpu_frame_grey = utils.noise_reduction_cuda(self.noise_reduction, gpu_frame_grey, self.blur_radius)
+            if self.noise_reduction:
+                gpu_frame_grey = frame_proc.noise_reduction(gpu_frame_grey, self.blur_radius)
 
             self.frames['original'] = gpu_frame.download()
             frame_grey = gpu_frame_grey.download()
@@ -393,8 +383,3 @@ class VideoTracker():
     def perform_optical_flow_cuda_task(self, frame_count, gpu_frame_grey, frame_w, frame_h):
         gpu_dof_frame = self.optical_flow_cuda(gpu_frame_grey, frame_w, frame_h)
         self.frames['optical_flow'] = gpu_dof_frame.download()
-
-    #def update_tracker_task_2(self, tuple):
-    #    (index, frame, results) = tuple
-    #    tracker = self.live_trackers[index]
-    #    results[index] = tracker.update(frame)

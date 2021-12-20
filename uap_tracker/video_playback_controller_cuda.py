@@ -18,7 +18,8 @@ class VideoPlaybackControllerCuda(VideoPlaybackController):
 
                 timer = cv2.getTickCount()
 
-                self.video_tracker.process_frame_cuda(frame, frame_count, fps)
+                with FrameProcessor.CPU(frame, self.video_tracker.dof_cuda) as processor:
+                    self.video_tracker.process_frame_cuda(processor, frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
