@@ -1,6 +1,7 @@
 import cv2
 import sys
 from uap_tracker.video_playback_controller import VideoPlaybackController
+from uap_tracker.frame_processor import FrameProcessor
 
 class VideoPlaybackControllerCuda(VideoPlaybackController):
 
@@ -18,7 +19,7 @@ class VideoPlaybackControllerCuda(VideoPlaybackController):
 
                 timer = cv2.getTickCount()
 
-                with FrameProcessor.CPU(frame, self.video_tracker.dof_cuda) as processor:
+                with FrameProcessor.GPU(frame, self.video_tracker.dof_cuda) as processor:
                     self.video_tracker.process_frame_cuda(processor, frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)

@@ -143,7 +143,7 @@ class GpuFrameProcessor(FrameProcessor):
         #print('GPU.noise_reduction')
         gpuFilter = cv2.cuda.createGaussianFilter(cv2.CV_8UC1, cv2.CV_8UC1, (blur_radius, blur_radius), 0)
         gpu_noise_reduced_frame = cv2.cuda_Filter.apply(gpuFilter, gpu_frame)
-        return noise_reduced_frame
+        return gpu_noise_reduced_frame
 
     def convert_to_grey(self, gpu_frame):
         # Overload this for a GPU specific implementation

@@ -15,8 +15,8 @@ class CameraStreamControllerCuda(CameraStreamController):
             success, frame = self.camera.read()
             if success:
 
-                self.video_tracker.process_frame_cuda(
-                    frame, frame_count, fps)
+                with FrameProcessor.GPU(frame, self.video_tracker.dof_cuda) as processor:
+                    self.video_tracker.process_frame_cuda(processor, frame, frame_count, fps)
 
                 # Calculate Frames per second (FPS)
                 fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
