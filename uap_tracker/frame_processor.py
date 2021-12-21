@@ -1,21 +1,21 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
+from uap_tracker.dense_optical_flow import DenseOpticalFlowCpu
+from uap_tracker.dense_optical_flow_cuda import DenseOpticalFlowCuda
 
 class FrameProcessor():
 
-    def __init__(self, frame, dof):
-        self.frame = frame
-        #self.frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    def __init__(self, dof):
         self.dof = dof
 
     @staticmethod
-    def CPU(frame_grey, dof):
-        return CpuFrameProcessor(frame_grey, dof)
+    def CPU():
+        return CpuFrameProcessor()
 
     @staticmethod
-    def GPU(frame_grey, dof):
-        return GpuFrameProcessor(frame_grey, dof)
+    def GPU():
+        return GpuFrameProcessor()
 
     def apply_fisheye_mask(self, frame, mask_pct):
         mask_height = (100 - mask_pct) / 100.0
@@ -55,8 +55,9 @@ class FrameProcessor():
 
 class CpuFrameProcessor(FrameProcessor):
 
-    def __init__(self, frame_grey, dof):
-        super().__init__(frame_grey, dof)
+    def __init__(self):
+        super().__init__(DenseOpticalFlowCpu(480, 480))
+
 
     def __enter__(self):
         #print('CPU.__enter__')
@@ -102,12 +103,10 @@ class CpuFrameProcessor(FrameProcessor):
 
 class GpuFrameProcessor(FrameProcessor):
 
-    def __init__(self, frame, dof):
-        super().__init__(frame, dof)
-        #self.gpu_frame_grey = cv2.cuda_GpuMat()
+    def __init__(self):
+        super().__init__(DenseOpticalFlowCuda(480, 480))
 
     def __enter__(self):
-        #self.gpu_frame_grey.upload(self.frame_grey)
         #print('GPU.__enter__')
         return self
 

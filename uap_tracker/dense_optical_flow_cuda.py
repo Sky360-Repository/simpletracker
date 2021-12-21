@@ -1,20 +1,20 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
+from uap_tracker.dense_optical_flow import DenseOpticalFlow
 
 
-class DenseOpticalFlowCuda():
+class DenseOpticalFlowCuda(DenseOpticalFlow):
 
     def __init__(self, width, height):
+        super().__init__(width, height)
         self.previous_gpu_frame = None
-        self.width = width
-        self.height = height
 
-    def _resize_cuda(self, gpu_frame):
+    def _resize(self, gpu_frame):
         return cv2.cuda.resize(gpu_frame, (self.width, self.height))
 
     def process_grey_frame(self, gpu_frame):
-        gpu_frame = self._resize_cuda(gpu_frame)
+        gpu_frame = self._resize(gpu_frame)
 
         gpu_bgr_frame = cv2.cuda_GpuMat()
         if self.previous_gpu_frame is None:

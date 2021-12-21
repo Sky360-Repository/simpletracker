@@ -13,20 +13,15 @@ class VideoPlaybackControllerCuda(VideoPlaybackController):
 
         frame_count = 0
         fps = 0
-        while cv2.waitKey(1) != 27:  # Escape
-            success, frame = self.capture.read()
-            if success:
-
-                timer = cv2.getTickCount()
-
-                with FrameProcessor.GPU(frame, self.video_tracker.dof_cuda) as processor:
+        with FrameProcessor.GPU() as processor:
+            while cv2.waitKey(1) != 27:  # Escape
+                success, frame = self.capture.read()
+                if success:
+                    timer = cv2.getTickCount()
                     self.video_tracker.process_frame_cuda(processor, frame, frame_count, fps)
-
-                # Calculate Frames per second (FPS)
-                fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
-
-                frame_count += 1
-            else:
-                break
-
-        self.video_tracker.finalise()
+                    # Calculate Frames per second (FPS)
+                    fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+                    frame_count += 1
+                else:
+                    break
+            self.video_tracker.finalise()

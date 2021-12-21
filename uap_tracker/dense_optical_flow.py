@@ -1,12 +1,20 @@
 import cv2
 import numpy as np
 
-
 class DenseOpticalFlow():
+
     def __init__(self, width, height):
-        self.previous_frame = None
         self.width = width
         self.height = height
+
+    def process_grey_frame(self, frame):
+        pass
+
+class DenseOpticalFlowCpu(DenseOpticalFlow):
+    def __init__(self, width, height):
+        super().__init__(width, height)
+
+        self.previous_frame = None
 
         # create hsv output for optical flow
         self.hsv = np.zeros((self.height, self.width, 3), np.float32)
