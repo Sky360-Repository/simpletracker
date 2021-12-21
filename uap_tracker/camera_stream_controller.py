@@ -33,7 +33,6 @@ class CameraStreamController():
 
         frame_count = 0
         fps = 0
-
         frame = np.empty((1024, 1024, 3),np.uint8)
         frame_grey = np.empty((1024, 1024, 3),np.uint8)
         frame_masked_background = np.empty((1024, 1024, 3),np.uint8)

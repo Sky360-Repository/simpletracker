@@ -11,12 +11,14 @@ class VideoPlaybackControllerCuda(VideoPlaybackController):
             print(f"Could not open video stream")
             sys.exit()
 
+        frame_count = 0
+        fps = 0
         frame = np.empty((1024, 1024, 3),np.uint8)
         frame_grey = np.empty((1024, 1024, 3),np.uint8)
         frame_masked_background = np.empty((1024, 1024, 3),np.uint8)
         keypoints = []
 
-        with FrameProcessor.CPU(
+        with FrameProcessor.GPU(
                 resize_frame=self.video_tracker.resize_frame,
                 noise_reduction=self.video_tracker.noise_reduction,
                 mask_pct=self.video_tracker.mask_pct,
