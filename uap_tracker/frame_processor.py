@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
-from uap_tracker.dense_optical_flow import DenseOpticalFlowCpu
-from uap_tracker.dense_optical_flow_cuda import DenseOpticalFlowCuda
+from uap_tracker.dense_optical_flow import CpuDenseOpticalFlow, GpuDenseOpticalFlow
 
 class FrameProcessor():
 
@@ -56,7 +55,7 @@ class FrameProcessor():
 class CpuFrameProcessor(FrameProcessor):
 
     def __init__(self):
-        super().__init__(DenseOpticalFlowCpu(480, 480))
+        super().__init__(CpuDenseOpticalFlow(480, 480))
 
 
     def __enter__(self):
@@ -104,7 +103,7 @@ class CpuFrameProcessor(FrameProcessor):
 class GpuFrameProcessor(FrameProcessor):
 
     def __init__(self):
-        super().__init__(DenseOpticalFlowCuda(480, 480))
+        super().__init__(GpuDenseOpticalFlow(480, 480))
 
     def __enter__(self):
         #print('GPU.__enter__')

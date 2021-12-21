@@ -6,8 +6,7 @@ from uap_tracker.stopwatch import Stopwatch
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
-from uap_tracker.dense_optical_flow import DenseOpticalFlowCpu
-from uap_tracker.dense_optical_flow_cuda import DenseOpticalFlowCuda
+from uap_tracker.dense_optical_flow import CpuDenseOpticalFlow, GpuDenseOpticalFlow
 from uap_tracker.frame_processor import  FrameProcessor, CpuFrameProcessor, GpuFrameProcessor
 
 #
@@ -52,8 +51,8 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
 
-        self.dof = DenseOpticalFlowCpu(480, 480)
-        self.dof_cuda = DenseOpticalFlowCuda(480, 480)
+        self.dof = CpuDenseOpticalFlow(480, 480)
+        self.dof_cuda = GpuDenseOpticalFlow(480, 480)
 
         self.tracker_type = tracker_type
         self.background_subtractor_type = background_subtractor_type
