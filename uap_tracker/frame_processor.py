@@ -216,8 +216,7 @@ class GpuFrameProcessor(FrameProcessor):
 
     def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
         # Overload this for a GPU specific implementation
-        print('GPU.keypoints_from_bg_subtraction')
-        #gpu_frame_masked_background = utils.apply_background_subtraction_cuda(gpu_frame_grey, background_subtractor, stream)
+        # print('GPU.keypoints_from_bg_subtraction')
         gpu_foreground_mask = self.background_subtractor.apply(gpu_frame_grey, learningRate=0.05, stream=stream)
         gpu_frame_masked_background = cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask)
         frame_masked_background = gpu_frame_masked_background.download()
@@ -274,7 +273,7 @@ class GpuFrameProcessor(FrameProcessor):
              if self.dense_optical_flow is not None:
                  # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
                  # to perform on a different thread
-                 optical_flow_thread = Thread(target=self.perform_optical_flow_cuda_task,
+                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
                                               args=(video_tracker, frame_count, gpu_frame_grey, scaled_width, scaled_height))
                  optical_flow_thread.start()
                  worker_threads.append(optical_flow_thread)

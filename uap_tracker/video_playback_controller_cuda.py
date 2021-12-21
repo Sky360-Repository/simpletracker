@@ -1,5 +1,6 @@
 import cv2
 import sys
+import numpy as np
 from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.frame_processor import FrameProcessor
 

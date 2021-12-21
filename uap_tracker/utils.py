@@ -136,16 +136,6 @@ def calc_image_scale(frame_w, frame_h, to_w, to_h):
     else:
         return (False,  frame_w, frame_h)
 
-# mask_pct - The percentage of the fisheye you want to mask
-
-def apply_background_subtraction(frame_grey, background_subtractor):
-    foreground_mask = background_subtractor.apply(frame_grey)
-    return cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
-
-def apply_background_subtraction_cuda(gpu_frame_grey, background_subtractor, stream):
-    gpu_foreground_mask = background_subtractor.apply(gpu_frame_grey, learningRate=0.05, stream=stream)
-    return cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask)
-
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p1 = (int(bbox[0]), int(bbox[1]))
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))

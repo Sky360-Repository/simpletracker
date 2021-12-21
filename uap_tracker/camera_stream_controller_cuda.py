@@ -1,6 +1,7 @@
 import cv2
 import sys
 import datetime
+import numpy as np
 from datetime import timedelta
 from uap_tracker.camera_stream_controller import CameraStreamController
 
