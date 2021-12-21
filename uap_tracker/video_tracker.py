@@ -148,182 +148,21 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def process_frame(self, frame_proc, frame, frame_count, fps):
+    def process_frame(self, frame_proc, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream=None):
+
+        self.fps = fps
+        self.frame_count = frame_count
+        self.frames = {}
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
-            # print(f" fps:{int(fps)}", end='\r')
-            self.fps = fps
-            self.frame_count = frame_count
-            frame_w = frame.shape[0]
-            frame_h = frame.shape[1]
-            worker_threads = []
 
-            frame = frame_proc.apply_fisheye_mask(frame, self.mask_pct)
-
-            if self.resize_frame:
-                scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
-                if scale:
-                    frame = frame_proc.resize_frame(frame, scaled_width, scaled_height)
-
-            frame_grey = frame_proc.convert_to_grey(frame)
-
-            # Mike: Not able to offload to CUDA
-            if self.noise_reduction:
-                frame_grey = frame_proc.noise_reduction(frame_grey, self.blur_radius)
-
-            self.frames = {
-                'original': frame,
-                'grey': frame_grey
-            }
-
-            if self.detection_mode == 'background_subtraction':
-
-                # Mike: Able to offload some of this to CUDA
-                if self.background_subtractor_type == 'MOG2_CUDA':
-                    gpu_frame_grey = cv2.cuda_GpuMat()
-                    gpu_frame_grey.upload(frame_grey)
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_grey, cv2.cuda.Stream_Null())
-                else:
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_grey)
-
-                if frame_count < 5:
-                    # Need 5 frames to get the background subtractor initialised
-                    return
-
-                self.frames['masked_background'] = frame_masked_background
-                bboxes = [utils.kp_to_bbox(x) for x in keypoints]
-
-                if self.calculate_optical_flow:
-                    # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                    # to perform on a different thread
-                    optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                                 args=(frame_count, frame_grey, scaled_width, scaled_height))
-                    optical_flow_thread.start()
-                    worker_threads.append(optical_flow_thread)
-            else:
-                bboxes = []
-                keypoints = []
-
-            self.keypoints = keypoints
-
-            self.update_trackers(self.tracker_type, bboxes, frame)
-
-            frame_count + 1
-
-            # Mike: Wait for worker threads to join before publishing events as their results might be required
-            for worker_thread in worker_threads:
-                worker_thread.join()
+            frame_proc.process_frame(self, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream)
 
             if self.events is not None:
                 self.events.publish_process_frame(self)
 
             if self.visualizer is not None:
                 self.visualizer.Visualize(self)
-
-    def process_frame_cuda(self, frame_proc, frame, frame_count, fps):
-
-        with Stopwatch(mask='CUDA Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
-            # print(f" fps:{int(fps)}", end='\r')
-            self.fps = fps
-            self.frame_count = frame_count
-            frame_w = frame.shape[0]
-            frame_h = frame.shape[1]
-            worker_threads = []
-            self.frames = {}
-
-            # Mike: Not able to offload to CUDA
-            frame = frame_proc.apply_fisheye_mask(frame, self.mask_pct)
-
-            gpu_frame = cv2.cuda_GpuMat()
-            gpu_frame.upload(frame)
-
-            if self.resize_frame:
-                scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
-                if scale:
-                    gpu_frame = frame_proc.resize_frame(gpu_frame, scaled_width, scaled_height)
-
-            gpu_frame_grey = frame_proc.convert_to_grey(gpu_frame)
-
-            if self.noise_reduction:
-                gpu_frame_grey = frame_proc.noise_reduction(gpu_frame_grey, self.blur_radius)
-
-            self.frames['original'] = gpu_frame.download()
-            frame_grey = gpu_frame_grey.download()
-            self.frames['grey'] = frame_grey
-
-            if self.detection_mode == 'background_subtraction':
-
-                # Mike: Able to offload some of this to CUDA
-                if self.background_subtractor_type == 'MOG2_CUDA':
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction_cuda(gpu_frame_grey, cv2.cuda.Stream_Null())
-                else:
-                    keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_grey)
-
-                if frame_count < 5:
-                    # Need 5 frames to get the background subtractor initialised
-                    return
-
-                self.frames['masked_background'] = frame_masked_background
-                bboxes = [utils.kp_to_bbox(x) for x in keypoints]
-
-                if self.calculate_optical_flow:
-                    # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                    # to perform on a different thread
-                    optical_flow_cuda_thread = Thread(target=self.perform_optical_flow_cuda_task,
-                                                 args=(frame_count, gpu_frame_grey, scaled_width, scaled_height))
-                    optical_flow_cuda_thread.start()
-                    worker_threads.append(optical_flow_cuda_thread)
-
-            else:
-                bboxes = []
-                keypoints = []
-
-            self.keypoints = keypoints
-
-            self.update_trackers(self.tracker_type, bboxes, gpu_frame.download())
-
-            frame_count + 1
-
-            # Mike: Wait for worker threads to join before publishing events as their results might be required
-            for worker_thread in worker_threads:
-                worker_thread.join()
-
-            if self.events is not None:
-                self.events.publish_process_frame(self)
-
-            if self.visualizer is not None:
-                self.visualizer.Visualize(self)
-
-    def optical_flow(self, frame_grey, frame_w, frame_h):
-        dof_frame = self.dof.process_grey_frame(frame_grey)
-        return cv2.resize(dof_frame, (frame_w, frame_h))
-
-    def optical_flow_cuda(self, gpu_frame_grey, frame_w, frame_h):
-        gpu_dof_frame = self.dof_cuda.process_grey_frame(gpu_frame_grey)
-        gpu_dof_frame = cv2.cuda.resize(gpu_dof_frame, (frame_w, frame_h))
-        return gpu_dof_frame
-
-    def keypoints_from_bg_subtraction(self, frame_grey):
-        # MG: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        frame_masked_background = utils.apply_background_subtraction(
-            frame_grey, self.background_subtractor)
-
-        # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(
-            frame_masked_background, self.detection_sensitivity)
-        return key_points, frame_masked_background
-
-    def keypoints_from_bg_subtraction_cuda(self, gpu_frame_grey, stream):
-        # MG: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        gpu_frame_masked_background = utils.apply_background_subtraction_cuda(
-            gpu_frame_grey, self.background_subtractor, stream)
-
-        frame_masked_background = gpu_frame_masked_background.download()
-
-        # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(
-            frame_masked_background, self.detection_sensitivity)
-        return key_points, frame_masked_background
 
     def finalise(self):
         if self.events is not None:
@@ -333,7 +172,10 @@ class VideoTracker():
     # called from listeners / visualizers
     # returns named image for current frame
     def get_image(self, frame_name):
-        return self.frames[frame_name]
+        frame = None
+        if frame_name in self.frames:
+            frame = self.frames[frame_name]
+        return frame
 
     # called from listeners / visualizers
     # returns annotated image for current frame
@@ -372,10 +214,3 @@ class VideoTracker():
     # Mike: Identifying tasks that can be called on seperate threads to try and speed this sucker up
     def update_tracker_task(self, tracker, frame, results, index):
         results[index] = tracker.update(frame)
-
-    def perform_optical_flow_task(self, frame_count, frame_grey, frame_w, frame_h):
-        self.frames['optical_flow'] = self.optical_flow(frame_grey, frame_w, frame_h)
-
-    def perform_optical_flow_cuda_task(self, frame_count, gpu_frame_grey, frame_w, frame_h):
-        gpu_dof_frame = self.optical_flow_cuda(gpu_frame_grey, frame_w, frame_h)
-        self.frames['optical_flow'] = gpu_dof_frame.download()
