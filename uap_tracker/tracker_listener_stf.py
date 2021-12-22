@@ -4,7 +4,6 @@ import uap_tracker.utils as utils
 from uap_tracker.stf_writer import STFWriter
 import json
 import numpy as np
-import shutil
 import uuid
 
 #
