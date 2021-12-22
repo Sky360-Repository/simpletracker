@@ -13,9 +13,7 @@ from uap_tracker.simple_visualiser import SimpleVisualiser
 from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
 from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
-from uap_tracker.video_playback_controller_cuda import VideoPlaybackControllerCuda
 from uap_tracker.camera_stream_controller import CameraStreamController
-from uap_tracker.camera_stream_controller_cuda import CameraStreamControllerCuda
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from uap_tracker.video_frame_dumpers import OriginalFrameVideoWriter, GreyFrameVideoWriter, OpticalFlowFrameVideoWriter, AnnotatedFrameVideoWriter, MaskedBackgroundFrameVideoWriter
 from config import settings
@@ -39,12 +37,10 @@ def _setup_controller(media, events, visualizer, detection_mode):
         noise_reduction=settings.VideoTracker.get('noise_reduction', False),
         resize_frame=settings.VideoTracker.get('resize_frame', False),
         calculate_optical_flow=settings.VideoTracker.calculate_optical_flow,
-        max_active_trackers=settings.VideoTracker.max_active_trackers,
-        tracker_type=settings.VideoTracker.get('tracker_type', 'CSRT'),
-        background_subtractor_type=settings.VideoTracker.get('background_subtractor_type', 'KNN'),
+        max_active_trackers=settings.VideoTracker.max_active_trackers
     )
 
-    return controller_clz(media, video_tracker)
+    return controller_clz(media, video_tracker, settings.enable_cuda)
 
 
 def _get_visualizer(detection_mode):
@@ -98,9 +94,7 @@ def _get_detection_mode():
 def _get_controller():
     controllers = {
         'video': VideoPlaybackController,
-        'video_cuda': VideoPlaybackControllerCuda,
         'camera': CameraStreamController,
-        'camera_cuda': CameraStreamControllerCuda
     }
     controller_setting = settings.get('controller', None)
 
@@ -188,14 +182,14 @@ def main(argv):
         process_file(controller, visualizer, cmdline_filename,
                      output_dir, detection_mode)
     else:
-        if (controller == VideoPlaybackController) or (controller == VideoPlaybackControllerCuda):
+        if controller == VideoPlaybackController:
 
             for filename in os.listdir(settings.input_dir):
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
 
-        elif (controller == CameraStreamController) or (controller == CameraStreamControllerCuda):
+        elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)

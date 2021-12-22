@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 from threading import Thread
 import uap_tracker.utils as utils
-from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
-from uap_tracker.dense_optical_flow import CpuDenseOpticalFlow, GpuDenseOpticalFlow
 
 class FrameProcessor():
 
@@ -19,28 +17,35 @@ class FrameProcessor():
         self.normalised_w_h = (1024, 1024)
 
     @staticmethod
-    def CPU(resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        return CpuFrameProcessor(
-            CpuDenseOpticalFlow(480, 480),
-            BackgroundSubtractorFactory.create('KNN', detection_sensitivity),
-            resize_frame,
-            noise_reduction,
-            mask_pct,
-            detection_mode,
-            detection_sensitivity,
-            blur_radius)
+    def Select(enable_cuda, dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+        if enable_cuda:
+            return FrameProcessor.GPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
+
+        return FrameProcessor.CPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
 
     @staticmethod
-    def GPU(resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        return GpuFrameProcessor(
-            GpuDenseOpticalFlow(480, 480),
-            BackgroundSubtractorFactory.create('MOG2_CUDA', detection_sensitivity),
+    def CPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+        return CpuFrameProcessor(
+            dense_optical_flow,
+            background_subtractor,
             resize_frame,
             noise_reduction,
             mask_pct,
             detection_mode,
             detection_sensitivity,
-            blur_radius)
+            blur_radius=3)
+
+    @staticmethod
+    def GPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+        return GpuFrameProcessor(
+            dense_optical_flow,
+            background_subtractor,
+            resize_frame,
+            noise_reduction,
+            mask_pct,
+            detection_mode,
+            detection_sensitivity,
+            blur_radius=3)
 
     def apply_fisheye_mask(self, frame, mask_pct):
         mask_height = (100 - mask_pct) / 100.0
@@ -51,8 +56,7 @@ class FrameProcessor():
         new_width = int(mask_height * width)
         new_height = int(mask_height * height)
         mask = np.zeros(shape, dtype="uint8")
-        cv2.circle(mask, (int(width / 2), int(height / 2)),
-                   int(min(height, width) * mask_radius), 255, -1)
+        cv2.circle(mask, (int(width / 2), int(height / 2)), int(min(height, width) * mask_radius), 255, -1)
         masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
         clipped_masked_frame = utils.clip_at_center(
             masked_frame,
@@ -157,7 +161,8 @@ class CpuFrameProcessor(FrameProcessor):
 
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
-                return
+                video_tracker.frames['masked_background'] = np.zeros((scaled_height, scaled_width, 1), np.uint8)
+                return keypoints
 
             video_tracker.frames['masked_background'] = frame_masked_background
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
@@ -180,6 +185,8 @@ class CpuFrameProcessor(FrameProcessor):
         # Mike: Wait for worker threads to join before publishing events as their results might be required
         for worker_thread in worker_threads:
             worker_thread.join()
+
+        return keypoints
 
     def perform_optical_flow_task(self, video_tracker, frame_count, frame_grey, frame_w, frame_h):
         video_tracker.frames['optical_flow'] = self.process_optical_flow(frame_grey, frame_w, frame_h)
@@ -265,7 +272,8 @@ class GpuFrameProcessor(FrameProcessor):
 
              if frame_count < 5:
                  # Need 5 frames to get the background subtractor initialised
-                 return
+                 video_tracker.frames['masked_background'] = np.zeros((scaled_height, scaled_width, 1), np.uint8)
+                 return keypoints
 
              video_tracker.frames['masked_background'] = frame_masked_background
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
@@ -288,6 +296,8 @@ class GpuFrameProcessor(FrameProcessor):
          # Mike: Wait for worker threads to join before publishing events as their results might be required
          for worker_thread in worker_threads:
              worker_thread.join()
+
+         return keypoints
 
     def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h)

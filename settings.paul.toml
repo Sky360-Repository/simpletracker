@@ -1,21 +1,21 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['none', 'mot_stf','sot_stf']
-output_format = 'mot_stf'
+output_format='mot_stf'
 
 # The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']
-frame_dumpers = 'none'
+frame_dumpers='none'
 
-input_dir = 'input'
-output_dir = 'output'
+input_dir='input'
+output_dir='output'
 
 # Options
 #  video = video playback
-#  video_cuda = video playback with cuda support
 #  camera = camera stream
-#  camera_cuda = camera stream with cuda support
-controller = 'video'
+controller='video'
+
+enable_cuda=false
 
 [Visualizer]
 
@@ -24,8 +24,8 @@ controller = 'video'
 #  simple = Displays single image with annotations, annotations are also in console output
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
-format = 'two_by_two'
-max_display_dim = 1080
+format='two_by_two'
+max_display_dim=1080
 
 
 [VideoTracker]
@@ -35,15 +35,6 @@ mask_pct=20
 sensitivity=1
 resize_frame=false
 noise_reduction=false
-
-# Options
-# BOOSTING, MIL, KCF, TLD, MEDIANFLOW, GOTURN, MOSSE, CSRT, DASIAMRPN
-tracker_type='CSRT'
-
-# Options
-# KNN, MOG2, MOG2_CUDA
-# Note: MOG2_CUDA is currently the only supported option for cuda and if not set it will default to that
-background_subtractor_type='KNN'
 
 # The max number of concurrent active trackers
 max_active_trackers=10
@@ -56,5 +47,5 @@ calculate_optical_flow=true
 
 [Camera]
 
-camera_mode = 'rtsp'
+camera_mode='rtsp'
 # N.B. place camera_uri in secrets.toml

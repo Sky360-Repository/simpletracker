@@ -3,13 +3,15 @@ import sys
 import numpy as np
 from uap_tracker.frame_processor import FrameProcessor
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
+from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 
 class VideoPlaybackController():
 
-    def __init__(self, capture, video_tracker):
+    def __init__(self, capture, video_tracker, enable_cuda=False):
 
         self.capture = capture
         self.video_tracker = video_tracker
+        self.enable_cuda = enable_cuda
 
     def run(self):
 
@@ -23,14 +25,22 @@ class VideoPlaybackController():
         frame_grey = np.empty((1024, 1024, 3),np.uint8)
         frame_masked_background = np.empty((1024, 1024, 3),np.uint8)
         keypoints = []
+        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.enable_cuda, sensitivity=self.video_tracker.detection_sensitivity)
 
-        with FrameProcessor.CPU(
+        dense_optical_flow = None
+        if self.video_tracker.calculate_optical_flow:
+            dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.enable_cuda, width=480, height=480)
+
+        with FrameProcessor.Select(
+                enable_cuda=self.enable_cuda,
+                dense_optical_flow=dense_optical_flow,
+                background_subtractor=background_subtractor,
                 resize_frame=self.video_tracker.resize_frame,
                 noise_reduction=self.video_tracker.noise_reduction,
                 mask_pct=self.video_tracker.mask_pct,
                 detection_mode=self.video_tracker.detection_mode,
-                detection_sensitivity=self.video_tracker.detection_sensitivity,
-                blur_radius=self.video_tracker.blur_radius) as processor:
+                detection_sensitivity=self.video_tracker.detection_sensitivity) as processor:
+
             while cv2.waitKey(1) != 27:  # Escape
                 success, frame = self.capture.read()
                 if success:

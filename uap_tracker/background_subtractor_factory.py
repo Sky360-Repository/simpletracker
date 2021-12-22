@@ -6,6 +6,13 @@ import cv2
 class BackgroundSubtractorFactory():
 
     @staticmethod
+    def Select(enable_cuda, sensitivity):
+        if enable_cuda:
+            return BackgroundSubtractorFactory.create('MOG2_CUDA', sensitivity)
+
+        return BackgroundSubtractorFactory.create('KNN', sensitivity)
+
+    @staticmethod
     def create(type, sensitivity):
         background_subtractor = None
         if type == 'KNN':

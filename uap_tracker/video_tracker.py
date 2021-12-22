@@ -5,9 +5,6 @@ from uap_tracker.stopwatch import Stopwatch
 #import multiprocessing
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
-from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
-from uap_tracker.dense_optical_flow import CpuDenseOpticalFlow, GpuDenseOpticalFlow
-from uap_tracker.frame_processor import  FrameProcessor, CpuFrameProcessor, GpuFrameProcessor
 
 #
 # Tracks multiple objects in a video
@@ -21,10 +18,10 @@ class VideoTracker():
     DETECTION_SENSITIVITY_LOW = 3
 
     def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
-                 calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT', background_subtractor_type='KNN'):
+                 calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}\n  background_subtractor_type:{background_subtractor_type}")
+            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -37,28 +34,14 @@ class VideoTracker():
         self.live_trackers = []
         self.events = events
         self.visualizer = visualizer
-        self.normalised_w_h = (1024, 1024)
-        self.blur_radius = 3
         self.max_active_trackers = max_active_trackers
         self.mask_pct = mask_pct
         self.calculate_optical_flow = calculate_optical_flow
-
         self.noise_reduction = noise_reduction
         self.resize_frame = resize_frame
-        self.tracker_type = None
-        self.background_subtractor_type = None
-        self.background_subtractor = None
         self.frame_output = None
         self.frame_masked_background = None
-
-        self.dof = CpuDenseOpticalFlow(480, 480)
-        self.dof_cuda = GpuDenseOpticalFlow(480, 480)
-
         self.tracker_type = tracker_type
-        self.background_subtractor_type = background_subtractor_type
-
-        self.background_subtractor = BackgroundSubtractorFactory.create(
-            self.background_subtractor_type, self.detection_sensitivity)
 
     @property
     def is_tracking(self):
@@ -97,16 +80,6 @@ class VideoTracker():
         failed_trackers = []
         tracker_count = len(self.live_trackers)
 
-        #task_args = []
-        #results = []
-
-        #for i in range(tracker_count):
-        #    task_args.append((i, frame, results))
-
-        # Mike: We can do the tracker updates in parallel
-        #with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-        #    pool.starmap(self.update_tracker_task_2, task_args)
-
         threads = [None] * tracker_count
         results = [None] * tracker_count
 
@@ -128,7 +101,6 @@ class VideoTracker():
                 failed_trackers.append(tracker)
 
             # Try to match the new detections with this tracker
-            #if ok:
             for new_bbox in bboxes:
                 if new_bbox in unmatched_bboxes:
                     overlap = utils.bbox_overlap(bbox, new_bbox)
@@ -156,7 +128,7 @@ class VideoTracker():
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
 
-            frame_proc.process_frame(self, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream)
+            self.keypoints = frame_proc.process_frame(self, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream)
 
             if self.events is not None:
                 self.events.publish_process_frame(self)

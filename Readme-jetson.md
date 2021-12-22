@@ -36,10 +36,4 @@ You can also create your own settings file and update the run.sh file in the doc
 
 ##Enabling CUDA support
 
-CUDA support is managed by the type of controller you would like to use. There are 2 main controller options at present, 
-namely the Video Playback Controller and the Camera Controller. Both of these have CUDA support however this is still 
-under active development. 
-
-The main driver for which controller is used is driven by the *controller* setting in the setting.toml file. If you do 
-not require CUDA support for e.g. video playback select the "video" option. If you are able to utilise CUDA then select the 
-"video_cuda" option. There are further options but for these you need to review the comments in the settings.toml file.
+CUDA support is managed by the *enable_cuda* setting in the setting.toml file.

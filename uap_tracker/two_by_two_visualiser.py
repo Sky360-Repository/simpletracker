@@ -21,8 +21,7 @@ class TwoByTwoVisualiser(Visualizer):
             video_tracker, frame_output, self.font_size, self.font_colour, fps)
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
-        frame_masked_background_copy = cv2.cvtColor(
-            frame_masked_background, cv2.COLOR_GRAY2BGR)
+        frame_masked_background_copy = cv2.cvtColor(frame_masked_background, cv2.COLOR_GRAY2BGR)
 
         frame_masked_background_with_key_points = cv2.drawKeypoints(
             frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
@@ -35,6 +34,11 @@ class TwoByTwoVisualiser(Visualizer):
         bottom_left_frame = frame_masked_background_copy
         bottom_right_frame = frame_masked_background_with_key_points
 
+        max_display_dim = 1080
+
         return utils.combine_frames_2x2(
-            frame_input, frame_output, bottom_left_frame, bottom_right_frame
+            cv2.resize(frame_input, (max_display_dim, max_display_dim)),
+            cv2.resize(frame_output, (max_display_dim, max_display_dim)),
+            cv2.resize(bottom_left_frame, (max_display_dim, max_display_dim)),
+            cv2.resize(bottom_right_frame, (max_display_dim, max_display_dim))
         )

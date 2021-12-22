@@ -8,6 +8,21 @@ class DenseOpticalFlow():
         self.width = width
         self.height = height
 
+    @staticmethod
+    def Select(enable_cuda, width, height):
+        if enable_cuda:
+            return DenseOpticalFlow.GPU(width, height)
+
+        return DenseOpticalFlow.CPU(width, height)
+
+    @staticmethod
+    def CPU(width, height):
+        return CpuDenseOpticalFlow(width, height)
+
+    @staticmethod
+    def GPU(width, height):
+        return GpuDenseOpticalFlow(width, height)
+
     def process_grey_frame(self, frame):
         pass
 
