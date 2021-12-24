@@ -36,6 +36,7 @@ class VideoPlaybackController():
                 dense_optical_flow=dense_optical_flow,
                 background_subtractor=background_subtractor,
                 resize_frame=self.video_tracker.resize_frame,
+                resize_dim=self.video_tracker.resize_dim,
                 noise_reduction=self.video_tracker.noise_reduction,
                 mask_pct=self.video_tracker.mask_pct,
                 detection_mode=self.video_tracker.detection_mode,

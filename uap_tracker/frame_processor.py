@@ -5,7 +5,7 @@ import uap_tracker.utils as utils
 
 class FrameProcessor():
 
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
+    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
         self.dense_optical_flow = dense_optical_flow
         self.background_subtractor = background_subtractor
         self.resize_frame = resize_frame
@@ -14,21 +14,22 @@ class FrameProcessor():
         self.detection_mode = detection_mode
         self.detection_sensitivity = detection_sensitivity
         self.blur_radius = blur_radius
-        self.normalised_w_h = (1024, 1024)
+        self.max_dim = (resize_dim, resize_dim)
 
     @staticmethod
-    def Select(enable_cuda, dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def Select(enable_cuda, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
         if enable_cuda:
-            return FrameProcessor.GPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
+            return FrameProcessor.GPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
 
-        return FrameProcessor.CPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
+        return FrameProcessor.CPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
 
     @staticmethod
-    def CPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def CPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
         return CpuFrameProcessor(
             dense_optical_flow,
             background_subtractor,
             resize_frame,
+            resize_dim,
             noise_reduction,
             mask_pct,
             detection_mode,
@@ -36,11 +37,12 @@ class FrameProcessor():
             blur_radius=3)
 
     @staticmethod
-    def GPU(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def GPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
         return GpuFrameProcessor(
             dense_optical_flow,
             background_subtractor,
             resize_frame,
+            resize_dim,
             noise_reduction,
             mask_pct,
             detection_mode,
@@ -87,8 +89,8 @@ class FrameProcessor():
 
 class CpuFrameProcessor(FrameProcessor):
 
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
+    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
+        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
 
     def __enter__(self):
         #print('CPU.__enter__')
@@ -134,20 +136,21 @@ class CpuFrameProcessor(FrameProcessor):
     def process_frame(self, video_tracker, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream=None):
 
         # print(f" fps:{int(fps)}", end='\r')
+
+        frame = self.apply_fisheye_mask(frame, self.mask_pct)
+
+        # Mike: Recording height and width is done after the mask is applied as it will change the shape of the frame
         frame_w = scaled_width = frame.shape[0]
         frame_h = scaled_height = frame.shape[1]
         worker_threads = []
 
-        frame = self.apply_fisheye_mask(frame, self.mask_pct)
-
         if self.resize_frame:
-            scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
+            scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.max_dim[0], self.max_dim[1])
             if scale:
                 frame = self.resize(frame, scaled_width, scaled_height)
 
         frame_grey = self.convert_to_grey(frame)
 
-        # Mike: Not able to offload to CUDA
         if self.noise_reduction:
             frame_grey = self.reduce_noise(frame_grey, self.blur_radius)
 
@@ -156,7 +159,6 @@ class CpuFrameProcessor(FrameProcessor):
 
         if self.detection_mode == 'background_subtraction':
 
-            # Mike: Able to offload some of this to CUDA
             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_grey, stream=stream)
 
             if frame_count < 5:
@@ -168,8 +170,6 @@ class CpuFrameProcessor(FrameProcessor):
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
             if self.dense_optical_flow is not None:
-                # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                # to perform on a different thread
                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
                                              args=(video_tracker, frame_count, frame_grey, scaled_width, scaled_height))
                 optical_flow_thread.start()
@@ -189,12 +189,13 @@ class CpuFrameProcessor(FrameProcessor):
         return keypoints
 
     def perform_optical_flow_task(self, video_tracker, frame_count, frame_grey, frame_w, frame_h):
-        video_tracker.frames['optical_flow'] = self.process_optical_flow(frame_grey, frame_w, frame_h)
+        optical_flow_frame = self.process_optical_flow(frame_grey, frame_w, frame_h)
+        video_tracker.frames['optical_flow'] = optical_flow_frame
 
 class GpuFrameProcessor(FrameProcessor):
 
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
+    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
+        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
 
     def __enter__(self):
         #print('GPU.__enter__')
@@ -241,18 +242,20 @@ class GpuFrameProcessor(FrameProcessor):
     def process_frame(self, video_tracker, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream):
 
          # print(f" fps:{int(fps)}", end='\r')
-         frame_w = frame.shape[0]
-         frame_h = frame.shape[1]
-         worker_threads = []
 
-         # Mike: Not able to offload to CUDA
+         # Mike: Need to figure out how to offload to CUDA
          frame = self.apply_fisheye_mask(frame, self.mask_pct)
+
+         # Mike: Recording height and width is done after the mask is applied as it will change the shape of the frame
+         frame_w = scaled_width = frame.shape[0]
+         frame_h = scaled_height = frame.shape[1]
+         worker_threads = []
 
          gpu_frame = cv2.cuda_GpuMat()
          gpu_frame.upload(frame)
 
          if self.resize_frame:
-             scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.normalised_w_h[0], self.normalised_w_h[1])
+             scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.max_dim[0], self.max_dim[1])
              if scale:
                  gpu_frame = self.resize(gpu_frame, scaled_width, scaled_height)
 
@@ -267,7 +270,6 @@ class GpuFrameProcessor(FrameProcessor):
 
          if self.detection_mode == 'background_subtraction':
 
-             # Mike: Able to offload some of this to CUDA
              keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(gpu_frame_grey, stream=stream)
 
              if frame_count < 5:
@@ -279,8 +281,6 @@ class GpuFrameProcessor(FrameProcessor):
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
              if self.dense_optical_flow is not None:
-                 # Mike: The optical flow stuff apears to just add the frame to the frames list, so is an ideal candidate
-                 # to perform on a different thread
                  optical_flow_thread = Thread(target=self.perform_optical_flow_task,
                                               args=(video_tracker, frame_count, gpu_frame_grey, scaled_width, scaled_height))
                  optical_flow_thread.start()

@@ -18,10 +18,10 @@ class VideoTracker():
     DETECTION_SENSITIVITY_LOW = 3
 
     def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
-                 calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
+                 resize_dim=1024, calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}")
+            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  resize_dim:{resize_dim}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}")
 
         self.detection_mode = detection_mode
         if detection_sensitivity < 1 or detection_sensitivity > 3:
@@ -42,6 +42,7 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
         self.tracker_type = tracker_type
+        self.resize_dim = resize_dim
 
     @property
     def is_tracking(self):

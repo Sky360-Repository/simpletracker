@@ -36,9 +36,4 @@ class TwoByTwoVisualiser(Visualizer):
 
         max_display_dim = 1080
 
-        return utils.combine_frames_2x2(
-            cv2.resize(frame_input, (max_display_dim, max_display_dim)),
-            cv2.resize(frame_output, (max_display_dim, max_display_dim)),
-            cv2.resize(bottom_left_frame, (max_display_dim, max_display_dim)),
-            cv2.resize(bottom_right_frame, (max_display_dim, max_display_dim))
-        )
+        return utils.combine_frames_2x2(frame_input, frame_output, bottom_left_frame, bottom_right_frame)
