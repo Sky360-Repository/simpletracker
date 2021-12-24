@@ -34,6 +34,4 @@ class TwoByTwoVisualiser(Visualizer):
         bottom_left_frame = frame_masked_background_copy
         bottom_right_frame = frame_masked_background_with_key_points
 
-        max_display_dim = 1080
-
         return utils.combine_frames_2x2(frame_input, frame_output, bottom_left_frame, bottom_right_frame)
