@@ -17,6 +17,12 @@ class VideoTracker():
     DETECTION_SENSITIVITY_NORMAL = 2
     DETECTION_SENSITIVITY_LOW = 3
 
+    FRAME_TYPE_ANNOTATED = 'annotated'
+    FRAME_TYPE_GREY = 'grey'
+    FRAME_TYPE_MASKED_BACKGROUND = 'masked_background'
+    FRAME_TYPE_OPTICAL_FLOW = 'optical_flow'
+    FRAME_TYPE_ORIGINAL = 'original'
+
     def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
                  resize_dim=1024, calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
 
@@ -43,6 +49,8 @@ class VideoTracker():
         self.frame_masked_background = None
         self.tracker_type = tracker_type
         self.resize_dim = resize_dim
+        self.frames = {}
+        self.keypoints = []
 
     @property
     def is_tracking(self):
@@ -125,7 +133,7 @@ class VideoTracker():
 
         self.fps = fps
         self.frame_count = frame_count
-        self.frames = {}
+        self.frames.clear()
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
 
@@ -153,18 +161,21 @@ class VideoTracker():
     # called from listeners / visualizers
     # returns annotated image for current frame
     def get_annotated_image(self, active_trackers_only=True):
-        annotated_frame = self.frames.get('annotated_image', None)
+        annotated_frame = self.frames.get(self.FRAME_TYPE_ANNOTATED, None)
         if annotated_frame is None:
-            annotated_frame = self.frames['original'].copy()
+            annotated_frame = self.frames[self.FRAME_TYPE_ORIGINAL].copy()
             if active_trackers_only:
                 for tracker in self.active_trackers():
                     utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
             else:
                 for tracker in self.live_trackers:
                     utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
-            self.frames['annotated_image'] = annotated_frame
+            self.frames[self.FRAME_TYPE_ANNOTATED] = annotated_frame
 
-        return self.frames['annotated_image']
+        return self.frames[self.FRAME_TYPE_ANNOTATED]
+
+    def add_image(self, frame_name, frame):
+        self.frames[frame_name] = frame
 
     # called from listeners / visualizers
     # returns all images for current frame

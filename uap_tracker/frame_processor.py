@@ -154,8 +154,8 @@ class CpuFrameProcessor(FrameProcessor):
         if self.noise_reduction:
             frame_grey = self.reduce_noise(frame_grey, self.blur_radius)
 
-        video_tracker.frames['original'] = frame
-        video_tracker.frames['grey'] = frame_grey
+        video_tracker.add_image(video_tracker.FRAME_TYPE_ORIGINAL, frame)
+        video_tracker.add_image(video_tracker.FRAME_TYPE_GREY, frame_grey)
 
         if self.detection_mode == 'background_subtraction':
 
@@ -163,10 +163,10 @@ class CpuFrameProcessor(FrameProcessor):
 
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
-                video_tracker.frames['masked_background'] = np.zeros((scaled_height, scaled_width, 1), np.uint8)
+                video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
                 return keypoints
 
-            video_tracker.frames['masked_background'] = frame_masked_background
+            video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
             if self.dense_optical_flow is not None:
@@ -190,7 +190,7 @@ class CpuFrameProcessor(FrameProcessor):
 
     def perform_optical_flow_task(self, video_tracker, frame_count, frame_grey, frame_w, frame_h):
         optical_flow_frame = self.process_optical_flow(frame_grey, frame_w, frame_h)
-        video_tracker.frames['optical_flow'] = optical_flow_frame
+        video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, optical_flow_frame)
 
 class GpuFrameProcessor(FrameProcessor):
 
@@ -264,9 +264,11 @@ class GpuFrameProcessor(FrameProcessor):
          if self.noise_reduction:
              gpu_frame_grey = self.reduce_noise(gpu_frame_grey, self.blur_radius)
 
-         video_tracker.frames['original'] = gpu_frame.download()
+         frame = gpu_frame.download()
          frame_grey = gpu_frame_grey.download()
-         video_tracker.frames['grey'] = frame_grey
+
+         video_tracker.add_image(video_tracker.FRAME_TYPE_ORIGINAL, frame)
+         video_tracker.add_image(video_tracker.FRAME_TYPE_GREY, frame_grey)
 
          if self.detection_mode == 'background_subtraction':
 
@@ -274,10 +276,10 @@ class GpuFrameProcessor(FrameProcessor):
 
              if frame_count < 5:
                  # Need 5 frames to get the background subtractor initialised
-                 video_tracker.frames['masked_background'] = np.zeros((scaled_height, scaled_width, 1), np.uint8)
+                 video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
                  return keypoints
 
-             video_tracker.frames['masked_background'] = frame_masked_background
+             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
              if self.dense_optical_flow is not None:
@@ -301,4 +303,5 @@ class GpuFrameProcessor(FrameProcessor):
 
     def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h)
-        video_tracker.frames['optical_flow'] = gpu_dof_frame.download()
+        dof_frame = gpu_dof_frame.download()
+        video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, dof_frame)

@@ -57,7 +57,7 @@ class TrackerListenerMOTStf(TrackerListenerStf):
     def _mot(self, video_tracker):
         frame_id = video_tracker.get_frame_count()
         alive_trackers = video_tracker.get_live_trackers()
-        frame = video_tracker.get_image('original')
+        frame = video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
         high_quality_trackers = map(lambda x: x.is_tracking(), alive_trackers)
         if sum(high_quality_trackers) > 0:
 
@@ -125,7 +125,7 @@ class TrackerListenerSOTStf(TrackerListenerStf):
             self.process_tracker(video_tracker, frame_id, tracker, writer)
 
     def process_tracker(self, video_tracker, frame_id, tracker, writer):
-        frame = video_tracker.get_image('original')
+        frame = video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
         writer.add_bbox(frame_id, tracker)
         zoom_frame = utils.zoom_and_clip(
             frame, tracker.get_center(), self.zoom_level)

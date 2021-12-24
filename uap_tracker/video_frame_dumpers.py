@@ -13,7 +13,7 @@ class OriginalFrameVideoWriter(VideoFormatter):
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
-        return video_tracker.get_image('original')
+        return video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
 
 class GreyFrameVideoWriter(VideoFormatter):
 
@@ -23,7 +23,7 @@ class GreyFrameVideoWriter(VideoFormatter):
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
-        grey_frame = video_tracker.get_image('grey');
+        grey_frame = video_tracker.get_image(video_tracker.FRAME_TYPE_GREY);
         if grey_frame is not None:
             grey_frame = cv2.cvtColor(grey_frame, cv2.COLOR_GRAY2BGR)
         return grey_frame
@@ -36,7 +36,7 @@ class OpticalFlowFrameVideoWriter(VideoFormatter):
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
-        return video_tracker.get_image('optical_flow')
+        return video_tracker.get_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW)
 
 class AnnotatedFrameVideoWriter(VideoFormatter):
 
@@ -56,7 +56,7 @@ class MaskedBackgroundFrameVideoWriter(VideoFormatter):
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
-        masked_background_frame = video_tracker.get_image('masked_background');
+        masked_background_frame = video_tracker.get_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND);
         if masked_background_frame is not None:
             masked_background_frame = cv2.cvtColor(masked_background_frame, cv2.COLOR_GRAY2BGR)
         return masked_background_frame
