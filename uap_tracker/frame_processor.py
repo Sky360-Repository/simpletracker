@@ -84,7 +84,7 @@ class FrameProcessor():
     def process_optical_flow(self, frame_grey, frame_w, frame_h):
         pass
 
-    def process_frame(self, video_tracker, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream):
+    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
         pass
 
 class CpuFrameProcessor(FrameProcessor):
@@ -133,7 +133,7 @@ class CpuFrameProcessor(FrameProcessor):
         dof_frame = self.dense_optical_flow.process_grey_frame(frame_grey)
         return self.resize(dof_frame, frame_w, frame_h)
 
-    def process_frame(self, video_tracker, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream=None):
+    def process_frame(self, video_tracker, frame, frame_count, fps, stream=None):
 
         # print(f" fps:{int(fps)}", end='\r')
 
@@ -160,13 +160,12 @@ class CpuFrameProcessor(FrameProcessor):
         if self.detection_mode == 'background_subtraction':
 
             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_grey, stream=stream)
+            video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
 
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
-                video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
                 return keypoints
 
-            video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
             if self.dense_optical_flow is not None:
@@ -239,7 +238,7 @@ class GpuFrameProcessor(FrameProcessor):
         gpu_dof_frame = self.resize(gpu_dof_frame, frame_w, frame_h)
         return gpu_dof_frame
 
-    def process_frame(self, video_tracker, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream):
+    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
 
          # print(f" fps:{int(fps)}", end='\r')
 
@@ -273,13 +272,12 @@ class GpuFrameProcessor(FrameProcessor):
          if self.detection_mode == 'background_subtraction':
 
              keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(gpu_frame_grey, stream=stream)
+             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
 
              if frame_count < 5:
                  # Need 5 frames to get the background subtractor initialised
-                 video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
                  return keypoints
 
-             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
              if self.dense_optical_flow is not None:

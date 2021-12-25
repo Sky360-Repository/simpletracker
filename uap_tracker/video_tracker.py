@@ -129,7 +129,7 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
-    def process_frame(self, frame_proc, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream=None):
+    def process_frame(self, frame_proc, frame, frame_count, fps, stream=None):
 
         self.fps = fps
         self.frame_count = frame_count
@@ -137,7 +137,7 @@ class VideoTracker():
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
 
-            self.keypoints = frame_proc.process_frame(self, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps, stream)
+            self.keypoints = frame_proc.process_frame(self, frame, frame_count, fps, stream)
 
             if self.events is not None:
                 self.events.publish_process_frame(self)

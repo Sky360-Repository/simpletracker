@@ -1,6 +1,7 @@
 import cv2
 import sys
 import numpy as np
+import uap_tracker.utils as utils
 from uap_tracker.frame_processor import FrameProcessor
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
@@ -15,16 +16,13 @@ class VideoPlaybackController():
 
     def run(self):
 
-        if not self.capture.isOpened():
+        success, init_frame = self.capture.read()
+        if not success:
             print(f"Could not open video stream")
             sys.exit()
 
         frame_count = 0
         fps = 0
-        frame = np.empty((1024, 1024, 3),np.uint8)
-        frame_grey = np.empty((1024, 1024, 3),np.uint8)
-        frame_masked_background = np.empty((1024, 1024, 3),np.uint8)
-        keypoints = []
         background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.enable_cuda, sensitivity=self.video_tracker.detection_sensitivity)
 
         dense_optical_flow = None
@@ -46,7 +44,7 @@ class VideoPlaybackController():
                 success, frame = self.capture.read()
                 if success:
                     timer = cv2.getTickCount()
-                    self.video_tracker.process_frame(processor, frame, frame_grey, frame_masked_background, keypoints, frame_count, fps)
+                    self.video_tracker.process_frame(processor, frame, frame_count, fps)
                     # Calculate Frames per second (FPS)
                     fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
                     frame_count += 1
