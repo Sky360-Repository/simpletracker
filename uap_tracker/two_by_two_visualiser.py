@@ -7,8 +7,8 @@ from uap_tracker.visualizer import Visualizer
 class TwoByTwoVisualiser(Visualizer):
 
     def visualise_frame(self, video_tracker):
-        frame_input = video_tracker.get_image('original')
-        frame_masked_background = video_tracker.get_image('masked_background')
+        frame_input = video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
+        frame_masked_background = video_tracker.get_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND)
         frame_output = video_tracker.get_annotated_image(active_trackers_only=False)
 
         key_points = video_tracker.get_keypoints()
@@ -21,8 +21,7 @@ class TwoByTwoVisualiser(Visualizer):
             video_tracker, frame_output, self.font_size, self.font_colour, fps)
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
-        frame_masked_background_copy = cv2.cvtColor(
-            frame_masked_background, cv2.COLOR_GRAY2BGR)
+        frame_masked_background_copy = cv2.cvtColor(frame_masked_background, cv2.COLOR_GRAY2BGR)
 
         frame_masked_background_with_key_points = cv2.drawKeypoints(
             frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
@@ -35,6 +34,4 @@ class TwoByTwoVisualiser(Visualizer):
         bottom_left_frame = frame_masked_background_copy
         bottom_right_frame = frame_masked_background_with_key_points
 
-        return utils.combine_frames_2x2(
-            frame_input, frame_output, bottom_left_frame, bottom_right_frame
-        )
+        return utils.combine_frames_2x2(frame_input, frame_output, bottom_left_frame, bottom_right_frame)

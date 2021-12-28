@@ -35,10 +35,16 @@ class VideoFormatter():
         width, height = self._source_video_width_height()
         return STFWriter(self.output_dir, self.file_name, width, height)
 
+    def _get_frame_to_write(self, video_tracker):
+        return video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
+
     def trackers_updated_callback(self, video_tracker):
         if not self.writer:
             self._start_video()
-        self.writer.write_original_frame(video_tracker.get_image('original'))
+
+        frame = self._get_frame_to_write(video_tracker)
+        if frame is not None:
+            self.writer.write_original_frame(frame)
 
     def finish(self, total_trackers_started, total_trackers_finished):
         self._finish_video()
