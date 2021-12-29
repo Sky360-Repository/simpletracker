@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from threading import Thread
 import uap_tracker.utils as utils
+from uap_tracker.mask import FisheyeMask
 
 class FrameProcessor():
 
@@ -9,12 +10,15 @@ class FrameProcessor():
         self.dense_optical_flow = dense_optical_flow
         self.background_subtractor = background_subtractor
         self.resize_frame = resize_frame
+        self.resize_dim = (resize_dim, resize_dim)
         self.noise_reduction = noise_reduction
         self.mask_pct = mask_pct
         self.detection_mode = detection_mode
         self.detection_sensitivity = detection_sensitivity
         self.blur_radius = blur_radius
-        self.max_dim = (resize_dim, resize_dim)
+        self.original_frame_w = 0
+        self.original_frame_h = 0
+        self.mask = FisheyeMask(mask_pct)
 
     @staticmethod
     def Select(enable_cuda, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
@@ -49,25 +53,21 @@ class FrameProcessor():
             detection_sensitivity,
             blur_radius=3)
 
-    def apply_fisheye_mask(self, frame, mask_pct):
-        mask_height = (100 - mask_pct) / 100.0
-        mask_radius = mask_height / 2.0
-        shape = frame.shape[:2]
-        height = shape[0]
-        width = shape[1]
-        new_width = int(mask_height * width)
-        new_height = int(mask_height * height)
-        mask = np.zeros(shape, dtype="uint8")
-        cv2.circle(mask, (int(width / 2), int(height / 2)), int(min(height, width) * mask_radius), 255, -1)
-        masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
-        clipped_masked_frame = utils.clip_at_center(
-            masked_frame,
-            (int(width / 2), int(height / 2)),
-            width,
-            height,
-            new_width,
-            new_height)
-        return clipped_masked_frame
+    def initialise(self, init_frame):
+
+        shape = self.mask.initialise(init_frame)
+
+        self.original_frame_w = shape[0]
+        self.original_frame_h = shape[1]
+
+        if self.resize_frame:
+            scale, scaled_width, scaled_height = utils.calc_image_scale(self.original_frame_w, self.original_frame_h, self.resize_dim[0], self.resize_dim[1])
+            self.resize_frame = scale
+            self.resize_dim = (scaled_width, scaled_height)
+
+            return self.resize_dim
+
+        return shape[:2]
 
     def resize(self, frame, w, h):
         pass
@@ -137,17 +137,15 @@ class CpuFrameProcessor(FrameProcessor):
 
         # print(f" fps:{int(fps)}", end='\r')
 
-        frame = self.apply_fisheye_mask(frame, self.mask_pct)
-
-        # Mike: Recording height and width is done after the mask is applied as it will change the shape of the frame
-        frame_w = scaled_width = frame.shape[0]
-        frame_h = scaled_height = frame.shape[1]
         worker_threads = []
+        bboxes = []
+        keypoints = []
 
+        frame = self.mask.apply(frame)
+
+        # Mike: As part of the initialisation method we worked out that the frame needs to be resized
         if self.resize_frame:
-            scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.max_dim[0], self.max_dim[1])
-            if scale:
-                frame = self.resize(frame, scaled_width, scaled_height)
+            frame = self.resize(frame, self.resize_dim[0], self.resize_dim[1])
 
         frame_grey = self.convert_to_grey(frame)
 
@@ -170,12 +168,9 @@ class CpuFrameProcessor(FrameProcessor):
 
             if self.dense_optical_flow is not None:
                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                             args=(video_tracker, frame_count, frame_grey, scaled_width, scaled_height))
+                                             args=(video_tracker, frame_count, frame_grey, self.resize_dim[0], self.resize_dim[1]))
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
-        else:
-            bboxes = []
-            keypoints = []
 
         video_tracker.update_trackers(video_tracker.tracker_type, bboxes, frame)
 
@@ -242,21 +237,19 @@ class GpuFrameProcessor(FrameProcessor):
 
          # print(f" fps:{int(fps)}", end='\r')
 
-         # Mike: Need to figure out how to offload to CUDA
-         frame = self.apply_fisheye_mask(frame, self.mask_pct)
-
-         # Mike: Recording height and width is done after the mask is applied as it will change the shape of the frame
-         frame_w = scaled_width = frame.shape[0]
-         frame_h = scaled_height = frame.shape[1]
          worker_threads = []
+         bboxes = []
+         keypoints = []
+
+         # Mike: Need to figure out how to offload to CUDA
+         frame = self.mask.apply(frame)
 
          gpu_frame = cv2.cuda_GpuMat()
          gpu_frame.upload(frame)
 
+         # Mike: As part of the initialisation method we worked out that the frame needs to be resized
          if self.resize_frame:
-             scale, scaled_width, scaled_height = utils.calc_image_scale(frame_w, frame_h, self.max_dim[0], self.max_dim[1])
-             if scale:
-                 gpu_frame = self.resize(gpu_frame, scaled_width, scaled_height)
+             frame = self.resize(gpu_frame, self.resize_dim[0], self.resize_dim[1])
 
          gpu_frame_grey = self.convert_to_grey(gpu_frame)
 
@@ -282,12 +275,9 @@ class GpuFrameProcessor(FrameProcessor):
 
              if self.dense_optical_flow is not None:
                  optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                              args=(video_tracker, frame_count, gpu_frame_grey, scaled_width, scaled_height))
+                                              args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1]))
                  optical_flow_thread.start()
                  worker_threads.append(optical_flow_thread)
-         else:
-             bboxes = []
-             keypoints = []
 
          video_tracker.update_trackers(video_tracker.tracker_type, bboxes, frame)
 

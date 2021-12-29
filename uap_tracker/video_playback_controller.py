@@ -40,6 +40,9 @@ class VideoPlaybackController():
                 detection_mode=self.video_tracker.detection_mode,
                 detection_sensitivity=self.video_tracker.detection_sensitivity) as processor:
 
+            # Mike: Initialise the tracker and processor
+            self.video_tracker.initialise(processor, init_frame)
+
             while cv2.waitKey(1) != 27:  # Escape
                 success, frame = self.capture.read()
                 if success:
