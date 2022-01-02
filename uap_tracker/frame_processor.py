@@ -237,7 +237,7 @@ class GpuFrameProcessor(FrameProcessor):
 
          # print(f" fps:{int(fps)}", end='\r')
 
-         worker_threads = []
+         #worker_threads = []
          bboxes = []
          keypoints = []
 
@@ -274,18 +274,18 @@ class GpuFrameProcessor(FrameProcessor):
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
              if self.dense_optical_flow is not None:
-                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                              args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1]))
-                 optical_flow_thread.start()
-                 worker_threads.append(optical_flow_thread)
+                 self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1])
+                 #optical_flow_thread = Thread(target=self.perform_optical_flow_task, args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1]))
+                 #optical_flow_thread.start()
+                 #worker_threads.append(optical_flow_thread)
 
          video_tracker.update_trackers(video_tracker.tracker_type, bboxes, frame)
 
          frame_count + 1
 
          # Mike: Wait for worker threads to join before publishing events as their results might be required
-         for worker_thread in worker_threads:
-             worker_thread.join()
+         #for worker_thread in worker_threads:
+         #    worker_thread.join()
 
          return keypoints
 

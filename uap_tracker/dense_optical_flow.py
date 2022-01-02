@@ -27,6 +27,7 @@ class DenseOpticalFlow():
         pass
 
 class CpuDenseOpticalFlow(DenseOpticalFlow):
+
     def __init__(self, width, height):
         super().__init__(width, height)
 
@@ -38,9 +39,6 @@ class CpuDenseOpticalFlow(DenseOpticalFlow):
         # set saturation to 1
         self.hsv[..., 1] = 1.0
 
-#    def process_frame(self, frame):
-#        grey_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#        self.process_grey_frame(grey_frame)
     def _resize(self, frame):
         return cv2.resize(frame, (self.width, self.height))
 
