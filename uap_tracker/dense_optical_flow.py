@@ -23,7 +23,7 @@ class DenseOpticalFlow():
     def GPU(width, height):
         return GpuDenseOpticalFlow(width, height)
 
-    def process_grey_frame(self, frame):
+    def process_grey_frame(self, frame, stream):
         pass
 
 class CpuDenseOpticalFlow(DenseOpticalFlow):
@@ -42,7 +42,7 @@ class CpuDenseOpticalFlow(DenseOpticalFlow):
     def _resize(self, frame):
         return cv2.resize(frame, (self.width, self.height))
 
-    def process_grey_frame(self, frame):
+    def process_grey_frame(self, frame, stream=None):
         frame = self._resize(frame)
         if self.previous_frame is None:
             # First time round, save frame and return blank image
@@ -82,11 +82,12 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         super().__init__(width, height)
         self.previous_gpu_frame = None
 
-    def _resize(self, gpu_frame):
-        return cv2.cuda.resize(gpu_frame, (self.width, self.height))
+    def _resize(self, gpu_frame, stream):
+        return cv2.cuda.resize(gpu_frame, (self.width, self.height), stream=stream)
 
-    def process_grey_frame(self, gpu_frame):
-        gpu_frame = self._resize(gpu_frame)
+    def process_grey_frame(self, gpu_frame, stream):
+
+        gpu_frame = self._resize(gpu_frame, stream)
 
         gpu_bgr_frame = cv2.cuda_GpuMat()
         if self.previous_gpu_frame is None:
@@ -113,7 +114,7 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         gpu_flow = cv2.cuda_FarnebackOpticalFlow.create(5, 0.5, False, 15, 3, 5, 1.2, 0)
 
         # calculate optical flow
-        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(gpu_flow, self.previous_gpu_frame, gpu_frame, None)
+        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(gpu_flow, self.previous_gpu_frame, gpu_frame, stream)
 
         gpu_flow_x = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
         gpu_flow_y = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
@@ -123,7 +124,7 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         gpu_magnitude, gpu_angle = cv2.cuda.cartToPolar(gpu_flow_x, gpu_flow_y, angleInDegrees=True)
 
         # set value to normalized magnitude from 0 to 1
-        self.gpu_v_channel = cv2.cuda.normalize(gpu_magnitude, 0.0, 1.0, cv2.NORM_MINMAX, -1)
+        self.gpu_v_channel = cv2.cuda.normalize(gpu_magnitude, 0.0, 1.0, cv2.NORM_MINMAX, -1, stream=stream)
 
         # get angle of optical flow
         angle = gpu_angle.download()
@@ -133,13 +134,13 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         self.gpu_h_channel.upload(angle)
 
         # merge h,s,v channels
-        cv2.cuda.merge([self.gpu_h_channel, self.gpu_s_channel, self.gpu_v_channel], self.gpu_hsv_frame)
+        cv2.cuda.merge([self.gpu_h_channel, self.gpu_s_channel, self.gpu_v_channel], self.gpu_hsv_frame, stream=stream)
 
         # multiply each pixel value to 255
         self.gpu_hsv_frame.convertTo(cv2.CV_8U, 255.0, self.gpu_hsv_8u_frame, 0.0)
 
         # convert hsv to bgr
-        gpu_bgr_frame = cv2.cuda.cvtColor(self.gpu_hsv_8u_frame, cv2.COLOR_HSV2BGR)
+        gpu_bgr_frame = cv2.cuda.cvtColor(self.gpu_hsv_8u_frame, cv2.COLOR_HSV2BGR, stream=stream)
 
         self.previous_gpu_frame = gpu_frame
 
