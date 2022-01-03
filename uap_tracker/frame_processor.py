@@ -245,7 +245,7 @@ class GpuFrameProcessor(FrameProcessor):
          frame = self.mask.apply(frame)
 
          gpu_frame = cv2.cuda_GpuMat()
-         gpu_frame.upload(frame)
+         gpu_frame.upload(frame, stream=stream)
 
          # Mike: As part of the initialisation method we worked out that the frame needs to be resized
          if self.resize_frame:

@@ -104,9 +104,9 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
             self.gpu_v_channel = cv2.cuda_GpuMat(gpu_frame.size(), cv2.CV_32FC1)
 
             # set saturation to 1
-            self.gpu_s_channel.upload(np.ones_like(gpu_frame.download(), np.float32))
+            self.gpu_s_channel.upload(np.ones_like(gpu_frame.download(), np.float32), stream=stream)
 
-            gpu_bgr_frame.upload(np.zeros((self.height, self.width, 3), np.uint8))
+            gpu_bgr_frame.upload(np.zeros((self.height, self.width, 3), np.uint8), stream=stream)
 
             return gpu_bgr_frame
 
@@ -114,14 +114,14 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         gpu_flow = cv2.cuda_FarnebackOpticalFlow.create(5, 0.5, False, 15, 3, 5, 1.2, 0)
 
         # calculate optical flow
-        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(gpu_flow, self.previous_gpu_frame, gpu_frame, stream)
+        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(gpu_flow, self.previous_gpu_frame, gpu_frame, stream=stream)
 
         gpu_flow_x = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
         gpu_flow_y = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
-        cv2.cuda.split(gpu_flow, [gpu_flow_x, gpu_flow_y])
+        cv2.cuda.split(gpu_flow, [gpu_flow_x, gpu_flow_y], stream=stream)
 
         # convert from cartesian to polar coordinates to get magnitude and angle
-        gpu_magnitude, gpu_angle = cv2.cuda.cartToPolar(gpu_flow_x, gpu_flow_y, angleInDegrees=True)
+        gpu_magnitude, gpu_angle = cv2.cuda.cartToPolar(gpu_flow_x, gpu_flow_y, angleInDegrees=True, stream=stream)
 
         # set value to normalized magnitude from 0 to 1
         self.gpu_v_channel = cv2.cuda.normalize(gpu_magnitude, 0.0, 1.0, cv2.NORM_MINMAX, -1, stream=stream)
@@ -131,7 +131,7 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         angle *= (1 / 360.0) * (180 / 255.0)
 
         # set hue according to the angle of optical flow
-        self.gpu_h_channel.upload(angle)
+        self.gpu_h_channel.upload(angle, stream=stream)
 
         # merge h,s,v channels
         cv2.cuda.merge([self.gpu_h_channel, self.gpu_s_channel, self.gpu_v_channel], self.gpu_hsv_frame, stream=stream)
