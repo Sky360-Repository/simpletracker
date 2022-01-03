@@ -1,2 +1,3 @@
-export PYTHONPATH="${PYTHONPATH}:uap_tracker/"
-python3 uap_tracker/streams_test.py
+export PYTHONPATH="${PYTHONPATH}:streams/"
+# python3 streams/streams_test.py
+python3 streams/streams_test_jetson.py

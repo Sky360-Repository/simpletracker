@@ -212,10 +212,10 @@ class ProcFrameCuda2:
 class PinnedMem(object):
     def __init__(self, size, dtype=np.uint8):
         self.array = np.empty(size,dtype)
-        cv.cuda.registerPageLocked(self.array)
+        #cv.cuda.registerPageLocked(self.array)
         self.pinned = True
     def __del__(self):
-        cv.cuda.unregisterPageLocked(self.array)
+        #cv.cuda.unregisterPageLocked(self.array)
         self.pinned = False
     def __repr__(self):
         return f'pinned = {self.pinned}'
