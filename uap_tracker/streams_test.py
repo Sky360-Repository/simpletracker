@@ -122,14 +122,14 @@ if (cap.isOpened() == False):
 ret, frame = cap.read()
 cap.release()
 rows_small, cols_small = frame.shape[:2]
-proc_frame_cpu1 = ProcFrameCpu1(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cpu1 = ProcFrameCpu1(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-cpu_time_1, n_frames = ProcVid1(proc_frame_cpu1,lr)
-print(f'CPU 1 (pre-allocation): {n_frames} frames, {cpu_time_1:.2f} ms/frame')
-print(f'Speedup over CPU baseline: {cpu_time_0/cpu_time_1:.2f}')
+#cpu_time_1, n_frames = ProcVid1(proc_frame_cpu1,lr)
+#print(f'CPU 1 (pre-allocation): {n_frames} frames, {cpu_time_1:.2f} ms/frame')
+#print(f'Speedup over CPU baseline: {cpu_time_0/cpu_time_1:.2f}')
 
-if check_res: CheckFg(cpu_res,proc_frame_cpu1.res)
+#if check_res: CheckFg(cpu_res,proc_frame_cpu1.res)
 
 # export
 class ProcFrameCuda1:
@@ -158,15 +158,15 @@ class ProcFrameCuda1:
     def Frame(self):
         return self.frame
 
-proc_frame_cuda1 = ProcFrameCuda1(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cuda1 = ProcFrameCuda1(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-gpu_time_1, n_frames = ProcVid1(proc_frame_cuda1,lr)
-print(f'GPU 1 (pre-allocation): {n_frames} frames, {gpu_time_1:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_0/gpu_time_1:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_1:.2f}')
+#gpu_time_1, n_frames = ProcVid1(proc_frame_cuda1,lr)
+#print(f'GPU 1 (pre-allocation): {n_frames} frames, {gpu_time_1:.2f} ms/frame')
+#print(f'Incremental speedup: {gpu_time_0/gpu_time_1:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_1:.2f}')
 
-if check_res: CheckFg(gpu_res,proc_frame_cuda1.res)
+#if check_res: CheckFg(gpu_res,proc_frame_cuda1.res)
 
 # export
 class ProcFrameCuda2:
@@ -196,16 +196,16 @@ class ProcFrameCuda2:
     def Frame(self):
         return self.frame
 
-proc_frame_cuda2 = ProcFrameCuda2(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cuda2 = ProcFrameCuda2(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-gpu_time_2, n_frames = ProcVid1(proc_frame_cuda2,lr)
-print(f'GPU 2 (replacing the default stream): {n_frames} frames, {gpu_time_2:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_1/gpu_time_2:.2f}')
-print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_2:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_2:.2f}')
+#gpu_time_2, n_frames = ProcVid1(proc_frame_cuda2,lr)
+#print(f'GPU 2 (replacing the default stream): {n_frames} frames, {gpu_time_2:.2f} ms/frame')
+#print(f'Incremental speedup: {gpu_time_1/gpu_time_2:.2f}')
+#print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_2:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_2:.2f}')
 
-if check_res: CheckFg(gpu_res,proc_frame_cuda2.res)
+#if check_res: CheckFg(gpu_res,proc_frame_cuda2.res)
 
 #export
 # host mem not implemented, manually pin memory
@@ -248,16 +248,16 @@ class ProcFrameCuda3:
     def Frame(self):
         return self.frame.array
 
-proc_frame_cuda3 = ProcFrameCuda3(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cuda3 = ProcFrameCuda3(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
-print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_2/gpu_time_3:.2f}')
-print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_3:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_3:.2f}')
+#gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
+#print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
+#print(f'Incremental speedup: {gpu_time_2/gpu_time_3:.2f}')
+#print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_3:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_3:.2f}')
 
-if check_res: CheckFg(gpu_res,proc_frame_cuda3.res)
+#if check_res: CheckFg(gpu_res,proc_frame_cuda3.res)
 
 #export
 def ProcVid2(proc_frame,lr,simulate=False):
@@ -318,16 +318,16 @@ class ProcFrameCuda4:
         if (self.store_res):
             self.res.append(np.copy(self.fg_host.array))
 
-proc_frame_cuda4 = ProcFrameCuda4(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cuda4 = ProcFrameCuda4(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-gpu_time_4, n_frames = ProcVid2(proc_frame_cuda4,lr)
-print(f'GPU 4 (overlap host and device - attempt 2): {n_frames} frames, {gpu_time_4:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_3/gpu_time_4:.2f}')
-print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_4:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_4:.2f}')
+#gpu_time_4, n_frames = ProcVid2(proc_frame_cuda4,lr)
+#print(f'GPU 4 (overlap host and device - attempt 2): {n_frames} frames, {gpu_time_4:.2f} ms/frame')
+#print(f'Incremental speedup: {gpu_time_3/gpu_time_4:.2f}')
+#print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_4:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_4:.2f}')
 
-if check_res: CheckFg(gpu_res,proc_frame_cuda4.res)
+#if check_res: CheckFg(gpu_res,proc_frame_cuda4.res)
 
 # export
 class ProcFrameCuda5:
@@ -368,16 +368,16 @@ class ProcFrameCuda5:
         if (self.store_res):
             self.res.append(np.copy(self.fg_host.array))
 
-proc_frame_cuda5 = ProcFrameCuda5(rows_small, cols_small, rows_big, cols_big, check_res)
+#proc_frame_cuda5 = ProcFrameCuda5(rows_small, cols_small, rows_big, cols_big, check_res)
 
 #export
-gpu_time_5, n_frames = ProcVid2(proc_frame_cuda5,lr)
-print(f'GPU 5 (overlap host and device - attempt 3): {n_frames} frames, {gpu_time_5:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_4/gpu_time_5:.2f}')
-print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_5:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_5:.2f}')
+#gpu_time_5, n_frames = ProcVid2(proc_frame_cuda5,lr)
+#print(f'GPU 5 (overlap host and device - attempt 3): {n_frames} frames, {gpu_time_5:.2f} ms/frame')
+#print(f'Incremental speedup: {gpu_time_4/gpu_time_5:.2f}')
+#print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_5:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_5:.2f}')
 
-if check_res:  CheckFg(gpu_res,proc_frame_cuda5.res)
+#if check_res:  CheckFg(gpu_res,proc_frame_cuda5.res)
 
 # export
 class SyncType():
@@ -486,11 +486,11 @@ proc_frame_cuda6 = ProcFrameCuda6(rows_small, cols_small, rows_big, cols_big, 2,
 #export
 gpu_time_6, n_frames = ProcVid2(proc_frame_cuda6,lr)
 print(f'GPU 6 (multiple streams): {n_frames} frames, {gpu_time_6:.2f} ms/frame')
-print(f'Incremental speedup: {gpu_time_5/gpu_time_6:.2f}')
-print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_6:.2f}')
-print(f'Speedup over CPU: {cpu_time_1/gpu_time_6:.2f}')
+#print(f'Incremental speedup: {gpu_time_5/gpu_time_6:.2f}')
+#print(f'Speedup over GPU baseline: {gpu_time_0/gpu_time_6:.2f}')
+#print(f'Speedup over CPU: {cpu_time_1/gpu_time_6:.2f}')
 
-if check_res: CheckFg(gpu_res,proc_frame_cuda6.res)
+#if check_res: CheckFg(gpu_res,proc_frame_cuda6.res)
 
 #export
 proc_frame_cuda7 = ProcFrameCuda6(rows_small,cols_small,rows_big,cols_big,2,check_res,SyncType.soft,True)
