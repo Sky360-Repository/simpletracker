@@ -114,7 +114,7 @@ class GpuDenseOpticalFlow(DenseOpticalFlow):
         gpu_flow = cv2.cuda_FarnebackOpticalFlow.create(5, 0.5, False, 15, 3, 5, 1.2, 0)
 
         # calculate optical flow
-        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(self.previous_gpu_frame, gpu_frame, gpu_flow, stream=stream)
+        gpu_flow = cv2.cuda_FarnebackOpticalFlow.calc(gpu_flow, self.previous_gpu_frame, gpu_frame, None, stream=stream)
 
         gpu_flow_x = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
         gpu_flow_y = cv2.cuda_GpuMat(gpu_flow.size(), cv2.CV_32FC1)
