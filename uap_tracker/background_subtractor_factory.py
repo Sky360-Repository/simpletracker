@@ -57,11 +57,11 @@ class BackgroundSubtractorFactory():
 
         if type == 'MOG2_CUDA':
             if sensitivity == 1:  # Detects small, medium and large objects
-                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=500) #, detectShadows=True)
-            elif sensitivity == 2:  # Detects medium and large objects
-                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=1000) #, detectShadows=True)
-            elif sensitivity == 3:  # Detects large objects
                 background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=1500) #, detectShadows=True)
+            elif sensitivity == 2:  # Detects medium and large objects
+                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=2000) #, detectShadows=True)
+            elif sensitivity == 3:  # Detects large objects
+                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=2000) #, detectShadows=True)
             else:
                 raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 
