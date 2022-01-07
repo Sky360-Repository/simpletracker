@@ -18,10 +18,13 @@ RUN apt-get update && apt-get upgrade -y &&\
 	    # Developer Tools
         build-essential \
         cmake \
+        gcc \
+        g++ \
         git \
         wget \
         unzip \
         yasm \
+        ffmpeg \
         pkg-config \
         # For Images and Videos
         libjpeg-dev \
@@ -32,6 +35,7 @@ RUN apt-get update && apt-get upgrade -y &&\
         libavformat-dev \
         libavutil-dev \
         libswscale-dev \
+        libv4l-dev \
         libxvidcore-dev \
         libx264-dev \
         # For GUI
@@ -51,6 +55,17 @@ RUN apt-get update && apt-get upgrade -y &&\
         libpostproc-dev \
         libeigen3-dev \
         libtbb-dev \
+        libopenblas-dev \
+        liblapack-dev \
+        libtheora-dev \
+        libvorbis-dev \
+        sphinx-common \
+        libopencore-amrnb-dev \
+        libopencore-amrwb-dev \
+        libopenexr-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libavfilter-dev \
+        libavresample-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -86,22 +101,22 @@ RUN cd /opt/ &&\
 # Cmake configure
 RUN   mkdir /opt/opencv-${OPENCV_VERSION}/build && cd /opt/opencv-${OPENCV_VERSION}/build && \
       cmake \
-         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib-${OPENCV_VERSION}/modules \
-         -D WITH_CUDA=ON \
-	     -D ENABLE_FAST_MATH=ON \
-	     -D CUDA_FAST_MATH=1 \
-         -D WITH_CUBLAS=1 \
-         -D OPENCV_ENABLE_NONFREE=ON \
-         -D CMAKE_BUILD_TYPE=RELEASE \
-         -D CMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
-         -D PYTHON3_LIBRARY=$CONDA_PREFIX/lib/python3.9 \
-         -D PYTHON3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.9 \
-         -D PYTHON3_EXECUTABLE=$CONDA_PREFIX/bin/python \
-         -D PYTHON3_PACKAGES_PATH=$CONDA_PREFIX/lib/python3.9/site-packages \
-	 -D BUILD_TIFF=ON \
-	 -D BUILD_PNG=ON -D BUILD_JPEG=ON \
-	 -D BUILD_ZLIB=ON \
-         ..
+        -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib-${OPENCV_VERSION}/modules \
+        -D WITH_CUDA=ON \
+	    -D ENABLE_FAST_MATH=ON \
+	    -D CUDA_FAST_MATH=1 \
+        -D WITH_CUBLAS=1 \
+        -D OPENCV_ENABLE_NONFREE=ON \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+        -D PYTHON3_LIBRARY=$CONDA_PREFIX/lib/python3.9 \
+        -D PYTHON3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.9 \
+        -D PYTHON3_EXECUTABLE=$CONDA_PREFIX/bin/python \
+        -D PYTHON3_PACKAGES_PATH=$CONDA_PREFIX/lib/python3.9/site-packages \
+	    -D BUILD_TIFF=ON \
+	    -D BUILD_PNG=ON -D BUILD_JPEG=ON \
+	    -D BUILD_ZLIB=ON \
+        ..
 	 
 
 # Make
