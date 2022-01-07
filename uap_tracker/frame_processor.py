@@ -294,3 +294,51 @@ class GpuFrameProcessor(FrameProcessor):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h, stream)
         dof_frame = gpu_dof_frame.download()
         video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, dof_frame)
+
+class VpiFrameProcessor(FrameProcessor):
+
+    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
+        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
+
+    def __enter__(self):
+        #print('VPI.__enter__')
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
+        #print('VPI.__exit__')
+
+    def resize(self, gpu_frame, w, h, stream):
+        # Overload this for a VPI specific implementation
+        #print('VPI.resize_frame')
+        pass
+
+    def reduce_noise(self, gpu_frame, blur_radius, stream):
+        # Overload this for a VPI specific implementation
+        #print('VPI.noise_reduction')
+        pass
+
+    def convert_to_grey(self, gpu_frame, stream):
+        # Overload this for a VPI specific implementation
+        #print('VPI.convert_to_grey')
+        pass
+
+    def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
+        # Overload this for a VPI specific implementation
+        # print('VPI.keypoints_from_bg_subtraction')
+        pass
+
+    def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
+        # Overload this for a VPI specific implementation
+        #print('VPI.process_optical_flow')
+        pass
+
+    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
+        # Overload this for a VPI specific implementation
+        # print('VPI.process_frame')
+        pass
+
+    def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
+        # Overload this for a VPI specific implementation
+        # print('VPI.perform_optical_flow_task')
+        pass
