@@ -185,12 +185,15 @@ def main(argv):
     else:
         if controller == VideoPlaybackController:
 
-            for filename in os.listdir(settings.input_dir):
+            sorted_files = os.listdir(settings.input_dir)
+            sorted_files.sort()
+
+            for filename in sorted_files:
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
 
-        elif (controller in [CameraStreamController,CameraStreamControllerCuda]):
+        elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
