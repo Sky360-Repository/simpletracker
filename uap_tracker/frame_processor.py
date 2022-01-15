@@ -187,7 +187,10 @@ class CpuFrameProcessor(FrameProcessor):
         video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, optical_flow_frame)
 
 class GpuFrameProcessor(FrameProcessor):
-
+    # https://jamesbowley.co.uk/accelerating-opencv-with-cuda-streams-in-python/
+    # Mike: NOTE The cuda implementation is terrible, it runs at about 1/3 the speed of the CPU implementation on my laptop.
+    # I think this might have something to do with pararllel streams (link above) but am not very confident in that statement
+    # as I am still very much trying to get a better understanding of it all.
     def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
         super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
 
