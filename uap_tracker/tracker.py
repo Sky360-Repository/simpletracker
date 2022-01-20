@@ -1,12 +1,17 @@
-import cv2
-import numpy as np
+# Original work Copyright (c) 2022 Sky360
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 import uap_tracker.utils as utils
 from uap_tracker.tracker_factory import TrackerFactory
-
-#
-# Tracks a single object
-#
-
 
 class Tracker():
 
@@ -43,7 +48,7 @@ class Tracker():
             if validate_target:
                 stationary_check_thold = 4
                 stationary_check_max = 5
-                orphaned_check_thold = 10
+                orphaned_check_thold = 20
 
                 if len(self.bboxes) > 10:
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
