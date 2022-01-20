@@ -6,6 +6,7 @@ import os
 import getopt
 import sys
 import cv2
+import shutil
 
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.no_op_visualiser import NoOpVisualiser
@@ -185,6 +186,10 @@ def main(argv):
     else:
         if controller == VideoPlaybackController:
 
+            processed_dir = os.path.join(settings.input_dir, "processed")
+            if not os.path.isdir(processed_dir):
+                os.mkdir(processed_dir)
+
             sorted_files = os.listdir(settings.input_dir)
             sorted_files.sort()
 
@@ -192,6 +197,8 @@ def main(argv):
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
+                processed_path = os.path.join(processed_dir, filename)
+                shutil.move(full_path,processed_path)
 
         elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
