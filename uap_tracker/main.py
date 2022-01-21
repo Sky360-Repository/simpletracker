@@ -1,3 +1,15 @@
+# Original work Copyright (c) 2022 Sky360
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 # usage: python uap_tracker/stage1.py
 # e.g. python uap_tracker/stage1.py
 
@@ -6,6 +18,7 @@ import os
 import getopt
 import sys
 import cv2
+import shutil
 
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.no_op_visualiser import NoOpVisualiser
@@ -185,12 +198,21 @@ def main(argv):
     else:
         if controller == VideoPlaybackController:
 
-            for filename in os.listdir(settings.input_dir):
+            processed_dir = os.path.join(settings.input_dir, "processed")
+            if not os.path.isdir(processed_dir):
+                os.mkdir(processed_dir)
+
+            sorted_files = os.listdir(settings.input_dir)
+            sorted_files.sort()
+
+            for filename in sorted_files:
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
                              output_dir, detection_mode)
+                processed_path = os.path.join(processed_dir, filename)
+                shutil.move(full_path,processed_path)
 
-        elif (controller in [CameraStreamController,CameraStreamControllerCuda]):
+        elif controller == CameraStreamController:
             camera = get_camera(settings.get('camera', {}))
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)

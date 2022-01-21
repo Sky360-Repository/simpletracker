@@ -1,8 +1,18 @@
+# Original work Copyright (c) 2022 Sky360
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 import cv2
 
-#
-# Factory that creates background subtractors
-#
+
 class BackgroundSubtractorFactory():
 
     @staticmethod
@@ -57,11 +67,11 @@ class BackgroundSubtractorFactory():
 
         if type == 'MOG2_CUDA':
             if sensitivity == 1:  # Detects small, medium and large objects
-                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=500) #, detectShadows=True)
-            elif sensitivity == 2:  # Detects medium and large objects
-                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=1000) #, detectShadows=True)
-            elif sensitivity == 3:  # Detects large objects
                 background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=1500) #, detectShadows=True)
+            elif sensitivity == 2:  # Detects medium and large objects
+                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=2000) #, detectShadows=True)
+            elif sensitivity == 3:  # Detects large objects
+                background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(varThreshold=2000) #, detectShadows=True)
             else:
                 raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
 

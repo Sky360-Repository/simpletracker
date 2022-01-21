@@ -32,9 +32,9 @@ max_display_dim=1080
 
 mask_pct=20
 # Detects small, medium and large objects
-sensitivity=1
+sensitivity=2
 resize_frame=true
-resize_dim=1440
+resize_dim=1024
 noise_reduction=true
 
 # The max number of concurrent active trackers

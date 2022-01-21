@@ -51,7 +51,7 @@ RUN wget \
      https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
      && mkdir /root/.conda \
      && bash Miniconda3-latest-Linux-x86_64.sh -b \
-     && rm -f Miniconda3-latest-Linux-x86_64.sh 
+     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 RUN conda --version
 
@@ -91,7 +91,7 @@ RUN   mkdir /opt/opencv-${OPENCV_VERSION}/build && cd /opt/opencv-${OPENCV_VERSI
 	 -D BUILD_PNG=ON -D BUILD_JPEG=ON \
 	 -D BUILD_ZLIB=ON \
          ..
-	 
+
 
 # Make
 RUN cd /opt/opencv-${OPENCV_VERSION}/build && \
@@ -104,4 +104,3 @@ RUN cd /opt/opencv-${OPENCV_VERSION}/build && \
     # &&\
     # Remove OpenCV sources and build folder
 #    rm -rf /opt/opencv-${OPENCV_VERSION} && rm -rf /opt/opencv_contrib-${OPENCV_VERSION}
-

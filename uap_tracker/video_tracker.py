@@ -1,15 +1,20 @@
-import cv2
+# Original work Copyright (c) 2022 Sky360
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 import numpy as np
 from threading import Thread
 from uap_tracker.stopwatch import Stopwatch
-#import multiprocessing
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
-
-#
-# Tracks multiple objects in a video
-#
-
 
 class VideoTracker():
 
@@ -129,11 +134,27 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(tracker_type, frame, new_bbox)
 
+    def initialise(self, frame_proc, init_frame):
+
+        # Mike: Initiliase the processor as well
+        size = frame_proc.initialise(init_frame)
+        size = (size[1], size[0], 3)
+
+        #print(f'pre allocate size {size}')
+
+        # Mike: Preallocate the frames dictionary
+        self.frames = {
+            self.FRAME_TYPE_GREY: np.empty(size[0:2], np.uint8),
+            self.FRAME_TYPE_MASKED_BACKGROUND: np.empty(size[0:2], np.uint8),
+            self.FRAME_TYPE_OPTICAL_FLOW: np.empty(size, np.uint8),
+            self.FRAME_TYPE_ORIGINAL: np.empty(size, np.uint8)
+        }
+
     def process_frame(self, frame_proc, frame, frame_count, fps, stream=None):
 
         self.fps = fps
         self.frame_count = frame_count
-        self.frames.clear()
+        self.frames[self.FRAME_TYPE_ANNOTATED] = None
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
 
@@ -161,7 +182,7 @@ class VideoTracker():
     # called from listeners / visualizers
     # returns annotated image for current frame
     def get_annotated_image(self, active_trackers_only=True):
-        annotated_frame = self.frames.get(self.FRAME_TYPE_ANNOTATED, None)
+        annotated_frame = self.get_image(self.FRAME_TYPE_ANNOTATED)
         if annotated_frame is None:
             annotated_frame = self.frames[self.FRAME_TYPE_ORIGINAL].copy()
             if active_trackers_only:
@@ -170,6 +191,7 @@ class VideoTracker():
             else:
                 for tracker in self.live_trackers:
                     utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+
             self.frames[self.FRAME_TYPE_ANNOTATED] = annotated_frame
 
         return self.frames[self.FRAME_TYPE_ANNOTATED]

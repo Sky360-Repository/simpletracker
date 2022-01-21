@@ -1,12 +1,17 @@
-import cv2
-import numpy as np
+# Original work Copyright (c) 2022 Sky360
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 import uap_tracker.utils as utils
 from uap_tracker.tracker_factory import TrackerFactory
-
-#
-# Tracks a single object
-#
-
 
 class Tracker():
 
@@ -19,11 +24,11 @@ class Tracker():
         self.id = id
         self.cv2_tracker = TrackerFactory.create(tracker_type)
         self.cv2_tracker.init(frame, bbox)
-        self.bbox_start = bbox
-        # self.bbox_slide = bbox
         self.bboxes = [bbox]
         self.frame_stationary_check = 0
+        self.frame_active_tracker_count = 0
         self.tracking_state = Tracker.PROVISIONARY_TARGET
+        self.bbox_to_check = bbox
 
     # (x1,y1,w,h)
     def get_bbox(self):
@@ -43,21 +48,20 @@ class Tracker():
             if validate_target:
                 stationary_check_thold = 4
                 stationary_check_max = 5
+                orphaned_check_thold = 20
 
                 if len(self.bboxes) > 10:
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
-                    if utils.bbox_overlap(self.bbox_start, bbox) == 0.0:
+                    if utils.bbox_overlap(self.bbox_to_check, bbox) == 0.0:
                         # self.bbox_color = self.font_color
                         if self.tracking_state != Tracker.ACTIVE_TARGET:
                             self.tracking_state = Tracker.ACTIVE_TARGET
-                            # print(f'>> updating tracker {self.id} state to ACTIVE_TARGET')
-                            self.bbox_start = bbox
+                            self.bbox_to_check = bbox
 
-                    mod = float(len(self.bboxes) % 5)
-                    if mod == 0:
+                    if float(len(self.bboxes) % 5) == 0:
                         # print(f'5 X --> tracker {self.id}, total length: {len(self.bboxes)}')
-                        bbox_2 = self.bboxes[-5]
-                        if utils.bbox_overlap(self.bbox_start, bbox_2) > 0:
+                        bbox_lagging = self.bboxes[-5]
+                        if utils.bbox_overlap(self.bbox_to_check, bbox_lagging) > 0:
                             # MG: this bounding box has remained pretty static, its now closer to getting scavenged
                             self.frame_stationary_check += 1
                         else:
@@ -65,12 +69,17 @@ class Tracker():
 
                 if stationary_check_thold <= self.frame_stationary_check < stationary_check_max:
                     # MG: If its not moved enough then mark it as red for potential scavenging
-                    # self.bbox_color = (50, 50, 225)
                     self.tracking_state = Tracker.LOST_TARGET
                     # print(f'>> updating tracker {self.id} state to LOST_TARGET')
                 elif self.frame_stationary_check >= stationary_check_max:
-                    print(f'Scavenging tracker {self.id}')
+                    # print(f'Scavenging tracker {self.id}')
                     ok = False
+
+                if self.tracking_state == Tracker.ACTIVE_TARGET:
+                    self.frame_active_tracker_count += 1
+                    if self.frame_active_tracker_count > orphaned_check_thold:
+                        self.bbox_to_check = bbox
+                        self.frame_active_tracker_count = 0
 
         return ok, bbox
 
