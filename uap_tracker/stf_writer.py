@@ -15,6 +15,7 @@ import cv2
 import json
 import shutil
 import uap_tracker.utils as utils
+import time
 
 class STFWriter():
 
@@ -87,7 +88,9 @@ class STFWriter():
         self._add_trackid_label(tracker.id, 'unknown')
         return {
             'bbox': tracker.get_bbox(),
-            'track_id': tracker.id
+            'track_id': tracker.id,
+            'timestamp' : time.time()
+            
         }
 
     def add_bbox(self, frame_id, tracker):
