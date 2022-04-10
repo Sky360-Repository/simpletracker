@@ -3,7 +3,7 @@
 * Stage 1: Process videos looking for moving objects and generate annotation files with boundingboxes (tracks)
 * Stage 2: Kinematics analysis by creating regression splines with increasing order when error rate exceeds threshold
 * Stage 3: Human associates tracks with labels
-* Stage 4: crop slices from boundingboxes per frame
+* Stage 4: Crop slices from boundingboxes per frame
 * Stage 5: Train NN on the slices
 
 ## Processing Stage 1 (SimpleTracker)
