@@ -41,18 +41,22 @@ USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml
 def _setup_controller(media, events, visualizer, detection_mode):
     controller_clz = _get_controller()
 
-    video_tracker = VideoTracker(
-        detection_mode,
-        events,
-        visualizer,
-        detection_sensitivity=settings.VideoTracker.sensitivity,
-        mask_pct=settings.VideoTracker.mask_pct,
-        noise_reduction=settings.VideoTracker.get('noise_reduction', False),
-        resize_frame=settings.VideoTracker.get('resize_frame', False),
-        resize_dim=settings.VideoTracker.resize_dim,
-        calculate_optical_flow=settings.VideoTracker.calculate_optical_flow,
-        max_active_trackers=settings.VideoTracker.max_active_trackers,
-    )
+    appSettings = {}
+    appSettings['detection_mode'] = detection_mode
+    appSettings['detection_sensitivity'] = settings.VideoTracker.get('sensitivity', 2)
+    appSettings['mask_pct'] = settings.VideoTracker.get('mask_pct', 8)
+    appSettings['noise_reduction'] = settings.VideoTracker.get('noise_reduction', False)
+    appSettings['resize_frame'] = settings.VideoTracker.get('resize_frame', False)
+    appSettings['resize_dimension'] = settings.VideoTracker.get('resize_dimension', 1024)
+    appSettings['blur_radius'] = settings.VideoTracker.get('blur_radius', 3)
+    appSettings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
+    appSettings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
+    appSettings['tracker_type'] = 'CSRT'
+    appSettings['stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 10)
+    appSettings['stationary_check_max'] = settings.VideoTracker.get('stationary_check_max', 10)
+    appSettings['orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 25)
+
+    video_tracker = VideoTracker(appSettings, events, visualizer)
 
     return controller_clz(media, video_tracker, settings.enable_cuda)
 

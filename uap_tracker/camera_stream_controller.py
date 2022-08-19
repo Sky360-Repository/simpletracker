@@ -53,15 +53,10 @@ class CameraStreamController():
             dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.enable_cuda, width=480, height=480)
 
         with FrameProcessor.Select(
-                enable_cuda=self.enable_cuda,
-                dense_optical_flow=dense_optical_flow,
-                background_subtractor=background_subtractor,
-                resize_frame=self.video_tracker.resize_frame,
-                resize_dim=self.video_tracker.resize_dim,
-                noise_reduction=self.video_tracker.noise_reduction,
-                mask_pct=self.video_tracker.mask_pct,
-                detection_mode=self.video_tracker.detection_mode,
-                detection_sensitivity=self.video_tracker.detection_sensitivity) as processor:
+            settings=self.video_tracker.settings,
+            enable_cuda=self.enable_cuda,
+            dense_optical_flow=dense_optical_flow,
+            background_subtractor=background_subtractor) as processor:
 
             # Mike: Initialise the tracker and processor for this iteration
             self.video_tracker.initialise(processor, init_frame)

@@ -17,52 +17,41 @@ from uap_tracker.mask import FisheyeMask
 
 class FrameProcessor():
 
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
+    def __init__(self, settings, dense_optical_flow, background_subtractor):
+        self.settings = settings
         self.dense_optical_flow = dense_optical_flow
         self.background_subtractor = background_subtractor
-        self.resize_frame = resize_frame
-        self.resize_dim = (resize_dim, resize_dim)
-        self.noise_reduction = noise_reduction
-        self.mask_pct = mask_pct
-        self.detection_mode = detection_mode
-        self.detection_sensitivity = detection_sensitivity
-        self.blur_radius = blur_radius
+        self.resize_frame = settings['resize_frame']
+        self.resize_dimension = (settings['resize_dimension'], settings['resize_dimension'])
+        self.noise_reduction = settings['noise_reduction']
+        self.mask_pct = settings['mask_pct']
+        self.detection_mode = settings['detection_mode']
+        self.detection_sensitivity = settings['detection_sensitivity']
+        self.blur_radius = settings['blur_radius']
         self.original_frame_w = 0
         self.original_frame_h = 0
-        self.mask = FisheyeMask(mask_pct)
+        self.mask = FisheyeMask(settings['mask_pct'])
 
     @staticmethod
-    def Select(enable_cuda, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def Select(enable_cuda, settings, dense_optical_flow, background_subtractor):
         if enable_cuda:
-            return FrameProcessor.GPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
+            return FrameProcessor.GPU(settings, dense_optical_flow, background_subtractor)
 
-        return FrameProcessor.CPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity)
+        return FrameProcessor.CPU(settings, dense_optical_flow, background_subtractor)
 
     @staticmethod
-    def CPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def CPU(settings, dense_optical_flow, background_subtractor):
         return CpuFrameProcessor(
+            settings,
             dense_optical_flow,
-            background_subtractor,
-            resize_frame,
-            resize_dim,
-            noise_reduction,
-            mask_pct,
-            detection_mode,
-            detection_sensitivity,
-            blur_radius=3)
+            background_subtractor)
 
     @staticmethod
-    def GPU(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity):
+    def GPU(settings, dense_optical_flow, background_subtractor):
         return GpuFrameProcessor(
+            settings,
             dense_optical_flow,
-            background_subtractor,
-            resize_frame,
-            resize_dim,
-            noise_reduction,
-            mask_pct,
-            detection_mode,
-            detection_sensitivity,
-            blur_radius=3)
+            background_subtractor)
 
     def initialise(self, init_frame):
 
@@ -72,11 +61,11 @@ class FrameProcessor():
         self.original_frame_h = shape[1]
 
         if self.resize_frame:
-            scale, scaled_width, scaled_height = utils.calc_image_scale(self.original_frame_w, self.original_frame_h, self.resize_dim[0], self.resize_dim[1])
+            scale, scaled_width, scaled_height = utils.calc_image_scale(self.original_frame_w, self.original_frame_h, self.resize_dimension[0], self.resize_dimension[1])
             self.resize_frame = scale
-            self.resize_dim = (scaled_width, scaled_height)
+            self.resize_dimension = (scaled_width, scaled_height)
 
-            return self.resize_dim
+            return self.resize_dimension
 
         return shape[:2]
 
@@ -100,8 +89,8 @@ class FrameProcessor():
 
 class CpuFrameProcessor(FrameProcessor):
 
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
+    def __init__(self, settings, dense_optical_flow, background_subtractor):
+        super().__init__(settings, dense_optical_flow, background_subtractor)
 
     def __enter__(self):
         #print('CPU.__enter__')
@@ -156,7 +145,7 @@ class CpuFrameProcessor(FrameProcessor):
 
         # Mike: As part of the initialisation method we worked out that the frame needs to be resized
         if self.resize_frame:
-            frame = self.resize(frame, self.resize_dim[0], self.resize_dim[1], stream)
+            frame = self.resize(frame, self.resize_dimension[0], self.resize_dimension[1], stream)
 
         frame_grey = self.convert_to_grey(frame, stream)
 
@@ -179,7 +168,7 @@ class CpuFrameProcessor(FrameProcessor):
 
             if self.dense_optical_flow is not None:
                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                             args=(video_tracker, frame_count, frame_grey, self.resize_dim[0], self.resize_dim[1], stream))
+                                             args=(video_tracker, frame_count, frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream))
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
@@ -202,8 +191,8 @@ class GpuFrameProcessor(FrameProcessor):
     # Mike: NOTE The cuda implementation is terrible, it runs at about 1/3 the speed of the CPU implementation on my laptop.
     # I think this might have something to do with pararllel streams (link above) but am not very confident in that statement
     # as I am still very much trying to get a better understanding of it all.
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
+    def __init__(self, settings, dense_optical_flow, background_subtractor):
+        super().__init__(settings, dense_optical_flow, background_subtractor)
 
     def __enter__(self):
         #print('GPU.__enter__')
@@ -263,7 +252,7 @@ class GpuFrameProcessor(FrameProcessor):
 
          # Mike: As part of the initialisation method we worked out that the frame needs to be resized
          if self.resize_frame:
-             frame = self.resize(gpu_frame, self.resize_dim[0], self.resize_dim[1], stream)
+             frame = self.resize(gpu_frame, self.resize_dimension[0], self.resize_dimension[1], stream)
 
          gpu_frame_grey = self.convert_to_grey(gpu_frame, stream)
 
@@ -288,9 +277,9 @@ class GpuFrameProcessor(FrameProcessor):
              bboxes = [utils.kp_to_bbox(x) for x in keypoints]
 
              if self.dense_optical_flow is not None:
-                 #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1], stream)
+                 #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream)
                  optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                              args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dim[0], self.resize_dim[1], stream))
+                                              args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream))
                  optical_flow_thread.start()
                  worker_threads.append(optical_flow_thread)
 
@@ -308,147 +297,3 @@ class GpuFrameProcessor(FrameProcessor):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h, stream)
         dof_frame = gpu_dof_frame.download()
         video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, dof_frame)
-
-class NanoFrameProcessor(FrameProcessor):
-
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
-
-    def __enter__(self):
-        #print('Nano.__enter__')
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass
-        #print('Nano.__exit__')
-
-    def resize(self, gpu_frame, w, h, stream):
-        # Overload this for a Nano specific implementation
-        #print('Nano.resize_frame')
-        pass
-
-    def reduce_noise(self, gpu_frame, blur_radius, stream):
-        # Overload this for a Nano specific implementation
-        #print('Nano.noise_reduction')
-        pass
-
-    def convert_to_grey(self, gpu_frame, stream):
-        # Overload this for a Nano specific implementation
-        #print('Nano.convert_to_grey')
-        pass
-
-    def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
-        # Overload this for a Nano specific implementation
-        # print('Nano.keypoints_from_bg_subtraction')
-        pass
-
-    def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Nano specific implementation
-        #print('Nano.process_optical_flow')
-        pass
-
-    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
-        # Overload this for a Nano specific implementation
-        # print('Nano.process_frame')
-        pass
-
-    def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Nano specific implementation
-        # print('Nano.perform_optical_flow_task')
-        pass
-
-class XavierFrameProcessor(FrameProcessor):
-
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
-
-    def __enter__(self):
-        #print('Xavier.__enter__')
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass
-        #print('Xavier.__exit__')
-
-    def resize(self, gpu_frame, w, h, stream):
-        # Overload this for a Xavier specific implementation
-        #print('Xavier.resize_frame')
-        pass
-
-    def reduce_noise(self, gpu_frame, blur_radius, stream):
-        # Overload this for a Xavier specific implementation
-        #print('Xavier.noise_reduction')
-        pass
-
-    def convert_to_grey(self, gpu_frame, stream):
-        # Overload this for a Xavier specific implementation
-        #print('Xavier.convert_to_grey')
-        pass
-
-    def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
-        # Overload this for a Xavier specific implementation
-        # print('Xavier.keypoints_from_bg_subtraction')
-        pass
-
-    def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Xavier specific implementation
-        #print('Xavier.process_optical_flow')
-        pass
-
-    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
-        # Overload this for a Xavier specific implementation
-        # print('Xavier.process_frame')
-        pass
-
-    def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Xavier specific implementation
-        # print('Xavier.perform_optical_flow_task')
-        pass
-
-class OrinFrameProcessor(FrameProcessor):
-
-    def __init__(self, dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius):
-        super().__init__(dense_optical_flow, background_subtractor, resize_frame, resize_dim, noise_reduction, mask_pct, detection_mode, detection_sensitivity, blur_radius)
-
-    def __enter__(self):
-        #print('Orin.__enter__')
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass
-        #print('Orin.__exit__')
-
-    def resize(self, gpu_frame, w, h, stream):
-        # Overload this for a Orin specific implementation
-        #print('Orin.resize_frame')
-        pass
-
-    def reduce_noise(self, gpu_frame, blur_radius, stream):
-        # Overload this for a Orin specific implementation
-        #print('Orin.noise_reduction')
-        pass
-
-    def convert_to_grey(self, gpu_frame, stream):
-        # Overload this for a Orin specific implementation
-        #print('Orin.convert_to_grey')
-        pass
-
-    def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
-        # Overload this for a Orin specific implementation
-        # print('Orin.keypoints_from_bg_subtraction')
-        pass
-
-    def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Orin specific implementation
-        #print('Orin.process_optical_flow')
-        pass
-
-    def process_frame(self, video_tracker, frame, frame_count, fps, stream):
-        # Overload this for a Orin specific implementation
-        # print('Orin.process_frame')
-        pass
-
-    def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
-        # Overload this for a Orin specific implementation
-        # print('Orin.perform_optical_flow_task')
-        pass

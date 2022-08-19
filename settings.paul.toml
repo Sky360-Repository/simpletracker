@@ -34,8 +34,9 @@ mask_pct=20
 # Detects small, medium and large objects
 sensitivity=1
 resize_frame=false
-resize_dim=1440
+resize_dimension=1440
 noise_reduction=false
+blur_radius=3
 
 # The max number of concurrent active trackers
 max_active_trackers=10
@@ -45,6 +46,11 @@ max_active_trackers=10
 detection_mode='background_subtraction'
 
 calculate_optical_flow=true
+
+# tracker 
+stationary_check_threshold = 5
+stationary_check_max = 5
+orphaned_check_threshold = 20
 
 [Camera]
 

@@ -28,34 +28,34 @@ class VideoTracker():
     FRAME_TYPE_OPTICAL_FLOW = 'optical_flow'
     FRAME_TYPE_ORIGINAL = 'original'
 
-    def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
-                 resize_dim=1024, calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
-
-        print(
-            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  resize_dim:{resize_dim}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}")
-
-        self.detection_mode = detection_mode
-        if detection_sensitivity < 1 or detection_sensitivity > 3:
-            raise Exception(
-                f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
-
-        self.detection_sensitivity = detection_sensitivity
+    def __init__(self, settings, events, visualizer):
+      
+        self.settings = settings
+        self.detection_mode = settings['detection_mode']
+        self.detection_sensitivity = settings['detection_sensitivity']
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
         self.visualizer = visualizer
-        self.max_active_trackers = max_active_trackers
-        self.mask_pct = mask_pct
-        self.calculate_optical_flow = calculate_optical_flow
-        self.noise_reduction = noise_reduction
-        self.resize_frame = resize_frame
+        self.max_active_trackers = settings['max_active_trackers']
+        self.mask_pct = settings['mask_pct']
+        self.calculate_optical_flow = settings['calculate_optical_flow']
+        self.noise_reduction = settings['noise_reduction']
+        self.resize_frame = settings['resize_frame']
         self.frame_output = None
         self.frame_masked_background = None
-        self.tracker_type = tracker_type
-        self.resize_dim = resize_dim
+        self.tracker_type = settings['tracker_type']
+        self.resize_dimension = settings['resize_dimension']
         self.frames = {}
         self.keypoints = []
+
+        print(
+            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_pct:{self.mask_pct}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.tracker_type}")
+
+        if self.detection_sensitivity < 1 or self.detection_sensitivity > 3:
+            raise Exception(
+                f"Unknown sensitivity option ({self.detection_sensitivity}). 1, 2 and 3 is supported not {self.detection_sensitivity}.")        
 
     @property
     def is_tracking(self):
@@ -83,8 +83,7 @@ class VideoTracker():
 
         self.total_trackers_started += 1
 
-        tracker = Tracker(self.total_trackers_started, tracker_type,
-                          frame, bbox)
+        tracker = Tracker(self.settings, self.total_trackers_started, tracker_type, frame, bbox)
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
