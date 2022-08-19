@@ -33,7 +33,7 @@ max_display_dim=1080
 mask_pct=20
 # Detects small, medium and large objects
 sensitivity=2
-resize_frame=true
+resize_frame=false
 resize_dimension=1024
 noise_reduction=true
 blur_radius=3

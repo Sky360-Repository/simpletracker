@@ -55,12 +55,12 @@ class Tracker():
 
             if validate_target:
 
-                iterate = False
-                timedIteration = time.time()
-                if math.floor((timedIteration - self.start)) > self.second_counter:
+                validate = False
+                timed_ieration = time.time()
+                if math.floor((timed_ieration - self.start)) > self.second_counter:
                     self.tracked_boxes.append(bbox)
                     self.second_counter = self.second_counter + 1
-                    iterate = True
+                    validate = True
 
                 # print(f'Elaspsed seconds: {math.floor((iteration - self.start))}s - iterate: {iterate}')
 
@@ -76,7 +76,7 @@ class Tracker():
                             self.tracking_state = Tracker.ACTIVE_TARGET
                             self.bbox_to_check = bbox
 
-                    if iterate:
+                    if validate:
                         # print(f'5 X --> tracker {self.id}, total length: {len(self.bboxes)}')
                         previous_tracked_bbox = self.tracked_boxes[-1]
                         if utils.bbox_overlap(self.bbox_to_check, previous_tracked_bbox) > 0:
@@ -90,7 +90,7 @@ class Tracker():
                     self.tracking_state = Tracker.LOST_TARGET
                     # print(f'>> updating tracker {self.id} state to LOST_TARGET')
                 elif self.stationary_track_counter >= stationary_check_max:
-                    # print(f'Scavenging tracker {self.id}')
+                    print(f'Scavenging tracker {self.id}')
                     ok = False
 
                 if self.tracking_state == Tracker.ACTIVE_TARGET:
