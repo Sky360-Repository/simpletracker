@@ -34,7 +34,7 @@ enable_stopwatch=false
 
 # Detects small, medium and large objects
 sensitivity=2
-resize_frame=true
+resize_frame=false
 resize_dimension=1024
 noise_reduction=true
 blur_radius=3
@@ -60,6 +60,7 @@ orphaned_track_threshold=20
 [Mask]
 
 type='fish_eye'
+#type='custom'
 mask_pct=20
 
 [Camera]

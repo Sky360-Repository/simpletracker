@@ -94,6 +94,7 @@ class FisheyeMask(Mask):
             self.new_width,
             self.new_height)
         return clipped_masked_frame
+        #return masked_frame
 
 class CustomMask(Mask):
 
@@ -107,5 +108,10 @@ class CustomMask(Mask):
         return (self.width, self.height)
 
     def apply(self, frame):
+        # https://stackoverflow.com/questions/71659008/masking-many-images-from-two-different-path-opencv
+        mask = np.zeros(self.shape[:2], dtype=np.uint8)
+        cv2.rectangle(mask, (1000, 1000), (1450, 1450), 255, -1)
+        masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
+        #return masked_frame
         return frame
             
