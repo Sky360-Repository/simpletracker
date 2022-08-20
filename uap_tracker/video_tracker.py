@@ -31,29 +31,22 @@ class VideoTracker():
     def __init__(self, settings, events, visualizer):
       
         self.settings = settings
-        self.detection_mode = settings['detection_mode']
-        self.detection_sensitivity = settings['detection_sensitivity']
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
         self.visualizer = visualizer
-        self.max_active_trackers = settings['max_active_trackers']
-        self.calculate_optical_flow = settings['calculate_optical_flow']
-        self.noise_reduction = settings['noise_reduction']
-        self.resize_frame = settings['resize_frame']
         self.frame_output = None
         self.frame_masked_background = None
-        self.resize_dimension = settings['resize_dimension']
         self.frames = {}
         self.keypoints = []
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.settings['tracker_type']}")
+            f"Initializing Tracker:\n  resize_frame:{self.settings['resize_frame']}\n  resize_dimension:{self.settings['resize_dimension']}\n  noise_reduction: {self.settings['noise_reduction']}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.settings['detection_sensitivity']}\n  max_active_trackers:{self.settings['max_active_trackers']}\n  tracker_type:{self.settings['tracker_type']}")
 
-        if self.detection_sensitivity < 1 or self.detection_sensitivity > 3:
+        if self.settings['detection_sensitivity'] < 1 or self.settings['detection_sensitivity'] > 3:
             raise Exception(
-                f"Unknown sensitivity option ({self.detection_sensitivity}). 1, 2 and 3 is supported not {self.detection_sensitivity}.")        
+                f"Unknown sensitivity option ({self.settings['detection_sensitivity']}). 1, 2 and 3 is supported not {self.settings['detection_sensitivity']}.")        
 
     @property
     def is_tracking(self):
@@ -127,7 +120,7 @@ class VideoTracker():
         # Add new detections to live tracker
         for new_bbox in unmatched_bboxes:
             # Hit max trackers?
-            if len(self.live_trackers) < self.max_active_trackers:
+            if len(self.live_trackers) < self.settings['max_active_trackers']:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(frame, new_bbox)
 
@@ -153,7 +146,7 @@ class VideoTracker():
         self.frame_count = frame_count
         self.frames[self.FRAME_TYPE_ANNOTATED] = None
 
-        with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
+        with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', enable=self.settings['enable_stopwatch']):
 
             self.keypoints = frame_proc.process_frame(self, frame, frame_count, fps, stream)
 

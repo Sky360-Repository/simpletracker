@@ -34,6 +34,7 @@ from uap_tracker.video_tracker import VideoTracker
 from camera import get_camera
 from video_formatter import VideoFormatter
 import uap_tracker.utils as utils
+from app_settings import AppSettings
 
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
@@ -41,32 +42,10 @@ USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml
 def _setup_controller(media, events, visualizer, detection_mode):
     controller_clz = _get_controller()
 
-    app_settings = {}
-
-    app_settings['enable_cuda'] = settings.enable_cuda
-    app_settings['detection_mode'] = detection_mode
-
-    # Video Tracker section
-    app_settings['detection_sensitivity'] = settings.VideoTracker.get('sensitivity', 2)
-    app_settings['noise_reduction'] = settings.VideoTracker.get('noise_reduction', False)
-    app_settings['resize_frame'] = settings.VideoTracker.get('resize_frame', False)
-    app_settings['resize_dimension'] = settings.VideoTracker.get('resize_dimension', 1024)
-    app_settings['blur_radius'] = settings.VideoTracker.get('blur_radius', 3)
-    app_settings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
-    app_settings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
-    
-    app_settings['tracker_type'] = 'CSRT'
-    app_settings['tracker_stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 5)
-    app_settings['tracker_orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 20)    
-    
-
-    # Mask section
-    app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
-    app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
-
+    app_settings = AppSettings.Get(settings, detection_mode)
     video_tracker = VideoTracker(app_settings, events, visualizer)
 
-    return controller_clz(media, video_tracker, settings.enable_cuda)
+    return controller_clz(media, video_tracker)
 
 
 def _get_visualizer(detection_mode):

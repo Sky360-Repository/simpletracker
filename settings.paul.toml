@@ -15,8 +15,6 @@ output_dir='output'
 #  camera = camera stream
 controller='video'
 
-enable_cuda=false
-
 [Visualizer]
 
 # Options
@@ -29,6 +27,9 @@ max_display_dim=1080
 
 
 [VideoTracker]
+
+enable_cuda=false
+enable_stopwatch=false
 
 # Detects small, medium and large objects
 sensitivity=1

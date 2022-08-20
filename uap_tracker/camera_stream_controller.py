@@ -20,11 +20,11 @@ from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactor
 
 class CameraStreamController():
 
-    def __init__(self, camera, video_tracker, enable_cuda=False, minute_interval=10):
+    def __init__(self, camera, video_tracker, minute_interval=10):
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.enable_cuda = enable_cuda
+        self.enable_cuda = video_tracker.settings['enable_cuda']
         self.minute_interval = minute_interval
         self.running = False
 
@@ -46,10 +46,10 @@ class CameraStreamController():
 
         frame_count = 0
         fps = 0
-        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.enable_cuda, sensitivity=self.video_tracker.detection_sensitivity)
+        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.enable_cuda, sensitivity=self.video_tracker.settings['detection_sensitivity'])
 
         dense_optical_flow = None
-        if self.video_tracker.calculate_optical_flow:
+        if self.video_tracker.settings['calculate_optical_flow']:
             dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.enable_cuda, width=480, height=480)
 
         with FrameProcessor.Select(
