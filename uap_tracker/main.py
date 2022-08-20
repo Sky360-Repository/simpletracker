@@ -54,14 +54,15 @@ def _setup_controller(media, events, visualizer, detection_mode):
     app_settings['blur_radius'] = settings.VideoTracker.get('blur_radius', 3)
     app_settings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
     app_settings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
-    app_settings['stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 5)
-    app_settings['orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 20)
-
+    
     app_settings['tracker_type'] = 'CSRT'
+    app_settings['tracker_stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 5)
+    app_settings['tracker_orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 20)    
+    
 
     # Mask section
-    app_settings['mask_type'] = settings.Mask.get('type', 8)
-    app_settings['mask_pct'] = settings.Mask.get('mask_pct', 8)
+    app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
+    app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
 
     video_tracker = VideoTracker(app_settings, events, visualizer)
 

@@ -21,18 +21,18 @@ class Tracker():
     ACTIVE_TARGET = 2
     LOST_TARGET = 3
 
-    def __init__(self, settings, id, tracker_type, frame, bbox):
+    def __init__(self, settings, id, frame, bbox):
 
         self.settings = settings
         self.id = id
-        self.cv2_tracker = TrackerFactory.create(tracker_type)
+        self.cv2_tracker = TrackerFactory.create(settings)
         self.cv2_tracker.init(frame, bbox)
         self.bboxes = [bbox]
         self.stationary_track_counter = 0
         self.active_track_counter = 0
         self.tracking_state = Tracker.PROVISIONARY_TARGET
         self.bbox_to_check = bbox
-
+        
         self.start = time.time()
         self.second_counter = 0
         self.tracked_boxes = [bbox]
@@ -62,9 +62,9 @@ class Tracker():
 
                 # print(f'Elaspsed seconds: {math.floor((iteration - self.start))}s - iterate: {iterate}')
 
-                stationary_check_threshold = self.settings['stationary_check_threshold']
+                stationary_check_threshold = self.settings['tracker_stationary_check_threshold']
                 stationary_scavanage_threshold = math.floor(stationary_check_threshold * 1.25)
-                orphaned_check_thold = self.settings['orphaned_check_threshold']
+                orphaned_check_thold = self.settings['tracker_orphaned_check_threshold']
 
                 if len(self.tracked_boxes) > 1:
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target

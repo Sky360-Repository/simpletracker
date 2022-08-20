@@ -44,13 +44,12 @@ class VideoTracker():
         self.resize_frame = settings['resize_frame']
         self.frame_output = None
         self.frame_masked_background = None
-        self.tracker_type = settings['tracker_type']
         self.resize_dimension = settings['resize_dimension']
         self.frames = {}
         self.keypoints = []
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.tracker_type}")
+            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.settings['tracker_type']}")
 
         if self.detection_sensitivity < 1 or self.detection_sensitivity > 3:
             raise Exception(
@@ -76,17 +75,17 @@ class VideoTracker():
             if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, bbox)
 
-    def create_and_add_tracker(self, tracker_type, frame, bbox):
+    def create_and_add_tracker(self, frame, bbox):
         if not bbox:
             raise Exception("null bbox")
 
         self.total_trackers_started += 1
 
-        tracker = Tracker(self.settings, self.total_trackers_started, tracker_type, frame, bbox)
+        tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
-    def update_trackers(self, tracker_type, bboxes, frame):
+    def update_trackers(self, bboxes, frame):
 
         unmatched_bboxes = bboxes.copy()
         failed_trackers = []
@@ -130,7 +129,7 @@ class VideoTracker():
             # Hit max trackers?
             if len(self.live_trackers) < self.max_active_trackers:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
-                    self.create_and_add_tracker(tracker_type, frame, new_bbox)
+                    self.create_and_add_tracker(frame, new_bbox)
 
     def initialise(self, frame_proc, init_frame):
 

@@ -171,7 +171,7 @@ class CpuFrameProcessor(FrameProcessor):
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
-        video_tracker.update_trackers(video_tracker.tracker_type, bboxes, frame)
+        video_tracker.update_trackers(bboxes, frame)
 
         frame_count + 1
 
@@ -282,7 +282,7 @@ class GpuFrameProcessor(FrameProcessor):
                  optical_flow_thread.start()
                  worker_threads.append(optical_flow_thread)
 
-         video_tracker.update_trackers(video_tracker.tracker_type, bboxes, frame)
+         video_tracker.update_trackers(bboxes, frame)
 
          frame_count + 1
 
