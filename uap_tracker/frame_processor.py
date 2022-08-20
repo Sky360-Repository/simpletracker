@@ -13,7 +13,7 @@
 import cv2
 from threading import Thread
 import uap_tracker.utils as utils
-from uap_tracker.mask import FisheyeMask
+from uap_tracker.mask import Mask
 
 class FrameProcessor():
 
@@ -24,13 +24,12 @@ class FrameProcessor():
         self.resize_frame = settings['resize_frame']
         self.resize_dimension = (settings['resize_dimension'], settings['resize_dimension'])
         self.noise_reduction = settings['noise_reduction']
-        self.mask_pct = settings['mask_pct']
         self.detection_mode = settings['detection_mode']
         self.detection_sensitivity = settings['detection_sensitivity']
         self.blur_radius = settings['blur_radius']
         self.original_frame_w = 0
         self.original_frame_h = 0
-        self.mask = FisheyeMask(settings['mask_pct'])
+        self.mask = Mask.Select(settings)
 
     @staticmethod
     def Select(enable_cuda, settings, dense_optical_flow, background_subtractor):

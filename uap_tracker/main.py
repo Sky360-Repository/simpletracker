@@ -41,22 +41,29 @@ USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml
 def _setup_controller(media, events, visualizer, detection_mode):
     controller_clz = _get_controller()
 
-    appSettings = {}
-    appSettings['detection_mode'] = detection_mode
-    appSettings['detection_sensitivity'] = settings.VideoTracker.get('sensitivity', 2)
-    appSettings['mask_pct'] = settings.VideoTracker.get('mask_pct', 8)
-    appSettings['noise_reduction'] = settings.VideoTracker.get('noise_reduction', False)
-    appSettings['resize_frame'] = settings.VideoTracker.get('resize_frame', False)
-    appSettings['resize_dimension'] = settings.VideoTracker.get('resize_dimension', 1024)
-    appSettings['blur_radius'] = settings.VideoTracker.get('blur_radius', 3)
-    appSettings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
-    appSettings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
-    appSettings['tracker_type'] = 'CSRT'
-    appSettings['stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 10)
-    appSettings['stationary_check_max'] = settings.VideoTracker.get('stationary_check_max', 10)
-    appSettings['orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 25)
+    app_settings = {}
 
-    video_tracker = VideoTracker(appSettings, events, visualizer)
+    app_settings['enable_cuda'] = settings.enable_cuda
+    app_settings['detection_mode'] = detection_mode
+
+    # Video Tracker section
+    app_settings['detection_sensitivity'] = settings.VideoTracker.get('sensitivity', 2)
+    app_settings['noise_reduction'] = settings.VideoTracker.get('noise_reduction', False)
+    app_settings['resize_frame'] = settings.VideoTracker.get('resize_frame', False)
+    app_settings['resize_dimension'] = settings.VideoTracker.get('resize_dimension', 1024)
+    app_settings['blur_radius'] = settings.VideoTracker.get('blur_radius', 3)
+    app_settings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
+    app_settings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
+    app_settings['stationary_check_threshold'] = settings.VideoTracker.get('stationary_check_threshold', 5)
+    app_settings['orphaned_check_threshold'] = settings.VideoTracker.get('orphaned_check_threshold', 20)
+
+    app_settings['tracker_type'] = 'CSRT'
+
+    # Mask section
+    app_settings['mask_type'] = settings.Mask.get('type', 8)
+    app_settings['mask_pct'] = settings.Mask.get('mask_pct', 8)
+
+    video_tracker = VideoTracker(app_settings, events, visualizer)
 
     return controller_clz(media, video_tracker, settings.enable_cuda)
 

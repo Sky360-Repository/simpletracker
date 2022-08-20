@@ -39,7 +39,6 @@ class VideoTracker():
         self.events = events
         self.visualizer = visualizer
         self.max_active_trackers = settings['max_active_trackers']
-        self.mask_pct = settings['mask_pct']
         self.calculate_optical_flow = settings['calculate_optical_flow']
         self.noise_reduction = settings['noise_reduction']
         self.resize_frame = settings['resize_frame']
@@ -51,7 +50,7 @@ class VideoTracker():
         self.keypoints = []
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_pct:{self.mask_pct}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.tracker_type}")
+            f"Initializing Tracker:\n  resize_frame:{self.resize_frame}\n  resize_dimension:{self.resize_dimension}\n  noise_reduction: {self.noise_reduction}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.detection_sensitivity}\n  max_active_trackers:{self.max_active_trackers}\n  tracker_type:{self.tracker_type}")
 
         if self.detection_sensitivity < 1 or self.detection_sensitivity > 3:
             raise Exception(

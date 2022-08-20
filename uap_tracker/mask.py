@@ -16,6 +16,34 @@ import uap_tracker.utils as utils
 
 class Mask():
 
+    @staticmethod
+    def Select(settings):
+
+        mask_type = settings['mask_type']
+
+        if mask_type == 'fish_eye':
+            mask_pct = settings['mask_pct']
+            if mask_pct > 0:
+                return Mask.Fisheye(settings)
+        else:
+            if mask_type == 'custom':
+                return Mask.Custom(settings)
+
+        print(f'The NoOp Mask has been selected, is this correct?')
+        return Mask.NoOp(settings)
+
+    @staticmethod
+    def NoOp(settings):
+        return NoOpMask(settings)
+
+    @staticmethod
+    def Fisheye(settings):
+        return FisheyeMask(settings)
+
+    @staticmethod
+    def Custom(settings):
+        return CustomMask(settings)
+
     def __init__(self):
         pass
 
@@ -25,10 +53,24 @@ class Mask():
     def apply(self, frame):
         pass
 
+class NoOpMask(Mask):
+
+    def __init__(self, settings):
+        pass
+
+    def initialise(self, init_frame):
+        self.shape = init_frame.shape[:2]
+        self.height = self.shape[0]
+        self.width = self.shape[1]
+        return (self.width, self.height)
+
+    def apply(self, frame):
+        return frame
+
 class FisheyeMask(Mask):
 
-    def __init__(self, mask_pct):
-        self.mask_pct = mask_pct
+    def __init__(self, settings):
+        self.mask_pct = settings['mask_pct']
 
     def initialise(self, init_frame):
         self.mask_height = (100 - self.mask_pct) / 100.0
@@ -52,3 +94,18 @@ class FisheyeMask(Mask):
             self.new_width,
             self.new_height)
         return clipped_masked_frame
+
+class CustomMask(Mask):
+
+    def __init__(self, settings):
+        pass
+
+    def initialise(self, init_frame):
+        self.shape = init_frame.shape[:2]
+        self.height = self.shape[0]
+        self.width = self.shape[1]
+        return (self.width, self.height)
+
+    def apply(self, frame):
+        return frame
+            

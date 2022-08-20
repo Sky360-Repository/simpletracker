@@ -30,10 +30,9 @@ max_display_dim=1080
 
 [VideoTracker]
 
-mask_pct=20
 # Detects small, medium and large objects
 sensitivity=2
-resize_frame=false
+resize_frame=true
 resize_dimension=1024
 noise_reduction=true
 blur_radius=3
@@ -47,10 +46,14 @@ detection_mode='background_subtraction'
 
 calculate_optical_flow=false
 
-# tracker 
-stationary_check_threshold = 5
-stationary_check_max = 5
-orphaned_check_threshold = 20
+# Tracker stationary and orphased settings
+stationary_check_threshold=5
+orphaned_check_threshold=20
+
+[Mask]
+
+type='fish_eye'
+mask_pct=20
 
 [Camera]
 
