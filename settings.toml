@@ -25,8 +25,9 @@ controller='video'
 format='simple'
 max_display_dim=1080
 
-
 [VideoTracker]
+
+tracker_type='CSRT'
 
 enable_cuda=false
 enable_stopwatch=false
@@ -47,9 +48,14 @@ detection_mode='background_subtraction'
 
 calculate_optical_flow=false
 
-# Tracker stationary and orphased settings
-stationary_check_threshold=5
-orphaned_check_threshold=20
+# Tracker settings
+#   these settings help ensuer that trans are not orphaned and do not remain stationary for a long time
+#   generally I have found that stationary tracks are false positives and not good targets
+#
+#   Enable this by by setting the validation flag to true, its highly encouraged that this option is enabled
+enable_track_validation=true
+stationary_track_threshold=5
+orphaned_track_threshold=20
 
 [Mask]
 

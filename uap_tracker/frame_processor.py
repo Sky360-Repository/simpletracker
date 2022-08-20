@@ -32,8 +32,8 @@ class FrameProcessor():
         self.mask = Mask.Select(settings)
 
     @staticmethod
-    def Select(enable_cuda, settings, dense_optical_flow, background_subtractor):
-        if enable_cuda:
+    def Select(settings, dense_optical_flow, background_subtractor):
+        if settings['enable_cuda']:
             return FrameProcessor.GPU(settings, dense_optical_flow, background_subtractor)
 
         return FrameProcessor.CPU(settings, dense_optical_flow, background_subtractor)

@@ -39,16 +39,16 @@ from app_settings import AppSettings
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
 
-def _setup_controller(media, events, visualizer, detection_mode):
+def _setup_controller(media, events, visualizer, app_settings):
     controller_clz = _get_controller()
 
-    app_settings = AppSettings.Get(settings, detection_mode)
     video_tracker = VideoTracker(app_settings, events, visualizer)
 
     return controller_clz(media, video_tracker)
 
 
-def _get_visualizer(detection_mode):
+def _get_visualizer(app_settings):
+
     two_by_two_mode_visualizers = {
         'background_subtraction': TwoByTwoVisualiser,
         'optical_flow': TwoByTwoOpticalFlowVisualiser,
@@ -59,7 +59,7 @@ def _get_visualizer(detection_mode):
         'none': None,
         'noop': NoOpVisualiser,
         'simple': SimpleVisualiser,
-        'two_by_two': two_by_two_mode_visualizers[detection_mode]
+        'two_by_two': two_by_two_mode_visualizers[app_settings['detection_mode']]
     }
     visualizer_format = settings.Visualizer.get('format', None)
     visualizer_max_display_dim = settings.Visualizer.get(
@@ -79,21 +79,6 @@ def _get_visualizer(detection_mode):
         visualizer = None
     print(f"Visualizer: {visualizer}")
     return visualizer
-
-
-def _get_detection_mode():
-    detection_mode = settings.VideoTracker.get(
-        'detection_mode', None)
-
-    detection_modes = ['background_subtraction', 'optical_flow', 'none']
-
-    if not detection_mode:
-        print(
-            f"Please set detection_mode in the config or use the SKY360_DETECTION_MODE env var: {detection_modes}")
-        sys.exit(1)
-    else:
-        print(f"Detection Mode: {detection_mode}")
-    return detection_mode
 
 
 def _get_controller():
@@ -174,18 +159,19 @@ def main(argv):
 
     #cv2.namedWindow("Tracking", cv2.WINDOW_AUTOSIZE)
 
+    app_settings = AppSettings.Get(settings)
+    AppSettings.Validate(app_settings)
+
     output_dir = _create_output_dir()
 
     controller = _get_controller()
 
-    detection_mode = _get_detection_mode()
-
-    visualizer = _get_visualizer(detection_mode)
+    visualizer = _get_visualizer(app_settings)
 
     # If a video was passed in on commandline, run that and ignore other sources
     if cmdline_filename:
         process_file(controller, visualizer, cmdline_filename,
-                     output_dir, detection_mode)
+                     output_dir, app_settings)
     else:
         if controller == VideoPlaybackController:
 
@@ -199,7 +185,7 @@ def main(argv):
             for filename in sorted_files:
                 full_path = os.path.join(settings.input_dir, filename)
                 process_file(controller, visualizer, full_path,
-                             output_dir, detection_mode)
+                             output_dir, app_settings)
                 processed_path = os.path.join(processed_dir, filename)
                 shutil.move(full_path,processed_path)
 
@@ -208,9 +194,9 @@ def main(argv):
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
             if dumpers is not None:
-                _run(controller, [listener] + dumpers, visualizer, camera, detection_mode)
+                _run(controller, [listener] + dumpers, visualizer, camera, app_settings)
             else:
-                _run(controller, [listener], visualizer, camera, detection_mode)
+                _run(controller, [listener], visualizer, camera, app_settings)
 
 
 def _create_output_dir():
@@ -223,7 +209,7 @@ def _create_output_dir():
     return output_dir
 
 
-def process_file(controller, visualizer, full_path, output_dir, detection_mode):
+def process_file(controller, visualizer, full_path, output_dir, app_settings):
     base = os.path.basename(full_path)
     root_name = os.path.splitext(base)[0]
 
@@ -238,12 +224,12 @@ def process_file(controller, visualizer, full_path, output_dir, detection_mode):
     listener = _setup_listener(video, root_name, output_dir)
     dumpers = _setup_dumpers(video, root_name, output_dir)
     if dumpers is not None:
-        _run(controller, [listener] + dumpers, visualizer, video, detection_mode)
+        _run(controller, [listener] + dumpers, visualizer, video, app_settings)
     else:
-        _run(controller, [listener], visualizer, video, detection_mode)
+        _run(controller, [listener], visualizer, video, app_settings)
 
 
-def _run(controller, listeners, visualizer, media, detection_mode):
+def _run(controller, listeners, visualizer, media, app_settings):
 
     events = EventPublisher()
 
@@ -251,7 +237,7 @@ def _run(controller, listeners, visualizer, media, detection_mode):
         if listener:
             events.listen(listener)
 
-    controller = _setup_controller(media, events, visualizer, detection_mode)
+    controller = _setup_controller(media, events, visualizer, app_settings)
     controller.run()
 
 
