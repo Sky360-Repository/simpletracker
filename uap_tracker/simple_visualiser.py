@@ -19,5 +19,5 @@ class SimpleVisualiser(Visualizer):
     def visualise_frame(self, video_tracker):
         frame_output = video_tracker.get_annotated_image(active_trackers_only=False)
         fps = video_tracker.get_fps()
-        utils.stamp_output_frame(video_tracker, frame_output, self.font_size, self.font_colour, fps)
+        utils.stamp_output_frame(video_tracker, frame_output, self.font_size, self.font_colour, fps, self.font_thickness)
         return frame_output

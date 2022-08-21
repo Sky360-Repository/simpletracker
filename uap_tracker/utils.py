@@ -184,16 +184,16 @@ def combine_frames_2x2(top_left, top_right, bottom_left, bottom_right):
     im_h2 = cv2.hconcat([bottom_left, bottom_right])
     return cv2.vconcat([im_h1, im_h2])
 
-def stamp_original_frame(frame, font_size, font_color):
-    cv2.putText(frame, 'Original Frame (Sky360)', (100, 200),
-                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+def stamp_original_frame(frame, font_size, font_color, font_thickness):
+    cv2.putText(frame, 'Original Frame (Sky360)', (25, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
-def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
+def stamp_output_frame(video_tracker, frame, font_size, font_color, fps, font_thickness):
     msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
-    cv2.putText(frame, msg, (100, 200),
-                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+    cv2.putText(frame, msg, (25, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
-        100, 300), cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+        25, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
 def display_frame(processed_frame, max_display_dim):
     # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")

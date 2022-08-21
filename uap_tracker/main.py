@@ -73,8 +73,8 @@ def _get_visualizer(app_settings):
     visualizer_clz = visualizers[visualizer_format]
 
     if visualizer_clz:
-        visualizer = visualizer_clz(
-            visualizer_max_display_dim)
+        visualizer = visualizer_clz(visualizer_max_display_dim, 
+        app_settings['font_size'], app_settings['font_thickness'])
     else:
         visualizer = None
     print(f"Visualizer: {visualizer}")

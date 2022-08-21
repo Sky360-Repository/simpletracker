@@ -21,6 +21,10 @@ class AppSettings():
 
         app_settings = {}
 
+        #Visualisers
+        app_settings['font_size'] = settings.Visualizer.get('font_size', 0.75)
+        app_settings['font_thickness'] = settings.Visualizer.get('font_thickness', 2)
+
         # Video Tracker section
         app_settings['enable_stopwatch'] = settings.VideoTracker.get('enable_stopwatch', False)
         app_settings['enable_cuda'] = settings.VideoTracker.get('enable_cuda', False)

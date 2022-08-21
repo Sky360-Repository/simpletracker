@@ -24,7 +24,8 @@ controller='video'
 #    are also in console output
 format='two_by_two'
 max_display_dim=1080
-
+font_size=0.75
+font_thickness=2
 
 [VideoTracker]
 

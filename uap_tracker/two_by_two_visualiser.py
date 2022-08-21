@@ -27,10 +27,10 @@ class TwoByTwoVisualiser(Visualizer):
         fps = video_tracker.get_fps()
 
         utils.stamp_original_frame(
-            frame_input, self.font_size, self.font_colour)
+            frame_input, self.font_size, self.font_colour, self.font_thickness)
 
         utils.stamp_output_frame(
-            video_tracker, frame_output, self.font_size, self.font_colour, fps)
+            video_tracker, frame_output, self.font_size, self.font_colour, fps, self.font_thickness)
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
         frame_masked_background_copy = cv2.cvtColor(frame_masked_background, cv2.COLOR_GRAY2BGR)
@@ -38,11 +38,11 @@ class TwoByTwoVisualiser(Visualizer):
         frame_masked_background_with_key_points = cv2.drawKeypoints(
             frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         msg = f"Detected {len(key_points)} Key Points (Sky360)"
-        cv2.putText(frame_masked_background_with_key_points, msg, (100, 200),
-                    cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
+        cv2.putText(frame_masked_background_with_key_points, msg, (25, 25),
+                    cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, self.font_thickness)
 
         cv2.putText(frame_masked_background_copy, "Masked Background (Sky360)",
-                    (100, 200), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, 2)
+                    (25, 50), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, self.font_thickness)
         bottom_left_frame = frame_masked_background_copy
         bottom_right_frame = frame_masked_background_with_key_points
 
