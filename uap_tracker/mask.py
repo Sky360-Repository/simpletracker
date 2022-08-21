@@ -11,6 +11,7 @@
 # all copies or substantial portions of the Software.
 
 import cv2
+import os
 import numpy as np
 import uap_tracker.utils as utils
 
@@ -21,15 +22,19 @@ class Mask():
 
         mask_type = settings['mask_type']
 
-        if mask_type == 'fish_eye':
-            mask_pct = settings['mask_pct']
-            if mask_pct > 0:
-                return Mask.Fisheye(settings)
-        else:
-            if mask_type == 'custom':
-                return Mask.Custom(settings)
+        if mask_type == 'no_op':
+            return Mask.NoOp(settings)
 
-        print(f'The NoOp Mask has been selected, is this correct?')
+        if mask_type == 'fish_eye':
+            return Mask.Fisheye(settings)
+
+        if mask_type == 'overlay':
+            return Mask.Overlay(settings)
+
+        if mask_type == 'overlay_inverse':
+            return Mask.OverlayInverse(settings)
+
+        print(f'The NoOp Mask has been selected, is this correct or is there a config error?')
         return Mask.NoOp(settings)
 
     @staticmethod
@@ -41,8 +46,16 @@ class Mask():
         return FisheyeMask(settings)
 
     @staticmethod
-    def Custom(settings):
-        return CustomMask(settings)
+    def Overlay(settings):
+        return OverlayMask(settings)
+
+    @staticmethod
+    def OverlayInverse(settings):
+        return OverlayInverseMask(settings)
+
+    @staticmethod
+    def Shaped(settings):
+        return ShapedMask(settings)
 
     def __init__(self):
         pass
@@ -94,9 +107,43 @@ class FisheyeMask(Mask):
             self.new_width,
             self.new_height)
         return clipped_masked_frame
-        #return masked_frame
 
-class CustomMask(Mask):
+class OverlayMask(Mask):
+
+    def __init__(self, settings):
+        self.overlay_image_path = settings['overlay_image_path']
+
+    def initialise(self, init_frame):
+        self.shape = init_frame.shape[:2]
+        self.height = self.shape[0]
+        self.width = self.shape[1]
+
+        # load the oimage we are going to use as a mask
+        self.overlay_image = cv2.imread(self.overlay_image_path, cv2.IMREAD_GRAYSCALE)
+        
+        # resize this image to fit our input frame
+        overlay_h = self.overlay_image.shape[:2][0]
+        overlay_w = self.overlay_image.shape[:2][1]
+        if overlay_h != self.height or overlay_w != self.width:
+            self.overlay_image = cv2.resize(self.overlay_image, (self.width, self.height))
+        return (self.width, self.height)
+
+    def apply(self, frame):
+        masked_frame = cv2.bitwise_and(frame, frame, mask=self.overlay_image)
+        return masked_frame
+
+class OverlayInverseMask(OverlayMask):
+
+    def __init__(self, settings):
+        super().__init__(settings)
+
+    def apply(self, frame):
+        mask = cv2.bitwise_not(self.overlay_image)
+        masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
+        return masked_frame
+
+# TODO: MG: Place holder for if this type of mark is required
+class ShapedMask(Mask):
 
     def __init__(self, settings):
         pass
@@ -108,10 +155,8 @@ class CustomMask(Mask):
         return (self.width, self.height)
 
     def apply(self, frame):
-        # https://stackoverflow.com/questions/71659008/masking-many-images-from-two-different-path-opencv
         mask = np.zeros(self.shape[:2], dtype=np.uint8)
+        # MG: We have hardcoded points here for test purposes
         cv2.rectangle(mask, (1000, 1000), (1450, 1450), 255, -1)
         masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
-        #return masked_frame
-        return frame
-            
+        return masked_frame

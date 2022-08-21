@@ -60,8 +60,16 @@ orphaned_track_threshold=20
 
 [Mask]
 
+# Mask types supported
+#   one of: 'fish_eye', 'overlay', 'overlay_inverse'
+#   each option has it's own parameters, see below
+
 type='fish_eye'
 mask_pct=20
+
+#type='overlay'
+#type='overlay_inverse'
+#overlay_image_path='masks/test_mask.jpg'
 
 [Camera]
 
