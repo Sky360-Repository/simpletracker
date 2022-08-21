@@ -44,10 +44,6 @@ class VideoTracker():
         print(
             f"Initializing Tracker:\n  resize_frame:{self.settings['resize_frame']}\n  resize_dimension:{self.settings['resize_dimension']}\n  noise_reduction: {self.settings['noise_reduction']}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.settings['detection_sensitivity']}\n  max_active_trackers:{self.settings['max_active_trackers']}\n  tracker_type:{self.settings['tracker_type']}")
 
-        if self.settings['detection_sensitivity'] < 1 or self.settings['detection_sensitivity'] > 3:
-            raise Exception(
-                f"Unknown sensitivity option ({self.settings['detection_sensitivity']}). 1, 2 and 3 is supported not {self.settings['detection_sensitivity']}.")        
-
     @property
     def is_tracking(self):
         return len(self.live_trackers) > 0

@@ -51,13 +51,18 @@ class AppSettings():
 
         detection_mode = app_settings['detection_mode']
         detection_modes = ['background_subtraction', 'optical_flow', 'none']
-
         if not detection_mode:
             print(
                 f"Please set detection_mode in the config or use the SKY360_DETECTION_MODE env var: {detection_modes}")
             sys.exit(1)
         else:
             print(f"Detection Mode: {detection_mode}")
+
+        detection_sensitivity = app_settings['detection_sensitivity']
+        if detection_sensitivity < 1 or detection_sensitivity > 3:
+            print(
+                f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
+            sys.exit(1)
 
         mask_type = app_settings['mask_type']
         if mask_type == 'fish_eye':
