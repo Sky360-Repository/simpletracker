@@ -57,7 +57,7 @@ class VideoTracker():
 
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
         for kp in key_points:
-            bbox = utils.kp_to_bbox(kp)
+            bbox = utils.kp_to_bbox(kp, self.settings)
             # print(bbox)
 
             # Initialize tracker with first frame and bounding box

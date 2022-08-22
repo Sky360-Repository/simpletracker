@@ -36,8 +36,8 @@ enable_stopwatch=false
 
 # Detects small, medium and large objects
 sensitivity=2
-resize_frame=false
-resize_dimension=1024
+resize_frame=true
+resize_dimension=1080
 noise_reduction=true
 blur_radius=3
 
@@ -58,6 +58,11 @@ calculate_optical_flow=false
 enable_track_validation=true
 stationary_track_threshold=5
 orphaned_track_threshold=20
+
+# Bounding Boxes setting
+#   try and fix the size of the bounding box and add a little bit of margin as well
+bbox_fixed_size=false
+bbox_size=64
 
 [Mask]
 

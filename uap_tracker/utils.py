@@ -25,11 +25,22 @@ def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
-def kp_to_bbox(kp):
+def kp_to_bbox(kp, settings):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
-    return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * kp.size), int(scale * kp.size))
+    if settings['bbox_fixed_size']:
+        scale = settings['bbox_size'] / size
+    #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
+    x1 = int(x - ((scale * size) / 2))
+    y1 = int(y - ((scale * size) / 2))    
+    w = int(scale * size)
+    h = int(scale * size)
+    #x2 = x1 + w
+    #y2 = y1 + h
+    #print(f'x:{x}, y:{y}, x1:{x1}, y1:{y1}')#, w:{w}, h:{h}, x1-x2:{x1-x2}, y1-y2:{y1-y2}')
+    #return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
+    return (x1, y1, w, h)
 
 def bbox_overlap(bbox1, bbox2):
     #    bb1 : dict

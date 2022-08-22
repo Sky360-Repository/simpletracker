@@ -163,7 +163,7 @@ class CpuFrameProcessor(FrameProcessor):
                 # Need 5 frames to get the background subtractor initialised
                 return keypoints
 
-            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+            bboxes = [utils.kp_to_bbox(x, self.settings) for x in keypoints]
 
             if self.dense_optical_flow is not None:
                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
@@ -272,7 +272,7 @@ class GpuFrameProcessor(FrameProcessor):
                  # Need 5 frames to get the background subtractor initialised
                  return keypoints
 
-             bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+             bboxes = [utils.kp_to_bbox(x, self.settings) for x in keypoints]
 
              if self.dense_optical_flow is not None:
                  #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream)

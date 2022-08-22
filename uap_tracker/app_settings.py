@@ -43,6 +43,10 @@ class AppSettings():
         app_settings['stationary_track_threshold'] = settings.VideoTracker.get('stationary_track_threshold', 5)
         app_settings['orphaned_track_threshold'] = settings.VideoTracker.get('orphaned_track_threshold', 20)        
 
+        # BBox section
+        app_settings['bbox_fixed_size'] = settings.VideoTracker.get('bbox_fixed_size', False)
+        app_settings['bbox_size'] = settings.VideoTracker.get('bbox_size', 64)
+
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
