@@ -101,7 +101,7 @@ class CpuFrameProcessor(FrameProcessor):
 
     def resize(self, frame, w, h, stream):
         # Overload this for a CPU specific implementation
-        #print('CPU.resize_frame')
+        #print(f'CPU.resize_frame w:{w}, h:{h}')
         return cv2.resize(frame, (w, h))
 
     def reduce_noise(self, frame, blur_radius, stream):
@@ -203,7 +203,7 @@ class GpuFrameProcessor(FrameProcessor):
 
     def resize(self, gpu_frame, w, h, stream):
         # Overload this for a GPU specific implementation
-        #print('GPU.resize_frame')
+        #print(f'GPU.resize_frame w:{w}, h:{h}')
         return cv2.cuda.resize(gpu_frame, (w, h), stream=stream)
 
     def reduce_noise(self, gpu_frame, blur_radius, stream):
@@ -243,11 +243,10 @@ class GpuFrameProcessor(FrameProcessor):
          bboxes = []
          keypoints = []
 
-         # Mike: Need to figure out how to offload to CUDA
-         frame = self.mask.apply(frame)
-
          gpu_frame = cv2.cuda_GpuMat()
          gpu_frame.upload(frame, stream=stream)
+
+         gpu_frame = self.mask.apply(gpu_frame, stream=stream)
 
          # Mike: As part of the initialisation method we worked out that the frame needs to be resized
          if self.resize_frame:

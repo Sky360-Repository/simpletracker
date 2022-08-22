@@ -36,7 +36,7 @@ enable_stopwatch=false
 
 # Detects small, medium and large objects
 sensitivity=2
-resize_frame=true
+resize_frame=false
 resize_dimension=1024
 noise_reduction=true
 blur_radius=3
@@ -64,13 +64,15 @@ orphaned_track_threshold=20
 # Mask types supported
 #   one of: 'fish_eye', 'overlay', 'overlay_inverse'
 #   each option has it's own parameters, see below
+#   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
 
 type='fish_eye'
 mask_pct=20
 
+#type='no_op'
 #type='overlay'
 #type='overlay_inverse'
-#overlay_image_path='masks/test_mask_kk.jpg'
+#overlay_image_path='masks/test_mask_2.jpg'
 
 [Camera]
 
