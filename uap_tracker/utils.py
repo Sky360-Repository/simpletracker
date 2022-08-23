@@ -163,7 +163,7 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id),
-                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
+                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
 
 # Takes a frame and returns a smaller one
 # (size divided by zoom level) centered on center
