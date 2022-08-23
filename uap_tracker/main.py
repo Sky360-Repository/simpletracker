@@ -21,10 +21,7 @@ import cv2
 import shutil
 
 from uap_tracker.event_publisher import EventPublisher
-from uap_tracker.no_op_visualiser import NoOpVisualiser
-from uap_tracker.simple_visualiser import SimpleVisualiser
-from uap_tracker.two_by_two_optical_flow_visualiser import TwoByTwoOpticalFlowVisualiser
-from uap_tracker.two_by_two_visualiser import TwoByTwoVisualiser
+from uap_tracker.visualizer import NoOpVisualiser, SimpleVisualiser, TwoByTwoVisualiser, TwoByTwoOpticalFlowVisualiser
 from uap_tracker.video_playback_controller import VideoPlaybackController
 from uap_tracker.camera_stream_controller import CameraStreamController
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
