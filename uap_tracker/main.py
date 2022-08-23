@@ -22,8 +22,7 @@ import shutil
 
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.visualizer import NoOpVisualiser, SimpleVisualiser, TwoByTwoVisualiser, TwoByTwoOpticalFlowVisualiser
-from uap_tracker.video_playback_controller import VideoPlaybackController
-from uap_tracker.camera_stream_controller import CameraStreamController
+from uap_tracker.controller import VideoPlaybackController, CameraStreamController
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from uap_tracker.video_frame_dumpers import OriginalFrameVideoWriter, GreyFrameVideoWriter, OpticalFlowFrameVideoWriter, AnnotatedFrameVideoWriter, MaskedBackgroundFrameVideoWriter
 from config import settings
