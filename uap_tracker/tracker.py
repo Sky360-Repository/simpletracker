@@ -10,6 +10,8 @@
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
 
+import time
+import math
 import uap_tracker.utils as utils
 from uap_tracker.tracker_factory import TrackerFactory
 
@@ -19,16 +21,21 @@ class Tracker():
     ACTIVE_TARGET = 2
     LOST_TARGET = 3
 
-    def __init__(self, id, tracker_type, frame, bbox):
+    def __init__(self, settings, id, frame, bbox):
 
+        self.settings = settings
         self.id = id
-        self.cv2_tracker = TrackerFactory.create(tracker_type)
+        self.cv2_tracker = TrackerFactory.create(settings)
         self.cv2_tracker.init(frame, bbox)
         self.bboxes = [bbox]
-        self.frame_stationary_check = 0
-        self.frame_active_tracker_count = 0
+        self.stationary_track_counter = 0
+        self.active_track_counter = 0
         self.tracking_state = Tracker.PROVISIONARY_TARGET
         self.bbox_to_check = bbox
+        
+        self.start = time.time()
+        self.second_counter = 0
+        self.tracked_boxes = [bbox]
 
     # (x1,y1,w,h)
     def get_bbox(self):
@@ -39,18 +46,27 @@ class Tracker():
         return (int(x1+(w/2)),
                 int(y1+(h/2)))
 
-    def update(self, frame, validate_target=True):
+    def update(self, frame):
         ok, bbox = self.cv2_tracker.update(frame)
         # print(f'updating tracker {self.id}, result: {ok}')
         if ok:
             self.bboxes.append(bbox)
 
-            if validate_target:
-                stationary_check_thold = 4
-                stationary_check_max = 5
-                orphaned_check_thold = 20
+            if self.settings['enable_track_validation']:
 
-                if len(self.bboxes) > 10:
+                validate_bbox = False
+                if math.floor((time.time() - self.start)) > self.second_counter:
+                    self.tracked_boxes.append(bbox)
+                    self.second_counter = self.second_counter + 1
+                    validate_bbox = True
+
+                # print(f'Elaspsed seconds: {math.floor((iteration - self.start))}s - iterate: {iterate}')
+
+                stationary_track_threshold = self.settings['stationary_track_threshold']
+                stationary_scavanage_threshold = math.floor(stationary_track_threshold * 1.5)
+                orphaned_track_thold = self.settings['orphaned_track_threshold']
+
+                if len(self.tracked_boxes) > 1:
                     # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
                     if utils.bbox_overlap(self.bbox_to_check, bbox) == 0.0:
                         # self.bbox_color = self.font_color
@@ -58,28 +74,28 @@ class Tracker():
                             self.tracking_state = Tracker.ACTIVE_TARGET
                             self.bbox_to_check = bbox
 
-                    if float(len(self.bboxes) % 5) == 0:
+                    if validate_bbox:
                         # print(f'5 X --> tracker {self.id}, total length: {len(self.bboxes)}')
-                        bbox_lagging = self.bboxes[-5]
-                        if utils.bbox_overlap(self.bbox_to_check, bbox_lagging) > 0:
+                        previous_tracked_bbox = self.tracked_boxes[-1]
+                        if utils.bbox_overlap(self.bbox_to_check, previous_tracked_bbox) > 0:
                             # MG: this bounding box has remained pretty static, its now closer to getting scavenged
-                            self.frame_stationary_check += 1
+                            self.stationary_track_counter += 1
                         else:
-                            self.frame_stationary_check = 0
+                            self.stationary_track_counter = 0
 
-                if stationary_check_thold <= self.frame_stationary_check < stationary_check_max:
+                if stationary_track_threshold <= self.stationary_track_counter < stationary_scavanage_threshold:
                     # MG: If its not moved enough then mark it as red for potential scavenging
                     self.tracking_state = Tracker.LOST_TARGET
                     # print(f'>> updating tracker {self.id} state to LOST_TARGET')
-                elif self.frame_stationary_check >= stationary_check_max:
+                elif self.stationary_track_counter >= stationary_scavanage_threshold:
                     # print(f'Scavenging tracker {self.id}')
                     ok = False
 
                 if self.tracking_state == Tracker.ACTIVE_TARGET:
-                    self.frame_active_tracker_count += 1
-                    if self.frame_active_tracker_count > orphaned_check_thold:
+                    self.active_track_counter += 1
+                    if self.active_track_counter > orphaned_track_thold:
                         self.bbox_to_check = bbox
-                        self.frame_active_tracker_count = 0
+                        self.active_track_counter = 0
 
         return ok, bbox
 

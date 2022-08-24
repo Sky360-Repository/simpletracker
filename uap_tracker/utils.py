@@ -25,11 +25,22 @@ def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
-def kp_to_bbox(kp):
+def kp_to_bbox(kp, settings):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
-    return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * kp.size), int(scale * kp.size))
+    if settings['bbox_fixed_size']:
+        scale = settings['bbox_size'] / size
+    #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
+    x1 = int(x - ((scale * size) / 2))
+    y1 = int(y - ((scale * size) / 2))    
+    w = int(scale * size)
+    h = int(scale * size)
+    #x2 = x1 + w
+    #y2 = y1 + h
+    #print(f'x:{x}, y:{y}, x1:{x1}, y1:{y1}')#, w:{w}, h:{h}, x1-x2:{x1-x2}, y1-y2:{y1-y2}')
+    #return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
+    return (x1, y1, w, h)
 
 def bbox_overlap(bbox1, bbox2):
     #    bb1 : dict
@@ -152,7 +163,7 @@ def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id),
-                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_TRIPLEX, font_size, color, 2)
+                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
 
 # Takes a frame and returns a smaller one
 # (size divided by zoom level) centered on center
@@ -184,16 +195,16 @@ def combine_frames_2x2(top_left, top_right, bottom_left, bottom_right):
     im_h2 = cv2.hconcat([bottom_left, bottom_right])
     return cv2.vconcat([im_h1, im_h2])
 
-def stamp_original_frame(frame, font_size, font_color):
-    cv2.putText(frame, 'Original Frame (Sky360)', (100, 200),
-                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+def stamp_original_frame(frame, font_size, font_color, font_thickness):
+    cv2.putText(frame, 'Original Frame (Sky360)', (25, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
-def stamp_output_frame(video_tracker, frame, font_size, font_color, fps):
+def stamp_output_frame(video_tracker, frame, font_size, font_color, fps, font_thickness):
     msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
-    cv2.putText(frame, msg, (100, 200),
-                cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+    cv2.putText(frame, msg, (25, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
-        100, 300), cv2.FONT_HERSHEY_TRIPLEX, font_size, font_color, 2)
+        25, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
 def display_frame(processed_frame, max_display_dim):
     # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")

@@ -15,8 +15,6 @@ output_dir='output'
 #  camera = camera stream
 controller='video'
 
-enable_cuda=false
-
 [Visualizer]
 
 # Options
@@ -26,16 +24,22 @@ enable_cuda=false
 #    are also in console output
 format='simple'
 max_display_dim=1080
-
+font_size=0.5
+font_thickness=1
 
 [VideoTracker]
 
-mask_pct=20
+tracker_type='CSRT'
+
+enable_cuda=false
+enable_stopwatch=false
+
 # Detects small, medium and large objects
 sensitivity=2
 resize_frame=true
-resize_dim=1024
+resize_dimension=1440
 noise_reduction=true
+blur_radius=3
 
 # The max number of concurrent active trackers
 max_active_trackers=10
@@ -44,7 +48,37 @@ max_active_trackers=10
 #   one of: 'background_subtraction'
 detection_mode='background_subtraction'
 
-calculate_optical_flow=true
+calculate_optical_flow=false
+
+# Tracker settings
+#   these settings help ensuer that trans are not orphaned and do not remain stationary for a long time
+#   generally I have found that stationary tracks are false positives and not good targets
+#
+#   Enable this by by setting the validation flag to true, its highly encouraged that this option is enabled
+enable_track_validation=true
+stationary_track_threshold=5
+orphaned_track_threshold=20
+
+# Bounding Boxes setting
+#   try and fix the size of the bounding box and add a little bit of margin as well
+# NOTE: This is still work in progress and does not yet work correctly
+bbox_fixed_size=false
+bbox_size=64
+
+[Mask]
+
+# Mask types supported
+#   one of: 'fish_eye', 'overlay', 'overlay_inverse'
+#   each option has it's own parameters, see below
+#   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
+
+type='fish_eye'
+mask_pct=20
+
+#type='no_op'
+#type='overlay'
+#type='overlay_inverse'
+#overlay_image_path='masks/test_mask.jpg'
 
 [Camera]
 

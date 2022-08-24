@@ -16,7 +16,10 @@ import uap_tracker.utils as utils
 class TrackerFactory():
 
     @staticmethod
-    def create(tracker_type):
+    def create(settings):
+
+        tracker_type = settings['tracker_type']
+
         tracker = None
         (major_ver, minor_ver, subminor_ver) = utils.get_cv_version()
 

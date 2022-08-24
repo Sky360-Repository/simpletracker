@@ -28,34 +28,21 @@ class VideoTracker():
     FRAME_TYPE_OPTICAL_FLOW = 'optical_flow'
     FRAME_TYPE_ORIGINAL = 'original'
 
-    def __init__(self, detection_mode, events, visualizer, detection_sensitivity=2, mask_pct=8, noise_reduction=True, resize_frame=True,
-                 resize_dim=1024, calculate_optical_flow=True, max_active_trackers=10, tracker_type='CSRT'):
-
-        print(
-            f"Initializing Tracker:\n  resize_frame:{resize_frame}\n  resize_dim:{resize_dim}\n  noise_reduction: {noise_reduction}\n  mask_pct:{mask_pct}\n  sensitivity:{detection_sensitivity}\n  max_active_trackers:{max_active_trackers}\n  tracker_type:{tracker_type}")
-
-        self.detection_mode = detection_mode
-        if detection_sensitivity < 1 or detection_sensitivity > 3:
-            raise Exception(
-                f"Unknown sensitivity option ({detection_sensitivity}). 1, 2 and 3 is supported not {detection_sensitivity}.")
-
-        self.detection_sensitivity = detection_sensitivity
+    def __init__(self, settings, events, visualizer):
+      
+        self.settings = settings
         self.total_trackers_finished = 0
         self.total_trackers_started = 0
         self.live_trackers = []
         self.events = events
         self.visualizer = visualizer
-        self.max_active_trackers = max_active_trackers
-        self.mask_pct = mask_pct
-        self.calculate_optical_flow = calculate_optical_flow
-        self.noise_reduction = noise_reduction
-        self.resize_frame = resize_frame
         self.frame_output = None
         self.frame_masked_background = None
-        self.tracker_type = tracker_type
-        self.resize_dim = resize_dim
         self.frames = {}
         self.keypoints = []
+
+        print(
+            f"Initializing Tracker:\n  resize_frame:{self.settings['resize_frame']}\n  resize_dimension:{self.settings['resize_dimension']}\n  noise_reduction: {self.settings['noise_reduction']}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.settings['detection_sensitivity']}\n  max_active_trackers:{self.settings['max_active_trackers']}\n  tracker_type:{self.settings['tracker_type']}")
 
     @property
     def is_tracking(self):
@@ -70,25 +57,24 @@ class VideoTracker():
 
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
         for kp in key_points:
-            bbox = utils.kp_to_bbox(kp)
+            bbox = utils.kp_to_bbox(kp, self.settings)
             # print(bbox)
 
             # Initialize tracker with first frame and bounding box
             if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, bbox)
 
-    def create_and_add_tracker(self, tracker_type, frame, bbox):
+    def create_and_add_tracker(self, frame, bbox):
         if not bbox:
             raise Exception("null bbox")
 
         self.total_trackers_started += 1
 
-        tracker = Tracker(self.total_trackers_started, tracker_type,
-                          frame, bbox)
+        tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
-    def update_trackers(self, tracker_type, bboxes, frame):
+    def update_trackers(self, bboxes, frame):
 
         unmatched_bboxes = bboxes.copy()
         failed_trackers = []
@@ -130,9 +116,9 @@ class VideoTracker():
         # Add new detections to live tracker
         for new_bbox in unmatched_bboxes:
             # Hit max trackers?
-            if len(self.live_trackers) < self.max_active_trackers:
+            if len(self.live_trackers) < self.settings['max_active_trackers']:
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
-                    self.create_and_add_tracker(tracker_type, frame, new_bbox)
+                    self.create_and_add_tracker(frame, new_bbox)
 
     def initialise(self, frame_proc, init_frame):
 
@@ -156,7 +142,7 @@ class VideoTracker():
         self.frame_count = frame_count
         self.frames[self.FRAME_TYPE_ANNOTATED] = None
 
-        with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', quiet=True):
+        with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', enable=self.settings['enable_stopwatch']):
 
             self.keypoints = frame_proc.process_frame(self, frame, frame_count, fps, stream)
 

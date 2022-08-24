@@ -14,9 +14,9 @@ from time import perf_counter
 
 class Stopwatch:
 
-    def __init__(self, mask='Execution time: {s:0.4f} seconds', quiet=False):
+    def __init__(self, mask='Execution time: {s:0.4f} seconds', enable=False):
         self.mask = mask
-        self.quiet = quiet
+        self.enable = enable
 
     def __enter__(self):
         self.time = perf_counter()
@@ -25,5 +25,5 @@ class Stopwatch:
     def __exit__(self, type, value, traceback):
         self.time = perf_counter() - self.time
         self.readout = self.mask.format(s=self.time)
-        if not self.quiet:
+        if self.enable:
             print(self.readout)
