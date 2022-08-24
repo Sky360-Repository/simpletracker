@@ -12,6 +12,10 @@
 
 import cv2
 
+###########################################################################################################
+# This code file contains a selection of useful utility functions that are used throughout simple tracker #
+###########################################################################################################
+
 # Utility function to determine if the installed version of open cv is supported
 # We support v4.1 and above
 def is_cv_version_supported():
