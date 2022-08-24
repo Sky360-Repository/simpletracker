@@ -37,7 +37,7 @@ enable_stopwatch=false
 # Detects small, medium and large objects
 sensitivity=2
 resize_frame=true
-resize_dimension=1080
+resize_dimension=1440
 noise_reduction=true
 blur_radius=3
 
