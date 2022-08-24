@@ -54,11 +54,11 @@ class CameraStreamController(Controller):
 
         frame_count = 0
         fps = 0
-        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], sensitivity=self.video_tracker.settings['detection_sensitivity'])
+        background_subtractor = BackgroundSubtractorFactory.Select(self.video_tracker.settings)
 
         dense_optical_flow = None
         if self.video_tracker.settings['calculate_optical_flow']:
-            dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], width=480, height=480)
+            dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,
@@ -109,11 +109,11 @@ class VideoPlaybackController(Controller):
 
         frame_count = 0
         fps = 0
-        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], sensitivity=self.video_tracker.settings['detection_sensitivity'])
+        background_subtractor = BackgroundSubtractorFactory.Select(self.video_tracker.settings)
 
         dense_optical_flow = None
         if self.video_tracker.settings['calculate_optical_flow']:
-            dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], width=480, height=480)
+            dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,

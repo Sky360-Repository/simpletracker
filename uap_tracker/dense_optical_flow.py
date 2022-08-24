@@ -13,15 +13,22 @@
 import cv2
 import numpy as np
 
+###########################################################################################################################
+# This class provides a dense optical flow abstraction that is used in order to provide both a CPU and GPU implimentation #
+###########################################################################################################################
 class DenseOpticalFlow():
 
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
+    # Static factory select method to determine what dense optical flow implementation to use
     @staticmethod
-    def Select(enable_cuda, width, height):
-        if enable_cuda:
+    def Select(settings):
+
+        width = settings['dense_optical_flow_width']
+        height = settings['dense_optical_flow_height']
+        if settings['enable_cuda']:
             return DenseOpticalFlow.GPU(width, height)
 
         return DenseOpticalFlow.CPU(width, height)

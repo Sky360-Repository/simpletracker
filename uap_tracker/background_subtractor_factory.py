@@ -12,27 +12,30 @@
 
 import cv2
 
-
+####################################################################################################################
+# This class provides a factory implimentation for selecting which background subtraction algorithm should be used #
+#   We use KNN by default, unfortunately KNN has no CUDA implementation so for CUDA we deafult to MOG2             #
+####################################################################################################################
 class BackgroundSubtractorFactory():
 
+    # Static factory select method to determine what background subtraction algorithm to use
+    # We use KNN by default, unfortunately KNN has no CUDA implementation so for CUDA we deafult to MOG2
     @staticmethod
-    def Select(enable_cuda, sensitivity):
+    def Select(settings):
+        enable_cuda = settings['enable_cuda']
         if enable_cuda:
-            return BackgroundSubtractorFactory.create('MOG2_CUDA', sensitivity)
+            return BackgroundSubtractorFactory.create('MOG2_CUDA', settings)
 
-        return BackgroundSubtractorFactory.create('KNN', sensitivity)
+        return BackgroundSubtractorFactory.create('KNN', settings)
 
+    # Static create method, used to instantiate the selected background subtraction algorithm along with
+    # whatever parameters that have been configured
     @staticmethod
-    def create(type, sensitivity):
+    def create(type, settings):
+        sensitivity = settings['detection_sensitivity']
         background_subtractor = None
         if type == 'KNN':
-            # defaults: samples:2, dist2Threshold:400.0, history: 500
             background_subtractor = cv2.createBackgroundSubtractorKNN()
-
-            # samples = background_subtractor.getkNNSamples()
-            # dist_2_threshold = background_subtractor.getDist2Threshold()
-            # history = background_subtractor.getHistory()
-            # print(f'samples:{samples}, dist2Threshold:{dist_2_threshold}, history, {history}')
 
             #background_subtractor.setHistory(1)  # large gets many detections
 

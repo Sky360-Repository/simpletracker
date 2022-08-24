@@ -14,8 +14,12 @@ import sys
 import os
 from config import settings
 
+##################################################################################################
+# This class provides a central area for populating and validating the application configuration #
+##################################################################################################
 class AppSettings():
 
+    # Method to populate a configuration dictionary for use throughout the simple tracker application
     @staticmethod
     def Get(settings):
 
@@ -52,8 +56,15 @@ class AppSettings():
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
         app_settings['overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
 
+        # Dense optical flow
+        app_settings['dense_optical_flow_height'] = 480
+        app_settings['dense_optical_flow_width'] = 480
+
         return app_settings
 
+    # Method used to validate configuration dictionary for use throughout the simple tracker application
+    # If there is a specific combination of configuration that can't be used or that has to be used
+    # this is where the validation of that combination should happen
     @staticmethod
     def Validate(app_settings):
 
