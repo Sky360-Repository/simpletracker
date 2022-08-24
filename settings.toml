@@ -61,6 +61,7 @@ orphaned_track_threshold=20
 
 # Bounding Boxes setting
 #   try and fix the size of the bounding box and add a little bit of margin as well
+# NOTE: This is still work in progress and does not yet work correctly
 bbox_fixed_size=false
 bbox_size=64
 
@@ -77,7 +78,7 @@ mask_pct=20
 #type='no_op'
 #type='overlay'
 #type='overlay_inverse'
-#overlay_image_path='masks/test_mask_2.jpg'
+#overlay_image_path='masks/test_mask.jpg'
 
 [Camera]
 

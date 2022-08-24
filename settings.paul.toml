@@ -59,6 +59,12 @@ enable_track_validation=true
 stationary_track_threshold=5
 orphaned_track_threshold=20
 
+# Bounding Boxes setting
+#   try and fix the size of the bounding box and add a little bit of margin as well
+# NOTE: This is still work in progress and does not yet work correctly
+bbox_fixed_size=false
+bbox_size=64
+
 [Mask]
 
 # Mask types supported
