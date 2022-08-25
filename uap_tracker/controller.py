@@ -18,6 +18,12 @@ from uap_tracker.frame_processor import FrameProcessor
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 
+
+######################################################################################################################################
+# Base class for various controller implementations. The idea here is that we have a controller that drives a camera or video replay #
+# process as they are likely to be slightly different.                                                                               #
+# This is the main entry point into the object tracking and frame processing logic.                                                  #
+######################################################################################################################################
 class Controller():
 
     def __init__(self):
@@ -26,16 +32,20 @@ class Controller():
     def run(self):
         pass
 
+##########################################################################################################################
+# Specialised implementation of the controller class for consuming and dealing with the video inpuit from a live camera. #
+##########################################################################################################################
 class CameraStreamController(Controller):
 
-    def __init__(self, camera, video_tracker, minute_interval=10):
+    def __init__(self, camera, video_tracker):
         super().__init__()
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.minute_interval = minute_interval
+        self.minute_interval = self.video_tracker.settings['controller_iteration_interval']
         self.running = False
 
+    # Main entry point of the controller, this will kick off the whole image processing pipeline
     def run(self):
         print("Running Camera")
         success, init_frame = self.camera.read()
@@ -50,6 +60,7 @@ class CameraStreamController(Controller):
             self.process_iteration((datetime.datetime.now(
             ) + iteration_period), init_frame)
 
+    # So as to avoid the camera from getting 'stuck' we process in intervals specified by the parameter being passed in.
     def process_iteration(self, iteration_period, init_frame):
 
         frame_count = 0
@@ -92,6 +103,9 @@ class CameraStreamController(Controller):
                     self.running = False
                     break
 
+########################################################################################################################
+# Specialised implementation of the controller class for consuming and daling with the video inpuit from a video file. #
+########################################################################################################################
 class VideoPlaybackController(Controller):
 
     def __init__(self, capture, video_tracker):
@@ -100,6 +114,7 @@ class VideoPlaybackController(Controller):
         self.capture = capture
         self.video_tracker = video_tracker
 
+    # Main entry point of the controller, this will kick off the whole image processing pipeline
     def run(self):
 
         success, init_frame = self.capture.read()

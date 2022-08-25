@@ -25,6 +25,8 @@ class AppSettings():
 
         app_settings = {}
 
+        app_settings['controller_iteration_interval'] = settings.get('controller_iteration_interval', 10)
+
         #Visualisers
         app_settings['font_size'] = settings.Visualizer.get('font_size', 0.75)
         app_settings['font_thickness'] = settings.Visualizer.get('font_thickness', 2)
