@@ -28,6 +28,17 @@ def is_cv_version_supported():
 def get_cv_version():
     return (cv2.__version__).split('.')
 
+# Utility function to determine if cuda is supported
+def is_cuda_supported(): # 1 == using cuda, 0 = not using cuda
+    enabled = False
+    try:
+        count = cv2.cuda.getCudaEnabledDeviceCount()
+        if count > 0:
+            enabled = True
+    except:
+        pass
+    return enabled
+
 # Utility function to get the video writer in a standardised way
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')

@@ -60,7 +60,7 @@ class CameraStreamController(Controller):
             self.process_iteration((datetime.datetime.now(
             ) + iteration_period), init_frame)
 
-    # So as to avoid the camera from getting 'stuck' we process in intervals specified by the parameter being passed in.
+    # To avoid the camera from getting 'stuck' we process in intervals specified by configuration parameter.
     def process_iteration(self, iteration_period, init_frame):
 
         frame_count = 0
@@ -71,6 +71,7 @@ class CameraStreamController(Controller):
         if self.video_tracker.settings['calculate_optical_flow']:
             dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
+        # select what frame processor to use, this is mainly going to be driven by configuration
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,
             dense_optical_flow=dense_optical_flow,
@@ -96,6 +97,7 @@ class CameraStreamController(Controller):
                         self.video_tracker.finalise()
                         break
 
+                # If the escape key has been depressed then exit the processing loop
                 if cv2.waitKey(1) == 27:  # Escape
                     print(
                         f"Escape keypress detected, exit even if we are tracking: {self.video_tracker.is_tracking}")
@@ -130,6 +132,7 @@ class VideoPlaybackController(Controller):
         if self.video_tracker.settings['calculate_optical_flow']:
             dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
+        # select what frame processor to use, this is mainly going to be driven by configuration
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,
             dense_optical_flow=dense_optical_flow,
@@ -138,6 +141,7 @@ class VideoPlaybackController(Controller):
             # Mike: Initialise the tracker and processor
             self.video_tracker.initialise(processor, init_frame)
 
+            # If the escape key has been depressed then exit the processing loop
             while cv2.waitKey(1) != 27:  # Escape
                 success, frame = self.capture.read()
                 if success:

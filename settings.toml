@@ -25,8 +25,8 @@ controller='video'
 #    are also in console output
 format='simple'
 max_display_dim=1080
-font_size=0.5
-font_thickness=1
+font_size=0.75
+font_thickness=2
 
 [VideoTracker]
 
@@ -73,13 +73,13 @@ bbox_size=64
 #   each option has it's own parameters, see below
 #   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
 
-type='fish_eye'
-mask_pct=20
+#type='fish_eye'
+#mask_pct=20
 
 #type='no_op'
 #type='overlay'
-#type='overlay_inverse'
-#overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
+type='overlay_inverse'
+overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 
 [Camera]
 

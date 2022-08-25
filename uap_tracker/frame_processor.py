@@ -15,6 +15,12 @@ from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.mask import Mask
 
+####################################################################################################################################
+# Base class for various frame processor implementations. The idea here is that we have a standardised frame processing interface  #
+# that is used by the video tracker. We currently support both CPU and GPU so require a frame processor for each one of these      #
+# architectures. If additonal architectures are to be supported in future, like VPI, then this is where the specialisation         #
+# implementation will go.                                                                                                          #
+####################################################################################################################################
 class FrameProcessor():
 
     def __init__(self, settings, dense_optical_flow, background_subtractor):
@@ -31,6 +37,7 @@ class FrameProcessor():
         self.original_frame_h = 0
         self.mask = Mask.Select(settings)
 
+    # Static select method, used as a factory method for selecting the appropriate implementation based on configuration
     @staticmethod
     def Select(settings, dense_optical_flow, background_subtractor):
         if settings['enable_cuda']:
@@ -38,6 +45,7 @@ class FrameProcessor():
 
         return FrameProcessor.CPU(settings, dense_optical_flow, background_subtractor)
 
+    # Static method, used to instantiate the CPU implementation of the frame processor
     @staticmethod
     def CPU(settings, dense_optical_flow, background_subtractor):
         return CpuFrameProcessor(
@@ -45,6 +53,7 @@ class FrameProcessor():
             dense_optical_flow,
             background_subtractor)
 
+    # Static method, used to instantiate the GPU implementation (CUDA) of the frame processor
     @staticmethod
     def GPU(settings, dense_optical_flow, background_subtractor):
         return GpuFrameProcessor(
@@ -52,6 +61,7 @@ class FrameProcessor():
             dense_optical_flow,
             background_subtractor)
 
+    # Initialiser to initialise the instance
     def initialise(self, init_frame):
 
         shape = self.mask.initialise(init_frame)
@@ -68,24 +78,33 @@ class FrameProcessor():
 
         return shape[:2]
 
+    # frame resize interface specification
     def resize(self, frame, w, h, stream):
         pass
 
+    # noise reduction interface specification
     def reduce_noise(self, frame, blur_radius, stream):
         pass
 
+    # interface specification for converting a frame from colour to grey
     def convert_to_grey(self, frame, stream):
         pass
 
+    # interface specification for extracting keypoints from background subtracted frame
     def keypoints_from_bg_subtraction(self, frame_grey, stream):
         pass
 
+    # interface specification for processing optical flow
     def process_optical_flow(self, frame_grey, frame_w, frame_h, stream):
         pass
 
+    # interface specification for processing a frame, this is the main entry point method of this object
     def process_frame(self, video_tracker, frame, frame_count, fps, stream):
         pass
 
+######################################################################
+# Specialised implementation of the frame processor specific to CPU. #
+######################################################################
 class CpuFrameProcessor(FrameProcessor):
 
     def __init__(self, settings, dense_optical_flow, background_subtractor):
@@ -119,9 +138,11 @@ class CpuFrameProcessor(FrameProcessor):
     def keypoints_from_bg_subtraction(self, frame_grey, stream):
         # Overload this for a CPU specific implementation
         #print('CPU.keypoints_from_bg_subtraction')
-        # MG: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
+
+        # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
         foreground_mask = self.background_subtractor.apply(frame_grey)
         frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
+
         # Detect new objects of interest to pass to tracker
         key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
         return key_points, frame_masked_background
@@ -185,6 +206,9 @@ class CpuFrameProcessor(FrameProcessor):
         optical_flow_frame = self.process_optical_flow(frame_grey, frame_w, frame_h, stream)
         video_tracker.add_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW, optical_flow_frame)
 
+################################################################################
+# Specialised implementation of the frame processor specific to GPU i.e. CUDA. #
+################################################################################
 class GpuFrameProcessor(FrameProcessor):
     # https://jamesbowley.co.uk/accelerating-opencv-with-cuda-streams-in-python/
     # Mike: NOTE The cuda implementation is terrible, it runs at about 1/3 the speed of the CPU implementation on my laptop.
@@ -237,59 +261,62 @@ class GpuFrameProcessor(FrameProcessor):
 
     def process_frame(self, video_tracker, frame, frame_count, fps, stream):
 
-         # print(f" fps:{int(fps)}", end='\r')
+        # print(f" fps:{int(fps)}", end='\r')
 
-         worker_threads = []
-         bboxes = []
-         keypoints = []
+        worker_threads = []
+        bboxes = []
+        keypoints = []
 
-         gpu_frame = cv2.cuda_GpuMat()
-         gpu_frame.upload(frame, stream=stream)
+        # Mike: We need to upload the frame to GPU memory so that we can process it on the GPU
+        # We try and limit as much as we can the upload and download of the frae 
+        gpu_frame = cv2.cuda_GpuMat()
+        gpu_frame.upload(frame, stream=stream)
 
-         gpu_frame = self.mask.apply(gpu_frame, stream=stream)
+        gpu_frame = self.mask.apply(gpu_frame, stream=stream)
 
-         # Mike: As part of the initialisation method we worked out that the frame needs to be resized
-         if self.resize_frame:
-             frame = self.resize(gpu_frame, self.resize_dimension[0], self.resize_dimension[1], stream)
+        # Mike: As part of the initialisation method we worked out that the frame needs to be resized
+        if self.resize_frame:
+            gpu_frame = self.resize(gpu_frame, self.resize_dimension[0], self.resize_dimension[1], stream)
 
-         gpu_frame_grey = self.convert_to_grey(gpu_frame, stream)
+        gpu_frame_grey = self.convert_to_grey(gpu_frame, stream)
 
-         if self.noise_reduction:
-             gpu_frame_grey = self.reduce_noise(gpu_frame_grey, self.blur_radius, stream)
+        if self.noise_reduction:
+            gpu_frame_grey = self.reduce_noise(gpu_frame_grey, self.blur_radius, stream)
 
-         frame = gpu_frame.download()
-         frame_grey = gpu_frame_grey.download()
+        # Mike: Download frame from the GPU as there is no GPU implementation of the CSRT tracker
+        frame = gpu_frame.download()
+        frame_grey = gpu_frame_grey.download()
 
-         video_tracker.add_image(video_tracker.FRAME_TYPE_ORIGINAL, frame)
-         video_tracker.add_image(video_tracker.FRAME_TYPE_GREY, frame_grey)
+        video_tracker.add_image(video_tracker.FRAME_TYPE_ORIGINAL, frame)
+        video_tracker.add_image(video_tracker.FRAME_TYPE_GREY, frame_grey)
 
-         if self.detection_mode == 'background_subtraction':
+        if self.detection_mode == 'background_subtraction':
 
-             keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(gpu_frame_grey, stream)
-             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
+            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(gpu_frame_grey, stream)
+            video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
 
-             if frame_count < 5:
-                 # Need 5 frames to get the background subtractor initialised
-                 return keypoints
+            if frame_count < 5:
+                # Need 5 frames to get the background subtractor initialised
+                return keypoints
 
-             bboxes = [utils.kp_to_bbox(x, self.settings) for x in keypoints]
+            bboxes = [utils.kp_to_bbox(x, self.settings) for x in keypoints]
 
-             if self.dense_optical_flow is not None:
-                 #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream)
-                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
-                                              args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream))
-                 optical_flow_thread.start()
-                 worker_threads.append(optical_flow_thread)
+            if self.dense_optical_flow is not None:
+                #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream)
+                optical_flow_thread = Thread(target=self.perform_optical_flow_task, 
+                args=(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream))
+                optical_flow_thread.start()
+                worker_threads.append(optical_flow_thread)
 
-         video_tracker.update_trackers(bboxes, frame)
+        video_tracker.update_trackers(bboxes, frame)
 
-         frame_count + 1
+        frame_count + 1
 
-         # Mike: Wait for worker threads to join before publishing events as their results might be required
-         for worker_thread in worker_threads:
-             worker_thread.join()
+        # Mike: Wait for worker threads to join before publishing events as their results might be required
+        for worker_thread in worker_threads:
+            worker_thread.join()
 
-         return keypoints
+        return keypoints
 
     def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h, stream)
