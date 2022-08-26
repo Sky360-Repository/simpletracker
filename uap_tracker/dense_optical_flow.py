@@ -15,6 +15,7 @@ import numpy as np
 
 ###########################################################################################################################
 # This class provides a dense optical flow abstraction that is used in order to provide both a CPU and GPU implimentation #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow                    #
 ###########################################################################################################################
 class DenseOpticalFlow():
 
@@ -44,6 +45,10 @@ class DenseOpticalFlow():
     def process_grey_frame(self, frame, stream):
         pass
 
+########################################################################################################
+# This class provides the CPU implementation of dense optical flow                                     #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow #
+########################################################################################################
 class CpuDenseOpticalFlow(DenseOpticalFlow):
 
     def __init__(self, width, height):
@@ -94,6 +99,10 @@ class CpuDenseOpticalFlow(DenseOpticalFlow):
 
         return bgr
 
+########################################################################################################
+# This class provides the GPU implementation of dense optical flow                                     #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow #
+########################################################################################################
 class GpuDenseOpticalFlow(DenseOpticalFlow):
 
     def __init__(self, width, height):
