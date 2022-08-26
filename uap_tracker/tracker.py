@@ -15,6 +15,13 @@ import math
 import uap_tracker.utils as utils
 from uap_tracker.tracker_factory import TrackerFactory
 
+########################################################################################################################
+# This class represents a single target/blob that has been identified on the frame and is currently being tracked      #
+# If track validation is turned on then there are a couple of further steps that are taken in order to ensure the      #
+# target is valid and not a phantom target. This logic is by no means perfect or bullet proof but as tracking an       #
+# object is the most expensive in terms of processing time, we need only try and track targets that have the potential # 
+# to be good and valid targets.                                                                                        #
+########################################################################################################################
 class Tracker():
 
     PROVISIONARY_TARGET = 1
@@ -37,15 +44,18 @@ class Tracker():
         self.second_counter = 0
         self.tracked_boxes = [bbox]
 
-    # (x1,y1,w,h)
+    # function to get the latest bbox in the format (x1,y1,w,h)
     def get_bbox(self):
         return self.bboxes[-1]
 
+    # function to determine the center of the the bbox being tracked
     def get_center(self):
         x1, y1, w, h = self.get_bbox()
         return (int(x1+(w/2)),
                 int(y1+(h/2)))
 
+    # function to update the bbox on the frame, also if validation is enabled then some addtional logic is executed to determine 
+    # if the target is still a avlid target
     def update(self, frame):
         ok, bbox = self.cv2_tracker.update(frame)
         # print(f'updating tracker {self.id}, result: {ok}')
@@ -54,6 +64,9 @@ class Tracker():
 
             if self.settings['enable_track_validation']:
 
+                # Mike: perform validation logic every second, on the tickover of that second. Validation logic is very much dependent on the 
+                # target moving a certain amount over time. The technology that we use does have its limitation in that it will 
+                # identify and try and track false positives. This validaiton logic is in place to try and limit this
                 validate_bbox = False
                 if math.floor((time.time() - self.start)) > self.second_counter:
                     self.tracked_boxes.append(bbox)
@@ -62,14 +75,15 @@ class Tracker():
 
                 # print(f'Elaspsed seconds: {math.floor((iteration - self.start))}s - iterate: {iterate}')
 
+                # Mike: grab the validation config options from the settings dictionary
                 stationary_track_threshold = self.settings['stationary_track_threshold']
                 stationary_scavanage_threshold = math.floor(stationary_track_threshold * 1.5)
                 orphaned_track_thold = self.settings['orphaned_track_threshold']
 
+                # Mike: Only process validation after a second, we need to allow the target to move
                 if len(self.tracked_boxes) > 1:
-                    # MG: if the item being tracked has moved out of its initial bounds, then it's a trackable target
+                    # Mike: if the item being tracked has moved out of its initial bounds, then it's an active target
                     if utils.bbox_overlap(self.bbox_to_check, bbox) == 0.0:
-                        # self.bbox_color = self.font_color
                         if self.tracking_state != Tracker.ACTIVE_TARGET:
                             self.tracking_state = Tracker.ACTIVE_TARGET
                             self.bbox_to_check = bbox
@@ -78,19 +92,22 @@ class Tracker():
                         # print(f'5 X --> tracker {self.id}, total length: {len(self.bboxes)}')
                         previous_tracked_bbox = self.tracked_boxes[-1]
                         if utils.bbox_overlap(self.bbox_to_check, previous_tracked_bbox) > 0:
-                            # MG: this bounding box has remained pretty static, its now closer to getting scavenged
+                            # Mike: this bounding box has remained pretty static, its now closer to getting scavenged
                             self.stationary_track_counter += 1
                         else:
                             self.stationary_track_counter = 0
 
+                # Mike: If the target has not moved for a period of time, we classify the target as lost
                 if stationary_track_threshold <= self.stationary_track_counter < stationary_scavanage_threshold:
-                    # MG: If its not moved enough then mark it as red for potential scavenging
+                    # Mike: If its not moved enough then mark it as red for potential scavenging
                     self.tracking_state = Tracker.LOST_TARGET
                     # print(f'>> updating tracker {self.id} state to LOST_TARGET')
                 elif self.stationary_track_counter >= stationary_scavanage_threshold:
                     # print(f'Scavenging tracker {self.id}')
+                    # Mike: If it has remained stationary for a period of time then we are no longer interested
                     ok = False
 
+                #Mike: If its an active target then update counters at the popint of validation
                 if self.tracking_state == Tracker.ACTIVE_TARGET:
                     self.active_track_counter += 1
                     if self.active_track_counter > orphaned_track_thold:
@@ -99,17 +116,21 @@ class Tracker():
 
         return ok, bbox
 
+    # Utility function to determine is this tracker has an active target
     def is_tracking(self):
         return self.tracking_state == Tracker.ACTIVE_TARGET
 
+    # Utility function to determine if there is overlap between existing and new bboxes
     def does_bbx_overlap(self, bbox):
         overlap = utils.bbox_overlap(self.bboxes[-1], bbox)
         # print(f'checking tracking overlap {overlap} for {self.id}')
         return overlap > 0
-
+    
+    # Utility function to determine if there is containment of new bboxes
     def is_bbx_contained(self, bbox):
         return utils.bbox1_contain_bbox2(self.bboxes[-1], bbox)
 
+    # Utility function to provide the colour of the bbox on the frame
     def bbox_color(self):
         return {
             Tracker.PROVISIONARY_TARGET: (25, 175, 175),

@@ -14,6 +14,10 @@ import cv2
 from uap_tracker.stf_writer import STFWriter
 from uap_tracker.video_formatter import VideoFormatter
 
+###################################################################################################
+# This class provides a mechanism to write out the original frames of the video or camera stream. #
+# Mainly used for debugging the tracker in a headless environment.                                #
+###################################################################################################
 class OriginalFrameVideoWriter(VideoFormatter):
 
     def _create_stf_writer(self):
@@ -24,6 +28,10 @@ class OriginalFrameVideoWriter(VideoFormatter):
     def _get_frame_to_write(self, video_tracker):
         return video_tracker.get_image(video_tracker.FRAME_TYPE_ORIGINAL)
 
+###############################################################################################
+# This class provides a mechanism to write out the grey frames of the video or camera stream. #
+# Mainly used for debugging the tracker in a headless environment.                            #
+###############################################################################################
 class GreyFrameVideoWriter(VideoFormatter):
 
     def _create_stf_writer(self):
@@ -37,6 +45,10 @@ class GreyFrameVideoWriter(VideoFormatter):
             grey_frame = cv2.cvtColor(grey_frame, cv2.COLOR_GRAY2BGR)
         return grey_frame
 
+#######################################################################################################
+# This class provides a mechanism to write out the optical flow frames of the video or camera stream. #
+# Mainly used for debugging the tracker in a headless environment.                                    #
+#######################################################################################################
 class OpticalFlowFrameVideoWriter(VideoFormatter):
 
     def _create_stf_writer(self):
@@ -47,6 +59,10 @@ class OpticalFlowFrameVideoWriter(VideoFormatter):
     def _get_frame_to_write(self, video_tracker):
         return video_tracker.get_image(video_tracker.FRAME_TYPE_OPTICAL_FLOW)
 
+####################################################################################################
+# This class provides a mechanism to write out the annotated frames of the video or camera stream. #
+# Mainly used for debugging the tracker in a headless environment.                                 #
+####################################################################################################
 class AnnotatedFrameVideoWriter(VideoFormatter):
 
     def _create_stf_writer(self):
@@ -57,6 +73,10 @@ class AnnotatedFrameVideoWriter(VideoFormatter):
     def _get_frame_to_write(self, video_tracker):
         return video_tracker.get_annotated_image(active_trackers_only=False)
 
+############################################################################################################
+# This class provides a mechanism to write out the masked background frames of the video or camera stream. #
+# Mainly used for debugging the tracker in a headless environment.                                         #
+############################################################################################################
 class MaskedBackgroundFrameVideoWriter(VideoFormatter):
 
     def _create_stf_writer(self):

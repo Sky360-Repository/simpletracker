@@ -130,7 +130,7 @@ def bbox1_contain_bbox2(bbox1, bbox2):
 
 # Utility function to determine if a bounding box is already being tracked by checkling if its overlapped or already contained
 def is_bbox_being_tracked(live_trackers, bbox):
-    # MG: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
+    # Mike: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
     for tracker in live_trackers:
         if tracker.is_bbx_contained(bbox):
             return True
@@ -246,7 +246,7 @@ def display_frame(processed_frame, max_display_dim):
     # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
     # Display result, resize it to a standard size
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
-        # MG: scale the image to something that is of a reasonable viewing size
+        # Mike: scale the image to something that is of a reasonable viewing size
         frame_scaled = _scale_image_for_display(
             processed_frame, max_display_dim, max_display_dim)
         # print(f"{frame_scaled.shape}")
@@ -255,7 +255,7 @@ def display_frame(processed_frame, max_display_dim):
         cv2.imshow("Tracking", processed_frame)
 
 # Utility function to standardise the scaling of an image for display
-# MG: This will likely be removed in future as it does not take platform (cpu or gpu) into consideration
+# NOTE: Mike: This will likely be removed in future as it does not take platform (cpu or gpu) into consideration
 def _scale_image_for_display(frame, w, h):
     if frame.shape[0] > h or frame.shape[1] > w:
         # calculate the width and height percent of original size

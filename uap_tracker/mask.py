@@ -207,7 +207,7 @@ class OverlayMaskGpu(Mask):
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_frame, self.gpu_overlay_image, mask=self.gpu_overlay_image, stream=stream)
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_masked_frame, gpu_masked_frame, mask=self.gpu_overlay_image, stream=stream)
         # -- end work around --
-        #MG: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
+        #Mike: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
         #gpu_masked_frame = cv2.cuda.bitwise_and(gpu_frame, gpu_frame, mask=self.gpu_overlay_image, stream=stream)
         return gpu_masked_frame
 
@@ -242,6 +242,6 @@ class OverlayInverseMaskGpu(OverlayMaskGpu):
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_frame, gpu_mask, mask=gpu_mask, stream=stream)
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_masked_frame, gpu_masked_frame, mask=gpu_mask, stream=stream)
         # -- end work around --
-        #MG: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
+        #Mike: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
         #gpu_masked_frame = cv2.cuda.bitwise_and(gpu_frame, gpu_frame, mask=gpu_mask, stream=stream)
         return gpu_masked_frame
