@@ -155,3 +155,6 @@ tmp
 
 # Ignore dynaconf secret files
 .secrets.*
+
+# Ignore output files
+output/
