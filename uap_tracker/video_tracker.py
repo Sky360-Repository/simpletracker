@@ -61,7 +61,7 @@ class VideoTracker():
     # function to create trackers from extracted keypoints
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
         for kp in key_points:
-            bbox = utils.kp_to_bbox(kp, self.settings)
+            bbox = utils.kp_to_bbox(kp)
             # print(bbox)
 
             # Initialize tracker with first frame and bounding box
@@ -186,10 +186,10 @@ class VideoTracker():
             annotated_frame = self.frames[self.FRAME_TYPE_ORIGINAL].copy()
             if active_trackers_only:
                 for tracker in self.active_trackers():
-                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
             else:
                 for tracker in self.live_trackers:
-                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
 
             self.frames[self.FRAME_TYPE_ANNOTATED] = annotated_frame
 

@@ -47,22 +47,12 @@ def get_writer(output_filename, width, height):
 # Utility function to convert jey points in to a bounding box
 # The bounding box is used for track validation (if enabled) and will be displayed by the visualiser
 # as it tracks a point of interest (blob) on the frame
-def kp_to_bbox(kp, settings):
+def kp_to_bbox(kp):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
-    if settings['bbox_fixed_size']:
-        scale = settings['bbox_size'] / size
     #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
-    x1 = int(x - ((scale * size) / 2))
-    y1 = int(y - ((scale * size) / 2))    
-    w = int(scale * size)
-    h = int(scale * size)
-    #x2 = x1 + w
-    #y2 = y1 + h
-    #print(f'x:{x}, y:{y}, x1:{x1}, y1:{y1}')#, w:{w}, h:{h}, x1-x2:{x1-x2}, y1-y2:{y1-y2}')
-    #return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
-    return (x1, y1, w, h)
+    return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
 
 # Utility function to determine if 2 bounding boxes overlap each other. In order to make tracking more efficient
 # we try not to track sections of the same point of interest (blob)
@@ -188,12 +178,20 @@ def calc_image_scale(frame_w, frame_h, to_w, to_h):
         return (False,  frame_w, frame_h)
 
 # Utility function to standardise the drawing of a bounding box (rectangle) onto a frame
-def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
-    p1 = (int(bbox[0]), int(bbox[1]))
-    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+def add_bbox_to_image(bbox, frame, tracker_id, font_size, color, settings):
+    x1, y1, w, h = bbox
+    p1 = (int(x1), int(y1))
+    p2 = (int(x1 + w), int(y1 + h))
+
+    if settings['bbox_fixed_size']:
+        size = settings['bbox_size']
+        _x1 = int(x1+(w/2)) - int(size/2)
+        _y1 = int(y1+(h/2)) - int(size/2)
+        p1 = (_x1, _y1)
+        p2 = (int(_x1 + size), int(_y1 + size))
+
     cv2.rectangle(frame, p1, p2, color, 2, 1)
-    cv2.putText(frame, str(tracker_id),
-                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+    cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
 
 # Utility function to take a frame and return a smaller one
 # (size divided by zoom level) centered on center
