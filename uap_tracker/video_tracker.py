@@ -187,9 +187,15 @@ class VideoTracker():
             if active_trackers_only:
                 for tracker in self.active_trackers():
                     utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
+                    if self.settings['track_plotting_enabled']:
+                        #utils.add_track_points_to_image(tracker, annotated_frame)
+                        utils.add_track_line_to_image(tracker, annotated_frame)
             else:
                 for tracker in self.live_trackers:
                     utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
+                    if self.settings['track_plotting_enabled']:
+                        #utils.add_track_points_to_image(tracker, annotated_frame)
+                        utils.add_track_line_to_image(tracker, annotated_frame)
 
             self.frames[self.FRAME_TYPE_ANNOTATED] = annotated_frame
 

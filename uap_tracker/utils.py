@@ -179,19 +179,52 @@ def calc_image_scale(frame_w, frame_h, to_w, to_h):
 
 # Utility function to standardise the drawing of a bounding box (rectangle) onto a frame
 def add_bbox_to_image(bbox, frame, tracker_id, font_size, color, settings):
-    x1, y1, w, h = bbox
+    x1, y1, w, h = get_sized_bbox(bbox, settings)
     p1 = (int(x1), int(y1))
     p2 = (int(x1 + w), int(y1 + h))
-
-    if settings['bbox_fixed_size']:
-        size = settings['bbox_size']
-        _x1 = int(x1+(w/2)) - int(size/2)
-        _y1 = int(y1+(h/2)) - int(size/2)
-        p1 = (_x1, _y1)
-        p2 = (int(_x1 + size), int(_y1 + size))
-
     cv2.rectangle(frame, p1, p2, color, 2, 1)
     cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+
+# Utility function to standardise the drawing of the track center point onto a frame
+def add_track_points_to_image(tracker, frame):
+    bbox = get_sized_bbox_from_tracker(tracker)
+    center_points = tracker.center_points
+    for center_point in center_points:
+        if not is_point_contained_in_bbox(bbox, center_point[0]):
+            cv2.circle(frame, center_point[0], radius=1, color=center_point[1], thickness=2)
+
+# Utility function to standardise the drawing of the track line onto a frame
+def add_track_line_to_image(tracker, frame):
+    bbox = get_sized_bbox_from_tracker(tracker)
+    center_points = tracker.center_points
+    previous_point = None
+    for center_point in center_points:
+        if not previous_point is None:
+            if not is_point_contained_in_bbox(bbox, center_point[0]):
+                cv2.line(frame, previous_point[0], center_point[0], previous_point[1], thickness=2)
+        previous_point = center_point
+
+# Utility function to deletrmine if a point overlaps a bouding box
+def is_point_contained_in_bbox(bbox, point):
+    x, y, w, h = bbox
+    x0, y0 = point
+    return x <= x0 < x + w and y <= y0 < y + h
+
+# Utility function to get the sized bbox from tracker for display
+def get_sized_bbox_from_tracker(tracker):
+    return get_sized_bbox(tracker.get_bbox(), tracker.settings)
+
+# Utility function to get the sized bbox for display
+def get_sized_bbox(bbox, settings):
+    return_bbox = bbox
+    if settings['bbox_fixed_size']:
+        size = settings['bbox_size']
+        x1, y1, w, h = bbox
+        x1 = int(x1+(w/2)) - int(size/2)
+        y1 = int(y1+(h/2)) - int(size/2)
+        return_bbox = (x1, y1, size, size)
+
+    return return_bbox
 
 # Utility function to take a frame and return a smaller one
 # (size divided by zoom level) centered on center

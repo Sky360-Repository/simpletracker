@@ -53,6 +53,10 @@ class AppSettings():
         app_settings['bbox_fixed_size'] = settings.VideoTracker.get('bbox_fixed_size', False)
         app_settings['bbox_size'] = settings.VideoTracker.get('bbox_size', 64)
 
+        # Track Plotting section
+        app_settings['track_plotting_enabled'] = settings.VideoTracker.get('track_plotting_enabled', False)
+        app_settings['track_plotting_type'] = settings.VideoTracker.get('track_plotting_type', 'line')
+
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
@@ -97,3 +101,8 @@ class AppSettings():
             if overlay_image_path == None or os.path.exists(overlay_image_path) == False:
                 app_settings['mask_type'] = 'no_op'                
                 print(f"You have selected an {mask_type} mask type but the masking image '{overlay_image_path}' can't be found, a no_op mask will be used.")
+
+        track_plotting_type = app_settings['track_plotting_type']
+        if not track_plotting_type == 'line' or track_plotting_type == 'dot':
+            print(f"You have selected an unsupported track plotting type {track_plotting_type}, it will be reset to line.")
+            app_settings['track_plotting_type'] = 'line'

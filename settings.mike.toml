@@ -64,6 +64,9 @@ orphaned_track_threshold=20
 bbox_fixed_size=false
 bbox_size=64
 
+# Track Plotting
+track_plotting_enabled=true
+
 [Mask]
 
 # Mask types supported

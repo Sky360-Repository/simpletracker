@@ -43,6 +43,7 @@ class Tracker():
         self.start = time.time()
         self.second_counter = 0
         self.tracked_boxes = [bbox]
+        self.center_points = []
 
     # function to get the latest bbox in the format (x1,y1,w,h)
     def get_bbox(self):
@@ -61,6 +62,11 @@ class Tracker():
         # print(f'updating tracker {self.id}, result: {ok}')
         if ok:
             self.bboxes.append(bbox)
+
+            # Mike: If we have track plotting enabled, then we need to store the center points of the bboxes so that we can plo the 
+            # entire track on the frame including the colour
+            if self.settings['track_plotting_enabled']:
+                self.center_points.append((self.get_center(), self.bbox_color()))
 
             if self.settings['enable_track_validation']:
 
