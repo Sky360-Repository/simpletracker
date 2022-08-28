@@ -84,13 +84,7 @@ class STFWriter():
             self.annotations['track_labels'][track_id] = label
 
     def _create_stf_annotation(self, tracker):
-        x1, y1, w, h = tracker.get_bbox()
-        if tracker.settings['bbox_fixed_size']:
-            size = tracker.settings['bbox_size']
-            x1 = int(x1+(w/2)) - int(size/2)
-            y1 = int(y1+(h/2)) - int(size/2)
-            w = size
-            h = size
+        x1, y1, w, h = utils.get_sized_bbox_from_tracker(tracker)
         print(f"{tracker.id}, {(x1, y1, w, h)}")
         self._add_trackid_label(tracker.id, 'unknown')
         return {
