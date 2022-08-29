@@ -35,7 +35,7 @@ class Controller():
 ##########################################################################################################################
 # Specialised implementation of the controller class for consuming and dealing with the video inpuit from a live camera. #
 ##########################################################################################################################
-class CameraStreamController(Controller):
+class CameraController(Controller):
 
     def __init__(self, camera, video_tracker):
         super().__init__()
@@ -108,7 +108,7 @@ class CameraStreamController(Controller):
 ########################################################################################################################
 # Specialised implementation of the controller class for consuming and daling with the video inpuit from a video file. #
 ########################################################################################################################
-class VideoPlaybackController(Controller):
+class VideoController(Controller):
 
     def __init__(self, capture, video_tracker):
         super().__init__()

@@ -22,7 +22,7 @@ import shutil
 
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.visualizer import NoOpVisualiser, SimpleVisualiser, TwoByTwoVisualiser, TwoByTwoOpticalFlowVisualiser
-from uap_tracker.controller import VideoPlaybackController, CameraStreamController
+from uap_tracker.controller import VideoController, CameraController
 from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListenerSOTStf
 from uap_tracker.video_frame_dumpers import OriginalFrameVideoWriter, GreyFrameVideoWriter, OpticalFlowFrameVideoWriter, AnnotatedFrameVideoWriter, MaskedBackgroundFrameVideoWriter
 from config import settings
@@ -79,8 +79,8 @@ def _get_visualizer(app_settings):
 
 def _get_controller():
     controllers = {
-        'video': VideoPlaybackController,
-        'camera': CameraStreamController,
+        'video': VideoController,
+        'camera': CameraController,
     }
     controller_setting = settings.get('controller', None)
 
