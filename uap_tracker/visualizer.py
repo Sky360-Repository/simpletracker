@@ -15,7 +15,10 @@ import numpy as np
 import uap_tracker.utils as utils
 from uap_tracker import utils
 
-
+##############################################################################################################################
+# Base class for various visualiser implementations. Viualisers are generally there as the display part of the application.  #
+# Essentially its the GUI part of the application.                                                                           #
+##############################################################################################################################
 class Visualizer():
     def __init__(self, max_display_dim, font_size, font_thickness):
         self.max_display_dim = max_display_dim
@@ -34,11 +37,17 @@ class Visualizer():
         if frame_output is not None:
             self.display(frame_output)
 
+####################################################################################################################
+# No op visualiser has no GUI part. It basically just echos out the status of the application to the command line. #
+####################################################################################################################
 class NoOpVisualiser(Visualizer):
 
     def visualise_frame(self, video_tracker):
         return None
 
+######################################################
+# The Simple visualiser displays the annotated frame #
+######################################################
 class SimpleVisualiser(Visualizer):
         
     def visualise_frame(self, video_tracker):
@@ -47,6 +56,13 @@ class SimpleVisualiser(Visualizer):
         utils.stamp_output_frame(video_tracker, frame_output, self.font_size, self.font_colour, fps, self.font_thickness)
         return frame_output
 
+###########################################################
+# The TwoByTwo visualiser displays four frames:           #
+#   top left: Original Frame                              #
+#   top right: Annotated Frame                            #
+#   bottom left: Masked Background Frame                  #
+#   bottom right: Masked Background With Key Points Frame #
+###########################################################
 class TwoByTwoVisualiser(Visualizer):
 
     def visualise_frame(self, video_tracker):
@@ -79,6 +95,13 @@ class TwoByTwoVisualiser(Visualizer):
 
         return utils.combine_frames_2x2(frame_input, frame_output, bottom_left_frame, bottom_right_frame)
 
+#################################################
+# The TwoByTwo visualiser displays four frames: #
+#   top left: Original Frame                    #
+#   top right: Annotated Frame                  #
+#   bottom left: Optical Flow Frame             #
+#   bottom right: Optical Flow Frame            #
+#################################################
 class TwoByTwoOpticalFlowVisualiser(Visualizer):
 
     def visualise_frame(self, video_tracker):
