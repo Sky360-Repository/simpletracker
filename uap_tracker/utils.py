@@ -204,6 +204,16 @@ def add_track_line_to_image(tracker, frame):
                 cv2.line(frame, previous_point[0], center_point[0], previous_point[1], thickness=2)
         previous_point = center_point
 
+# Utility function to standardise the drawing of bbox center point onto a frame
+def add_center_point_to_image(tracker, frame):
+    predicted_center_point = tracker.get_center()
+    cv2.circle(frame, predicted_center_point, radius=1, color=(0, 0, 255), thickness=2)
+
+# Utility function to standardise the drawing of prediction point onto a frame
+def add_predicted_point_to_image(tracker, frame):
+    predicted_center_point = tracker.predictor_center_points[-1]
+    cv2.circle(frame, predicted_center_point, radius=1, color=(255, 0, 0), thickness=2)
+
 # Utility function to deletrmine if a point overlaps a bouding box
 def is_point_contained_in_bbox(bbox, point):
     x, y, w, h = bbox

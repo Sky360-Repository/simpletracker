@@ -57,6 +57,9 @@ class AppSettings():
         app_settings['track_plotting_enabled'] = settings.VideoTracker.get('track_plotting_enabled', False)
         app_settings['track_plotting_type'] = settings.VideoTracker.get('track_plotting_type', 'line')
 
+        # Track Prediction section
+        app_settings['track_prediction_enabled'] = settings.VideoTracker.get('track_prediction_enabled', False)
+
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)

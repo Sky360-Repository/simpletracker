@@ -68,6 +68,9 @@ bbox_size=64
 # Track Plotting
 track_plotting_enabled=true
 
+# Track Predicting
+track_prediction_enabled=false
+
 [Mask]
 
 # Mask types supported

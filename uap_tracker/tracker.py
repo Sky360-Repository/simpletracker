@@ -10,10 +10,12 @@
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
 
+import cv2
 import time
 import math
 import uap_tracker.utils as utils
 from uap_tracker.tracker_factory import TrackerFactory
+from uap_tracker.track_prediction import TrackPrediction
 
 ########################################################################################################################
 # This class represents a single target/blob that has been identified on the frame and is currently being tracked      #
@@ -43,7 +45,10 @@ class Tracker():
         self.start = time.time()
         self.second_counter = 0
         self.tracked_boxes = [bbox]
-        self.center_points = []
+        self.center_points = []        
+
+        self.track_predictor = TrackPrediction(id, bbox)
+        self.predictor_center_points = []
 
     # function to get the latest bbox in the format (x1,y1,w,h)
     def get_bbox(self):
@@ -67,6 +72,9 @@ class Tracker():
             # entire track on the frame including the colour
             if self.settings['track_plotting_enabled']:
                 self.center_points.append((self.get_center(), self.bbox_color()))
+
+            if self.settings['track_prediction_enabled']:
+                self.predictor_center_points.append(self.track_predictor.update(bbox))
 
             if self.settings['enable_track_validation']:
 
