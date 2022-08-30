@@ -16,6 +16,9 @@ from uap_tracker.stopwatch import Stopwatch
 import uap_tracker.utils as utils
 from uap_tracker.tracker import Tracker
 
+################################################################################################
+# This class is pretty much considered the application part of the Simple Tracker application. #
+################################################################################################
 class VideoTracker():
 
     DETECTION_SENSITIVITY_HIGH = 1
@@ -55,15 +58,17 @@ class VideoTracker():
         else:
             return trackers
 
+    # function to create trackers from extracted keypoints
     def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
         for kp in key_points:
-            bbox = utils.kp_to_bbox(kp, self.settings)
+            bbox = utils.kp_to_bbox(kp)
             # print(bbox)
 
             # Initialize tracker with first frame and bounding box
             if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, bbox)
 
+    # function to create an add the tracker to the list of active trackers
     def create_and_add_tracker(self, frame, bbox):
         if not bbox:
             raise Exception("null bbox")
@@ -74,6 +79,9 @@ class VideoTracker():
         tracker.update(frame)
         self.live_trackers.append(tracker)
 
+    # function to update existing trackers and and it a target is not tracked then create a new tracker to track the target
+    #
+    # trackers are run on seperate threads in the hope to speed up the applicaiton by taking advantage of parallelism
     def update_trackers(self, bboxes, frame):
 
         unmatched_bboxes = bboxes.copy()
@@ -120,6 +128,8 @@ class VideoTracker():
                 if not utils.is_bbox_being_tracked(self.live_trackers, new_bbox):
                     self.create_and_add_tracker(frame, new_bbox)
 
+    # function to initialise objects, using cuda streams apparently its important to allocated memory once versus over and over 
+    # again as it improves performance
     def initialise(self, frame_proc, init_frame):
 
         # Mike: Initiliase the processor as well
@@ -136,6 +146,8 @@ class VideoTracker():
             self.FRAME_TYPE_ORIGINAL: np.empty(size, np.uint8)
         }
 
+    # main entry point of the application although it generally gets handed over to an specific implimentation of the
+    # frame processor as soon as
     def process_frame(self, frame_proc, frame, frame_count, fps, stream=None):
 
         self.fps = fps
@@ -152,6 +164,7 @@ class VideoTracker():
             if self.visualizer is not None:
                 self.visualizer.Visualize(self)
 
+    # essentially shutdown the tracking applicaiton and clean up after yourself
     def finalise(self):
         if self.events is not None:
             self.events.publish_finalise(
@@ -173,21 +186,30 @@ class VideoTracker():
             annotated_frame = self.frames[self.FRAME_TYPE_ORIGINAL].copy()
             if active_trackers_only:
                 for tracker in self.active_trackers():
-                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
+                    if self.settings['track_plotting_enabled']:
+                        utils.add_track_line_to_image(tracker, annotated_frame)
+                    if self.settings['track_prediction_enabled']:
+                        utils.add_predicted_point_to_image(tracker, annotated_frame)                        
             else:
                 for tracker in self.live_trackers:
-                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color())
+                    utils.add_bbox_to_image(tracker.get_bbox(), annotated_frame, tracker.id, 1, tracker.bbox_color(), self.settings)
+                    if self.settings['track_plotting_enabled']:
+                        utils.add_track_line_to_image(tracker, annotated_frame)
+                    if self.settings['track_prediction_enabled']:
+                        utils.add_predicted_point_to_image(tracker, annotated_frame)
 
             self.frames[self.FRAME_TYPE_ANNOTATED] = annotated_frame
 
         return self.frames[self.FRAME_TYPE_ANNOTATED]
 
+    # utility function to add a frame to the dictionary for usage by listeners / visualizers
     def add_image(self, frame_name, frame):
         self.frames[frame_name] = frame
 
-    # called from listeners / visualizers
-    # returns all images for current frame
+    # funtions mainly called from listeners / visualizers
 
+    # returns all images for current frame
     def get_images(self):
         return self.frames
 

@@ -12,36 +12,50 @@
 
 import cv2
 
+###########################################################################################################
+# This code file contains a selection of useful utility functions that are used throughout simple tracker #
+###########################################################################################################
+
+# Utility function to determine if the installed version of open cv is supported
+# We support v4.1 and above
 def is_cv_version_supported():
     (major_ver, minor_ver, subminor_ver) = get_cv_version()
     if int(major_ver) >= 4 and int(minor_ver) >= 1:
         return True
     return False
 
+# Utility function to get the installed version of open cv
 def get_cv_version():
     return (cv2.__version__).split('.')
 
+# Utility function to determine if cuda is supported
+def is_cuda_supported(): # 1 == using cuda, 0 = not using cuda
+    enabled = False
+    try:
+        count = cv2.cuda.getCudaEnabledDeviceCount()
+        if count > 0:
+            enabled = True
+    except:
+        pass
+    return enabled
+
+# Utility function to get the video writer in a standardised way
 def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
-def kp_to_bbox(kp, settings):
+# Utility function to convert jey points in to a bounding box
+# The bounding box is used for track validation (if enabled) and will be displayed by the visualiser
+# as it tracks a point of interest (blob) on the frame
+def kp_to_bbox(kp):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
-    if settings['bbox_fixed_size']:
-        scale = settings['bbox_size'] / size
     #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
-    x1 = int(x - ((scale * size) / 2))
-    y1 = int(y - ((scale * size) / 2))    
-    w = int(scale * size)
-    h = int(scale * size)
-    #x2 = x1 + w
-    #y2 = y1 + h
-    #print(f'x:{x}, y:{y}, x1:{x1}, y1:{y1}')#, w:{w}, h:{h}, x1-x2:{x1-x2}, y1-y2:{y1-y2}')
-    #return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
-    return (x1, y1, w, h)
+    return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
 
+# Utility function to determine if 2 bounding boxes overlap each other. In order to make tracking more efficient
+# we try not to track sections of the same point of interest (blob)
 def bbox_overlap(bbox1, bbox2):
     #    bb1 : dict
     #        Keys: {'x1', 'x2', 'y1', 'y2'}
@@ -97,13 +111,16 @@ def bbox_overlap(bbox1, bbox2):
     assert iou <= 1.0
     return iou
 
+# Utility function to determine if a bounding box 1 contains bounding box 2. In order to make tracking more efficient
+# we try not to track sections of the same point of interest (blob)
 def bbox1_contain_bbox2(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
     return (x2 > x1) and (y2 > y1) and (x2+w2 < x1+w1) and (y2+h2 < y1+h1)
 
+# Utility function to determine if a bounding box is already being tracked by checkling if its overlapped or already contained
 def is_bbox_being_tracked(live_trackers, bbox):
-    # MG: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
+    # Mike: The bbox contained should computationally be faster than the overlap, so we use it first as a shortcut
     for tracker in live_trackers:
         if tracker.is_bbx_contained(bbox):
             return True
@@ -113,6 +130,7 @@ def is_bbox_being_tracked(live_trackers, bbox):
 
     return False
 
+# Utility function to detect blobs in a background subtracted frame
 def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
@@ -144,6 +162,7 @@ def perform_blob_detection(frame, sensitivity):
     # print("ran detect")
     return keypoints
 
+# Check to see if an image needs to be scaled down
 def calc_image_scale(frame_w, frame_h, to_w, to_h):
     if frame_h > to_h or frame_w > to_w:
         # calculate the width and height percent of original size
@@ -158,14 +177,66 @@ def calc_image_scale(frame_w, frame_h, to_w, to_h):
     else:
         return (False,  frame_w, frame_h)
 
-def add_bbox_to_image(bbox, frame, tracker_id, font_size, color):
-    p1 = (int(bbox[0]), int(bbox[1]))
-    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+# Utility function to standardise the drawing of a bounding box (rectangle) onto a frame
+def add_bbox_to_image(bbox, frame, tracker_id, font_size, color, settings):
+    x1, y1, w, h = get_sized_bbox(bbox, settings)
+    p1 = (int(x1), int(y1))
+    p2 = (int(x1 + w), int(y1 + h))
     cv2.rectangle(frame, p1, p2, color, 2, 1)
-    cv2.putText(frame, str(tracker_id),
-                (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
+    cv2.putText(frame, str(tracker_id), (p1[0], p1[1] - 4), cv2.FONT_HERSHEY_SIMPLEX, font_size, color, 2)
 
-# Takes a frame and returns a smaller one
+# Utility function to standardise the drawing of the track center point onto a frame
+def add_track_points_to_image(tracker, frame):
+    bbox = get_sized_bbox_from_tracker(tracker)
+    center_points = tracker.center_points
+    for center_point in center_points:
+        if not is_point_contained_in_bbox(bbox, center_point[0]):
+            cv2.circle(frame, center_point[0], radius=1, color=center_point[1], thickness=2)
+
+# Utility function to standardise the drawing of the track line onto a frame
+def add_track_line_to_image(tracker, frame):
+    bbox = get_sized_bbox_from_tracker(tracker)
+    center_points = tracker.center_points
+    previous_point = None
+    for center_point in center_points:
+        if not previous_point is None:
+            if not is_point_contained_in_bbox(bbox, center_point[0]):
+                cv2.line(frame, previous_point[0], center_point[0], previous_point[1], thickness=2)
+        previous_point = center_point
+
+# Utility function to standardise the drawing of bbox center point onto a frame
+def add_center_point_to_image(tracker, frame):
+    predicted_center_point = tracker.get_center()
+    cv2.circle(frame, predicted_center_point, radius=1, color=(0, 0, 255), thickness=2)
+
+# Utility function to standardise the drawing of prediction point onto a frame
+def add_predicted_point_to_image(tracker, frame):
+    predicted_center_point = tracker.predictor_center_points[-1]
+    cv2.circle(frame, predicted_center_point, radius=1, color=(255, 0, 0), thickness=2)
+
+# Utility function to deletrmine if a point overlaps a bouding box
+def is_point_contained_in_bbox(bbox, point):
+    x, y, w, h = bbox
+    x0, y0 = point
+    return x <= x0 < x + w and y <= y0 < y + h
+
+# Utility function to get the sized bbox from tracker for display
+def get_sized_bbox_from_tracker(tracker):
+    return get_sized_bbox(tracker.get_bbox(), tracker.settings)
+
+# Utility function to get the sized bbox for display
+def get_sized_bbox(bbox, settings):
+    return_bbox = bbox
+    if settings['bbox_fixed_size']:
+        size = settings['bbox_size']
+        x1, y1, w, h = bbox
+        x1 = int(x1+(w/2)) - int(size/2)
+        y1 = int(y1+(h/2)) - int(size/2)
+        return_bbox = (x1, y1, size, size)
+
+    return return_bbox
+
+# Utility function to take a frame and return a smaller one
 # (size divided by zoom level) centered on center
 def zoom_and_clip(frame, center, zoom_level):
     height, width, _channels = frame.shape
@@ -175,6 +246,8 @@ def zoom_and_clip(frame, center, zoom_level):
 
     return clip_at_center(frame, center, width, height, new_width, new_height)
 
+# Utility function to clip out the center part of a frame. This is mainly used by the fish-eye mask
+# to remove masked ("black") parts of the frame
 def clip_at_center(frame, center, width, height, new_width, new_height):
     x, y = center
     half_width = int(new_width/2)
@@ -190,15 +263,18 @@ def clip_at_center(frame, center, width, height, new_width, new_height):
 
     return frame[top:bottom, left:right]
 
+# Utility function to combine 4 frames into a single frame, mainly used by a visualiser
 def combine_frames_2x2(top_left, top_right, bottom_left, bottom_right):
     im_h1 = cv2.hconcat([top_left, top_right])
     im_h2 = cv2.hconcat([bottom_left, bottom_right])
     return cv2.vconcat([im_h1, im_h2])
 
+# Utility function to stamp the original frame with text stating its the original frame
 def stamp_original_frame(frame, font_size, font_color, font_thickness):
     cv2.putText(frame, 'Original Frame (Sky360)', (25, 25),
                 cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
+# Utility function to stamp the output frame with text displaying the current state of the trackers
 def stamp_output_frame(video_tracker, frame, font_size, font_color, fps, font_thickness):
     msg = f"Trackers: trackable:{sum(map(lambda x: x.is_tracking(), video_tracker.live_trackers))}, alive:{len(video_tracker.live_trackers)}, started:{video_tracker.total_trackers_started}, ended:{video_tracker.total_trackers_finished} (Sky360)"
     cv2.putText(frame, msg, (25, 25),
@@ -206,11 +282,12 @@ def stamp_output_frame(video_tracker, frame, font_size, font_color, fps, font_th
     cv2.putText(frame, f"FPS: {str(int(fps))} (Sky360)", (
         25, 50), cv2.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_thickness)
 
+# Utility function to standardise the display of a frame
 def display_frame(processed_frame, max_display_dim):
     # print(f"display_frame shape:{processed_frame.shape}, max:{max_display_dim}")
     # Display result, resize it to a standard size
     if processed_frame.shape[0] > max_display_dim or processed_frame.shape[1] > max_display_dim:
-        # MG: scale the image to something that is of a reasonable viewing size
+        # Mike: scale the image to something that is of a reasonable viewing size
         frame_scaled = _scale_image_for_display(
             processed_frame, max_display_dim, max_display_dim)
         # print(f"{frame_scaled.shape}")
@@ -218,6 +295,8 @@ def display_frame(processed_frame, max_display_dim):
     else:
         cv2.imshow("Tracking", processed_frame)
 
+# Utility function to standardise the scaling of an image for display
+# NOTE: Mike: This will likely be removed in future as it does not take platform (cpu or gpu) into consideration
 def _scale_image_for_display(frame, w, h):
     if frame.shape[0] > h or frame.shape[1] > w:
         # calculate the width and height percent of original size

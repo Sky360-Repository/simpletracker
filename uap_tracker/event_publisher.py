@@ -12,6 +12,9 @@
 
 from threading import Thread
 
+#####################################################################################################
+# This class provides a central area for video tracker to publish processing events to its listners #
+#####################################################################################################
 class EventPublisher():
 
     def __init__(self):
@@ -24,6 +27,7 @@ class EventPublisher():
     def listeners(self):
         return self._listeners
 
+    # function to publish the process frame event, we process each listener on its own thread to try and speed things up
     def publish_process_frame(self, video_tracker):
         listener_threads = []
         for listener in self.listeners:
@@ -35,6 +39,7 @@ class EventPublisher():
         for listener_thread in listener_threads:
             listener_thread.join()
 
+    # function to publish the finalise event, we process each listener on its own thread to try and speed things up
     def publish_finalise(self, total_trackers_started, total_trackers_finished):
         listener_threads = []
         for listener in self.listeners:
@@ -46,8 +51,10 @@ class EventPublisher():
         for listener_thread in listener_threads:
             listener_thread.join()
 
+    # private function to serve as the thread's entry point
     def _publish_process_frame_task(self, listener, video_tracker):
         listener.trackers_updated_callback(video_tracker)
 
+    # private function to serve as the thread's entry point
     def _publish_finalise_task(self, listener, total_trackers_started, total_trackers_finished):
         listener.finish(total_trackers_started, total_trackers_finished)

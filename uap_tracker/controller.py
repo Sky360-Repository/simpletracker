@@ -18,6 +18,12 @@ from uap_tracker.frame_processor import FrameProcessor
 from uap_tracker.dense_optical_flow import DenseOpticalFlow
 from uap_tracker.background_subtractor_factory import BackgroundSubtractorFactory
 
+
+######################################################################################################################################
+# Base class for various controller implementations. The idea here is that we have a controller that drives a camera or video replay #
+# process as they are likely to be slightly different.                                                                               #
+# This is the main entry point into the object tracking and frame processing logic.                                                  #
+######################################################################################################################################
 class Controller():
 
     def __init__(self):
@@ -26,16 +32,20 @@ class Controller():
     def run(self):
         pass
 
-class CameraStreamController(Controller):
+##########################################################################################################################
+# Specialised implementation of the controller class for consuming and dealing with the video inpuit from a live camera. #
+##########################################################################################################################
+class CameraController(Controller):
 
-    def __init__(self, camera, video_tracker, minute_interval=10):
+    def __init__(self, camera, video_tracker):
         super().__init__()
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.minute_interval = minute_interval
+        self.minute_interval = self.video_tracker.settings['controller_iteration_interval']
         self.running = False
 
+    # Main entry point of the controller, this will kick off the whole image processing pipeline
     def run(self):
         print("Running Camera")
         success, init_frame = self.camera.read()
@@ -50,16 +60,18 @@ class CameraStreamController(Controller):
             self.process_iteration((datetime.datetime.now(
             ) + iteration_period), init_frame)
 
+    # To avoid the camera from getting 'stuck' we process in intervals specified by configuration parameter.
     def process_iteration(self, iteration_period, init_frame):
 
         frame_count = 0
         fps = 0
-        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], sensitivity=self.video_tracker.settings['detection_sensitivity'])
+        background_subtractor = BackgroundSubtractorFactory.Select(self.video_tracker.settings)
 
         dense_optical_flow = None
         if self.video_tracker.settings['calculate_optical_flow']:
-            dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], width=480, height=480)
+            dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
+        # select what frame processor to use, this is mainly going to be driven by configuration
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,
             dense_optical_flow=dense_optical_flow,
@@ -85,6 +97,7 @@ class CameraStreamController(Controller):
                         self.video_tracker.finalise()
                         break
 
+                # If the escape key has been depressed then exit the processing loop
                 if cv2.waitKey(1) == 27:  # Escape
                     print(
                         f"Escape keypress detected, exit even if we are tracking: {self.video_tracker.is_tracking}")
@@ -92,7 +105,10 @@ class CameraStreamController(Controller):
                     self.running = False
                     break
 
-class VideoPlaybackController(Controller):
+########################################################################################################################
+# Specialised implementation of the controller class for consuming and daling with the video inpuit from a video file. #
+########################################################################################################################
+class VideoController(Controller):
 
     def __init__(self, capture, video_tracker):
         super().__init__()
@@ -100,6 +116,7 @@ class VideoPlaybackController(Controller):
         self.capture = capture
         self.video_tracker = video_tracker
 
+    # Main entry point of the controller, this will kick off the whole image processing pipeline
     def run(self):
 
         success, init_frame = self.capture.read()
@@ -109,12 +126,13 @@ class VideoPlaybackController(Controller):
 
         frame_count = 0
         fps = 0
-        background_subtractor = BackgroundSubtractorFactory.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], sensitivity=self.video_tracker.settings['detection_sensitivity'])
+        background_subtractor = BackgroundSubtractorFactory.Select(self.video_tracker.settings)
 
         dense_optical_flow = None
         if self.video_tracker.settings['calculate_optical_flow']:
-            dense_optical_flow = DenseOpticalFlow.Select(enable_cuda=self.video_tracker.settings['enable_cuda'], width=480, height=480)
+            dense_optical_flow = DenseOpticalFlow.Select(self.video_tracker.settings)
 
+        # select what frame processor to use, this is mainly going to be driven by configuration
         with FrameProcessor.Select(
             settings=self.video_tracker.settings,
             dense_optical_flow=dense_optical_flow,
@@ -123,6 +141,7 @@ class VideoPlaybackController(Controller):
             # Mike: Initialise the tracker and processor
             self.video_tracker.initialise(processor, init_frame)
 
+            # If the escape key has been depressed then exit the processing loop
             while cv2.waitKey(1) != 27:  # Escape
                 success, frame = self.capture.read()
                 if success:

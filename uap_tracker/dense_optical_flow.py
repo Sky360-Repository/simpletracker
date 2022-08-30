@@ -13,15 +13,23 @@
 import cv2
 import numpy as np
 
+###########################################################################################################################
+# This class provides a dense optical flow abstraction that is used in order to provide both a CPU and GPU implimentation #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow                    #
+###########################################################################################################################
 class DenseOpticalFlow():
 
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
+    # Static factory select method to determine what dense optical flow implementation to use
     @staticmethod
-    def Select(enable_cuda, width, height):
-        if enable_cuda:
+    def Select(settings):
+
+        width = settings['dense_optical_flow_width']
+        height = settings['dense_optical_flow_height']
+        if settings['enable_cuda']:
             return DenseOpticalFlow.GPU(width, height)
 
         return DenseOpticalFlow.CPU(width, height)
@@ -37,6 +45,10 @@ class DenseOpticalFlow():
     def process_grey_frame(self, frame, stream):
         pass
 
+########################################################################################################
+# This class provides the CPU implementation of dense optical flow                                     #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow #
+########################################################################################################
 class CpuDenseOpticalFlow(DenseOpticalFlow):
 
     def __init__(self, width, height):
@@ -87,6 +99,10 @@ class CpuDenseOpticalFlow(DenseOpticalFlow):
 
         return bgr
 
+########################################################################################################
+# This class provides the GPU implementation of dense optical flow                                     #
+# Here is a link to the wikipedia article for optical flow: https://en.wikipedia.org/wiki/Optical_flow #
+########################################################################################################
 class GpuDenseOpticalFlow(DenseOpticalFlow):
 
     def __init__(self, width, height):

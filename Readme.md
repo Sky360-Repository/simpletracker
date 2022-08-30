@@ -12,6 +12,27 @@ The purpose of this program is to capture or process 'interesting' videos and pr
 
 It can capture live images from an RSTP camera or a direct attached one and then generate videos, images and annotation files sutioable for input to Stage 2 and ultimately Stage 3 for training a Neural Net.
 
+## How does SimpleTracker work?
+
+Most parts of Simple Tracker is driven by configuration, so are tweakable to an extent
+
+* There are 2 controller types that form the main entry points into SimpleTracker, namely the CameraController or the VideoController. One deals with a camera feed and the other with a video file.
+* Both produce a sequence of frames which are then pushed throught a processing pipeline to determine if there are any trackable targets
+* We will go into the processing pipeline a little further below as to what that means:
+* Step 1: Mask is applied
+* Step 2: Frame is resized
+* Step 3: Frame is converted to Grey scale
+* Step 4: A GaussianBlur is applied to reduce noise
+* Step 5: Background subtraction is applied (CPU defaults to KNN, GPU defaults to MOG2)
+* Step 6: Blobs are detected and keypoints extracted
+* Step 7: Dense Optical Flow is run
+* Step 8: Trackers (CSRT) are initialised using keypoints who are then tracked accross frames.
+* Step 9: We use a Kalman Filter to try and predict the trajectory of the target being tracked
+* Step 10: Events are raised, these mainly feed into the SimpleTracker listners which in turn will produce video files and other metadata files containing validated targets that were tracked. See the Output section below.
+* Step 11: Visualisers are updated
+
+Step 1 - 7 can be performed on both the CPU or GPU, however from Step 7 onwards its CPU only
+
 ## Install
 
 We recommend installing a conda environment and then running:

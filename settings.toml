@@ -14,6 +14,7 @@ output_dir='output'
 #  video = video playback
 #  camera = camera stream
 controller='video'
+#controller_iteration_interval=10
 
 [Visualizer]
 
@@ -24,8 +25,8 @@ controller='video'
 #    are also in console output
 format='simple'
 max_display_dim=1080
-font_size=0.5
-font_thickness=1
+font_size=0.75
+font_thickness=2
 
 [VideoTracker]
 
@@ -60,10 +61,15 @@ stationary_track_threshold=5
 orphaned_track_threshold=20
 
 # Bounding Boxes setting
-#   try and fix the size of the bounding box and add a little bit of margin as well
-# NOTE: This is still work in progress and does not yet work correctly
-bbox_fixed_size=false
+#   fix the size of the bounding box
+bbox_fixed_size=true
 bbox_size=64
+
+# Track Plotting
+track_plotting_enabled=true
+
+# Track Predicting
+track_prediction_enabled=false
 
 [Mask]
 
@@ -72,13 +78,13 @@ bbox_size=64
 #   each option has it's own parameters, see below
 #   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
 
-type='fish_eye'
-mask_pct=20
+#type='fish_eye'
+#mask_pct=20
 
 #type='no_op'
 #type='overlay'
-#type='overlay_inverse'
-#overlay_image_path='masks/test_mask.jpg'
+type='overlay_inverse'
+overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 
 [Camera]
 

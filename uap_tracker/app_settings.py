@@ -14,12 +14,18 @@ import sys
 import os
 from config import settings
 
+##################################################################################################
+# This class provides a central area for populating and validating the application configuration #
+##################################################################################################
 class AppSettings():
 
+    # Method to populate a configuration dictionary for use throughout the simple tracker application
     @staticmethod
     def Get(settings):
 
         app_settings = {}
+
+        app_settings['controller_iteration_interval'] = settings.get('controller_iteration_interval', 10)
 
         #Visualisers
         app_settings['font_size'] = settings.Visualizer.get('font_size', 0.75)
@@ -47,13 +53,27 @@ class AppSettings():
         app_settings['bbox_fixed_size'] = settings.VideoTracker.get('bbox_fixed_size', False)
         app_settings['bbox_size'] = settings.VideoTracker.get('bbox_size', 64)
 
+        # Track Plotting section
+        app_settings['track_plotting_enabled'] = settings.VideoTracker.get('track_plotting_enabled', False)
+        app_settings['track_plotting_type'] = settings.VideoTracker.get('track_plotting_type', 'line')
+
+        # Track Prediction section
+        app_settings['track_prediction_enabled'] = settings.VideoTracker.get('track_prediction_enabled', False)
+
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
         app_settings['overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
 
+        # Dense optical flow
+        app_settings['dense_optical_flow_height'] = 480
+        app_settings['dense_optical_flow_width'] = 480
+
         return app_settings
 
+    # Method used to validate configuration dictionary for use throughout the simple tracker application
+    # If there is a specific combination of configuration that can't be used or that has to be used
+    # this is where the validation of that combination should happen
     @staticmethod
     def Validate(app_settings):
 
@@ -84,3 +104,8 @@ class AppSettings():
             if overlay_image_path == None or os.path.exists(overlay_image_path) == False:
                 app_settings['mask_type'] = 'no_op'                
                 print(f"You have selected an {mask_type} mask type but the masking image '{overlay_image_path}' can't be found, a no_op mask will be used.")
+
+        track_plotting_type = app_settings['track_plotting_type']
+        if not track_plotting_type == 'line' or track_plotting_type == 'dot':
+            print(f"You have selected an unsupported track plotting type {track_plotting_type}, it will be reset to line.")
+            app_settings['track_plotting_type'] = 'line'

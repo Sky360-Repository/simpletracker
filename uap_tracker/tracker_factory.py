@@ -13,8 +13,13 @@
 import cv2
 import uap_tracker.utils as utils
 
+###############################################################################################################
+# This class provides a factory implimentation for selecting which tracker algorithm should be used           #
+#   We mainly use CSRT, never really used any of the other. Unfortunately no CUDA implementation for trackers #
+###############################################################################################################
 class TrackerFactory():
 
+    # Static factory select method to determine what tracker algorithm to use
     @staticmethod
     def create(settings):
 

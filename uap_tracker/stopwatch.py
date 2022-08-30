@@ -12,6 +12,9 @@
 
 from time import perf_counter
 
+###################################################################################################################
+# A class to provide some sort of execution time reporting so that we can determine application bottle necks etc. #
+###################################################################################################################
 class Stopwatch:
 
     def __init__(self, mask='Execution time: {s:0.4f} seconds', enable=False):

@@ -84,13 +84,13 @@ class STFWriter():
             self.annotations['track_labels'][track_id] = label
 
     def _create_stf_annotation(self, tracker):
-        print(f"{tracker.id}, {tracker.get_bbox()}")
+        x1, y1, w, h = utils.get_sized_bbox_from_tracker(tracker)
+        print(f"{tracker.id}, {(x1, y1, w, h)}")
         self._add_trackid_label(tracker.id, 'unknown')
         return {
-            'bbox': tracker.get_bbox(),
+            'bbox': (x1, y1, w, h),
             'track_id': tracker.id,
             'timestamp' : time.time()
-            
         }
 
     def add_bbox(self, frame_id, tracker):

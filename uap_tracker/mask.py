@@ -15,8 +15,14 @@ import os
 import numpy as np
 import uap_tracker.utils as utils
 
+####################################################################################################################################
+# Base class for various masking implementations. The idea here is that we have a standardised masking processing interface        #
+# that is used by the frame processor. We currently support several types which in turn support both CPU and GPU architectures.    #
+# If additonal architectures are to be supported in future, like VPI, then this is where the specialisation implementation will go.#
+####################################################################################################################################
 class Mask():
 
+    # Static factory select method to determine what masking implementation to use
     @staticmethod
     def Select(settings):
 
@@ -74,13 +80,19 @@ class Mask():
 
     def __init__(self):
         pass
-
+    
+    # Method to initialise the mask
     def initialise(self, init_frame):
         pass
 
+    # Method to apply the mask to the frame
     def apply(self, frame):
         pass
 
+#############################################################################################################
+# NoOp masking implementations. It's just a passthrough and does not perform any sort of masking operation. #
+# Its the fallback option and supports both CPU and GPU architectures.                                      #
+#############################################################################################################
 class NoOpMask(Mask):
 
     def __init__(self, settings):
@@ -95,6 +107,11 @@ class NoOpMask(Mask):
     def apply(self, frame, stream=None):
         return frame
 
+##################################################################################################################
+# Fisheye masking implementations. It provides a percentage based circle shaped mask and also zooms into (clips) #
+# the frame once the mask is applied.                                                                            #
+# This mask currently only supports the CPU architectures.                                                       #
+##################################################################################################################
 class FisheyeMask(Mask):
 
     def __init__(self, settings):
@@ -123,6 +140,11 @@ class FisheyeMask(Mask):
             self.new_height)
         return clipped_masked_frame
 
+##################################################################################################################
+# Overlay masking implementations. It provides the ability to overlay an image over the frame, black is the mask #
+# white will form the display area.                                                                              #
+# This mask currently only supports both CPU and GPU architectures. This is the CPU implementation.              #
+##################################################################################################################
 class OverlayMask(Mask):
 
     def __init__(self, settings):
@@ -149,6 +171,11 @@ class OverlayMask(Mask):
         masked_frame = cv2.bitwise_and(frame, frame, mask=self.overlay_image)
         return masked_frame
 
+##################################################################################################################
+# Overlay masking implementations. It provides the ability to overlay an image over the frame, black is the mask #
+# white will form the display area.                                                                              #
+# This mask currently only supports both CPU and GPU architectures. This is the GPU implementation.              #
+##################################################################################################################
 class OverlayMaskGpu(Mask):
 
     def __init__(self, settings):
@@ -180,10 +207,15 @@ class OverlayMaskGpu(Mask):
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_frame, self.gpu_overlay_image, mask=self.gpu_overlay_image, stream=stream)
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_masked_frame, gpu_masked_frame, mask=self.gpu_overlay_image, stream=stream)
         # -- end work around --
-        #MG: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
+        #Mike: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
         #gpu_masked_frame = cv2.cuda.bitwise_and(gpu_frame, gpu_frame, mask=self.gpu_overlay_image, stream=stream)
         return gpu_masked_frame
 
+#######################################################################################################
+# Overlay inverse masking implementations. It provides the ability to overlay an image over the frame,#
+# black will form the viewing area and the colour white is the mask.                                  #
+# This mask currently only supports both CPU and GPU architectures. This is the CPU implementation.   #
+#######################################################################################################
 class OverlayInverseMask(OverlayMask):
 
     def __init__(self, settings):
@@ -194,6 +226,11 @@ class OverlayInverseMask(OverlayMask):
         masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
         return masked_frame
 
+#######################################################################################################
+# Overlay inverse masking implementations. It provides the ability to overlay an image over the frame,#
+# black will form the viewing area and the colour white is the mask.                                  #
+# This mask currently only supports both CPU and GPU architectures. This is the GPU implementation.   #
+#######################################################################################################
 class OverlayInverseMaskGpu(OverlayMaskGpu):
 
     def __init__(self, settings):
@@ -205,6 +242,6 @@ class OverlayInverseMaskGpu(OverlayMaskGpu):
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_frame, gpu_mask, mask=gpu_mask, stream=stream)
         gpu_masked_frame = cv2.cuda.bitwise_not(gpu_masked_frame, gpu_masked_frame, mask=gpu_mask, stream=stream)
         # -- end work around --
-        #MG: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
+        #Mike: The below statement should work, but there appears to be a bug in OpenCV at the moment: https://github.com/opencv/opencv/issues/20698 so this is a work around
         #gpu_masked_frame = cv2.cuda.bitwise_and(gpu_frame, gpu_frame, mask=gpu_mask, stream=stream)
         return gpu_masked_frame
