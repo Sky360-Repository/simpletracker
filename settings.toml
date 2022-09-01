@@ -14,7 +14,6 @@ output_dir='output'
 #  video = video playback
 #  camera = camera stream
 controller='video'
-#controller_iteration_interval=10
 
 [Visualizer]
 
@@ -89,4 +88,5 @@ overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 [Camera]
 
 camera_mode='rtsp'
+camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
