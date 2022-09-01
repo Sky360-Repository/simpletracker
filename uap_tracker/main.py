@@ -169,7 +169,7 @@ def main(argv):
         process_file(controller, visualizer, cmdline_filename,
                      output_dir, app_settings)
     else:
-        if controller == VideoPlaybackController:
+        if controller == VideoController:
 
             processed_dir = os.path.join(settings.input_dir, "processed")
             if not os.path.isdir(processed_dir):
@@ -185,8 +185,8 @@ def main(argv):
                 processed_path = os.path.join(processed_dir, filename)
                 shutil.move(full_path,processed_path)
 
-        elif controller == CameraStreamController:
-            camera = get_camera(settings.get('camera', {}))
+        elif controller == CameraController:
+            camera = get_camera(app_settings)
             listener = _setup_listener(camera, 'capture', output_dir)
             dumpers = _setup_dumpers(camera, 'capture', output_dir)
             if dumpers is not None:

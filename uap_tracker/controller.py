@@ -42,7 +42,7 @@ class CameraController(Controller):
 
         self.camera = camera
         self.video_tracker = video_tracker
-        self.minute_interval = self.video_tracker.settings['controller_iteration_interval']
+        self.minute_interval = self.video_tracker.settings['camera_iteration_interval']
         self.running = False
 
     # Main entry point of the controller, this will kick off the whole image processing pipeline

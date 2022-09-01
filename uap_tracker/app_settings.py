@@ -25,7 +25,11 @@ class AppSettings():
 
         app_settings = {}
 
-        app_settings['controller_iteration_interval'] = settings.get('controller_iteration_interval', 10)
+        app_settings['controller'] = settings.get('controller', None)
+
+        app_settings['camera_mode'] = settings.Camera.get('camera_mode', 'rtsp')
+        app_settings['camera_uri'] = settings.Camera.get('camera_uri', None)
+        app_settings['camera_iteration_interval'] = settings.Camera.get('camera_iteration_interval', 10)
 
         #Visualisers
         app_settings['font_size'] = settings.Visualizer.get('font_size', 0.75)
@@ -76,6 +80,12 @@ class AppSettings():
     # this is where the validation of that combination should happen
     @staticmethod
     def Validate(app_settings):
+
+        controller = app_settings['controller']
+        if controller == 'camera':
+            if app_settings['camera_uri'] == None:
+                print(f"Controller is set to Camera but camera_uri is None")
+                sys.exit(2)
 
         detection_mode = app_settings['detection_mode']
         detection_modes = ['background_subtraction', 'optical_flow', 'none']

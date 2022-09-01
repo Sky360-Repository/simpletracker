@@ -13,12 +13,11 @@
 import cv2
 import os
 import sys
+from app_settings import AppSettings
 
-
-def get_camera(config):
-    camera_mode = config.get('mode', 'rtsp')
-    camera_uri = config.get('camera_uri',
-                            'rtsp://admin:sky360@192.168.1.108:554/live')
+def get_camera(settings: AppSettings):
+    camera_mode = settings['camera_mode']
+    camera_uri = settings['camera_uri']
     print(f"Connecting to {camera_mode} camera at {camera_uri}")
     camera = None
     if camera_mode == 'ffmpeg':
@@ -47,6 +46,6 @@ def get_camera(config):
 
     if not camera:
         print(cv2.getBuildInformation())
-        print(f"Unable to find camera using config: {config}")
+        print(f"Unable to find camera using config: {settings}")
         sys.exit(1)
     return camera
