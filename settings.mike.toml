@@ -1,7 +1,7 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['none', 'mot_stf','sot_stf']
-output_format='none'
+output_format='mot_stf'
 
 # The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']
@@ -13,7 +13,7 @@ output_dir='output'
 # Options
 #  video = video playback
 #  camera = camera stream
-controller='video'
+controller='camera'
 
 [Visualizer]
 
@@ -23,9 +23,9 @@ controller='video'
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
 format='simple'
-max_display_dim=1080
-font_size=0.5
-font_thickness=1
+max_display_dim=960
+font_size=0.75
+font_thickness=2
 
 [VideoTracker]
 
@@ -48,7 +48,7 @@ max_active_trackers=10
 #   one of: 'background_subtraction'
 detection_mode='background_subtraction'
 
-calculate_optical_flow=true
+calculate_optical_flow=false
 
 # Tracker settings
 #   these settings help ensuer that trans are not orphaned and do not remain stationary for a long time
@@ -61,7 +61,7 @@ orphaned_track_threshold=20
 
 # Bounding Boxes setting
 #   fix the size of the bounding box
-bbox_fixed_size=false
+bbox_fixed_size=true
 bbox_size=64
 
 # Track Plotting
@@ -75,15 +75,23 @@ track_prediction_enabled=false
 # Mask types supported
 #   one of: 'fish_eye', 'overlay', 'overlay_inverse'
 #   each option has it's own parameters, see below
+#   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
 
-type='fish_eye'
-mask_pct=20
+#type='fish_eye'
+#mask_pct=20
 
-#type='overlay'
+#type='no_op'
+type='overlay'
 #type='overlay_inverse'
-#overlay_image_path='masks/test_mask.jpg'
+overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
 
 [Camera]
 
 camera_mode='rtsp'
+camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
+
+[MOTSTF]
+write_original=true
+write_annotated=true
+write_images=false

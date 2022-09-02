@@ -148,7 +148,7 @@ class FisheyeMask(Mask):
 class OverlayMask(Mask):
 
     def __init__(self, settings):
-        self.overlay_image_path = settings['overlay_image_path']
+        self.overlay_image_path = settings['mask_overlay_image_path']
 
     def initialise(self, init_frame):
         self.shape = init_frame.shape[:2]
@@ -179,7 +179,7 @@ class OverlayMask(Mask):
 class OverlayMaskGpu(Mask):
 
     def __init__(self, settings):
-        self.overlay_image_path = settings['overlay_image_path']
+        self.overlay_image_path = settings['mask_overlay_image_path']
 
     def initialise(self, init_frame):
         self.shape = init_frame.shape[:2]

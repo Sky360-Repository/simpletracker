@@ -75,6 +75,7 @@ track_prediction_enabled=false
 # Mask types supported
 #   one of: 'fish_eye', 'overlay', 'overlay_inverse'
 #   each option has it's own parameters, see below
+#   NOTE: 'fish_eye' does not support cuda and will fallback to no_op
 
 type='fish_eye'
 mask_pct=20
@@ -86,4 +87,10 @@ mask_pct=20
 [Camera]
 
 camera_mode='rtsp'
+camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
+
+[MOTSTF]
+write_original=true
+write_annotated=true
+write_images=true

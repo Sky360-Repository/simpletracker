@@ -67,11 +67,16 @@ class AppSettings():
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
-        app_settings['overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
+        app_settings['mask_overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
 
         # Dense optical flow
         app_settings['dense_optical_flow_height'] = 480
         app_settings['dense_optical_flow_width'] = 480
+
+        # MOT_STF section
+        app_settings['motstf_write_original'] = settings.MOTSTF.get('write_original', True)
+        app_settings['motstf_write_annotated'] = settings.MOTSTF.get('write_annotated', True)
+        app_settings['motstf_write_images'] = settings.MOTSTF.get('write_images', False)
 
         return app_settings
 
@@ -110,7 +115,7 @@ class AppSettings():
                 print(f"You have selected a Fish Eye mask type but the mask_pct = {mask_pct}, a no op mask will be used.")
 
         if mask_type == 'overlay' or mask_type == 'overlay_inverse':
-            overlay_image_path = app_settings['overlay_image_path']
+            overlay_image_path = app_settings['mask_overlay_image_path']
             if overlay_image_path == None or os.path.exists(overlay_image_path) == False:
                 app_settings['mask_type'] = 'no_op'                
                 print(f"You have selected an {mask_type} mask type but the masking image '{overlay_image_path}' can't be found, a no_op mask will be used.")

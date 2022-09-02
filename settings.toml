@@ -90,3 +90,8 @@ overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 camera_mode='rtsp'
 camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
+
+[MOTSTF]
+write_original=true
+write_annotated=true
+write_images=false
