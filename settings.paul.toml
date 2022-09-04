@@ -29,7 +29,14 @@ font_thickness=2
 
 [VideoTracker]
 
+# Tracker Type
+#   currently only CSRT is supported
 tracker_type='CSRT'
+
+# Background Subtractor Type
+#   one of: 'KNN', 'MOG', MOG2
+background_subtractor_type='KNN'
+background_subtractor_learning_rate=0.05
 
 enable_cuda=false
 enable_stopwatch=false

@@ -47,6 +47,8 @@ class AppSettings():
         app_settings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
         app_settings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
         app_settings['tracker_type'] = settings.VideoTracker.get('tracker_type', 'CSRT')
+        app_settings['background_subtractor_type'] = settings.VideoTracker.get('background_subtractor_type', 'KNN')
+        app_settings['background_subtractor_learning_rate'] = settings.VideoTracker.get('background_subtractor_learning_rate', 0.05)
 
         # Tracker section
         app_settings['enable_track_validation'] = settings.VideoTracker.get('enable_track_validation', True)
@@ -124,3 +126,9 @@ class AppSettings():
         if not track_plotting_type == 'line' or track_plotting_type == 'dot':
             print(f"You have selected an unsupported track plotting type {track_plotting_type}, it will be reset to line.")
             app_settings['track_plotting_type'] = 'line'
+
+        background_subtractor_type = app_settings['background_subtractor_type']
+        supported_bgsubtractors = {'KNN': 'MOG2_CUDA', 'MOG': 'MOG_CUDA', 'MOG2': 'MOG2_CUDA'}
+        cuda_bgsubtractor = supported_bgsubtractors[background_subtractor_type]
+        if app_settings['enable_cuda']:
+            app_settings['background_subtractor_type'] = cuda_bgsubtractor

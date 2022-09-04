@@ -23,13 +23,20 @@ controller='video'
 #  two_by_two = Displays 2x2 images incl image with annotations, background subtraction and keypoints, annotations
 #    are also in console output
 format='simple'
-max_display_dim=1080
+max_display_dim=960
 font_size=0.75
 font_thickness=2
 
 [VideoTracker]
 
+# Tracker Type
+#   currently only CSRT is supported
 tracker_type='CSRT'
+
+# Background Subtractor Type
+#   one of: 'KNN', 'MOG', MOG2
+background_subtractor_type='KNN'
+background_subtractor_learning_rate=0.05
 
 enable_cuda=false
 enable_stopwatch=false
@@ -83,6 +90,7 @@ track_prediction_enabled=false
 #type='no_op'
 #type='overlay'
 type='overlay_inverse'
+#overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
 overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 
 [Camera]
