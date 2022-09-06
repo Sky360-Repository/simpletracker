@@ -36,7 +36,7 @@ tracker_type='CSRT'
 # Background Subtractor Type
 #   one of: 'KNN', 'MOG', MOG2
 background_subtractor_type='KNN'
-background_subtractor_learning_rate=0.05
+background_subtractor_learning_rate=0.1
 
 enable_cuda=false
 enable_stopwatch=false
@@ -88,10 +88,10 @@ track_prediction_enabled=false
 #mask_pct=20
 
 #type='no_op'
-#type='overlay'
-type='overlay_inverse'
-#overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
-overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
+type='overlay'
+#type='overlay_inverse'
+overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
+#overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 
 [Camera]
 

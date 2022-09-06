@@ -11,6 +11,8 @@
 # all copies or substantial portions of the Software.
 
 import cv2
+import time
+import math
 from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.mask import Mask
@@ -36,7 +38,9 @@ class FrameProcessor():
         self.blur_radius = settings['blur_radius']
         self.original_frame_w = 0
         self.original_frame_h = 0
-        self.mask = Mask.Select(settings)        
+        self.mask = Mask.Select(settings)
+        self.start = time.time()
+        self.tracker_wait_seconds_threshold = settings['tracker_wait_seconds_threshold']
 
     # Static select method, used as a factory method for selecting the appropriate implementation based on configuration
     @staticmethod
@@ -141,7 +145,7 @@ class CpuFrameProcessor(FrameProcessor):
         #print('CPU.keypoints_from_bg_subtraction')
 
         # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        foreground_mask = self.background_subtractor.apply(frame_grey, learningRate=self.background_subtractor_learning_rate)
+        foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
         frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
         # Detect new objects of interest to pass to tracker
@@ -193,7 +197,9 @@ class CpuFrameProcessor(FrameProcessor):
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
-        video_tracker.update_trackers(bboxes, frame)
+        # Mike: Allow cameta to focus and deal with light conditions etc
+        if math.floor((time.time() - self.start)) > self.tracker_wait_seconds_threshold:
+            video_tracker.update_trackers(bboxes, frame)
 
         frame_count + 1
 
@@ -309,7 +315,9 @@ class GpuFrameProcessor(FrameProcessor):
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
-        video_tracker.update_trackers(bboxes, frame)
+        # Mike: Allow frame delivery to settle before we start tracking
+        if math.floor((time.time() - self.start)) > self.tracker_wait_seconds_threshold:
+            video_tracker.update_trackers(bboxes, frame)
 
         frame_count + 1
 

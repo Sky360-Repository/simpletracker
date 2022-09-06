@@ -49,6 +49,7 @@ class AppSettings():
         app_settings['tracker_type'] = settings.VideoTracker.get('tracker_type', 'CSRT')
         app_settings['background_subtractor_type'] = settings.VideoTracker.get('background_subtractor_type', 'KNN')
         app_settings['background_subtractor_learning_rate'] = settings.VideoTracker.get('background_subtractor_learning_rate', 0.05)
+        app_settings['tracker_wait_seconds_threshold'] = 0
 
         # Tracker section
         app_settings['enable_track_validation'] = settings.VideoTracker.get('enable_track_validation', True)
@@ -93,6 +94,10 @@ class AppSettings():
             if app_settings['camera_uri'] == None:
                 print(f"Controller is set to Camera but camera_uri is None")
                 sys.exit(2)
+        
+        # Mike: The tracker threshold does not apply to video files
+        if controller == 'video':
+            app_settings['tracker_wait_seconds_threshold'] = 0
 
         detection_mode = app_settings['detection_mode']
         detection_modes = ['background_subtraction', 'optical_flow', 'none']
