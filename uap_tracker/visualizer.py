@@ -13,7 +13,6 @@
 import cv2
 import numpy as np
 import uap_tracker.utils as utils
-from uap_tracker import utils
 
 ##############################################################################################################################
 # Base class for various visualiser implementations. Viualisers are generally there as the display part of the application.  #

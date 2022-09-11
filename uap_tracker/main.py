@@ -27,10 +27,10 @@ from uap_tracker.tracker_listener_stf import TrackerListenerMOTStf, TrackerListe
 from uap_tracker.video_frame_dumpers import OriginalFrameVideoWriter, GreyFrameVideoWriter, OpticalFlowFrameVideoWriter, AnnotatedFrameVideoWriter, MaskedBackgroundFrameVideoWriter
 from config import settings
 from uap_tracker.video_tracker import VideoTracker
-from camera import get_camera
-from video_formatter import VideoFormatter
+from uap_tracker.camera import get_camera
+from uap_tracker.video_formatter import VideoFormatter
 import uap_tracker.utils as utils
-from app_settings import AppSettings
+from uap_tracker.app_settings import AppSettings
 
 
 USAGE = 'python uap_tracker/main.py\n settings are handled in the setttings.toml file or overridden in the ENV'
