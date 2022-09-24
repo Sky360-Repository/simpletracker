@@ -1,7 +1,7 @@
 
 # [Multiple,Single] Object Tracking
 #   one of: ['none', 'mot_stf','sot_stf']
-output_format='mot_stf'
+output_format='none'
 
 # The following dumpers give the ability to dump out video frames, mainly used for debugging purposes
 #   ['none', dump_original', 'dump_grey', 'dump_optical_flow', 'dump_annotated', 'dump_masked_background', 'all']
@@ -24,8 +24,8 @@ controller='camera'
 #    are also in console output
 format='simple'
 max_display_dim=960
-font_size=0.75
-font_thickness=2
+font_size=0.5
+font_thickness=1
 
 [VideoTracker]
 
@@ -34,15 +34,16 @@ font_thickness=2
 tracker_type='CSRT'
 
 # Background Subtractor Type
-#   one of: 'KNN', 'MOG', MOG2
-background_subtractor_type='KNN'
+#   one of: 'KNN', 'MOG', MOG2, 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2',
+#           'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'
+background_subtractor_type='BGS_WMV'
 background_subtractor_learning_rate=0.05
 
 enable_cuda=false
 enable_stopwatch=false
 
 # Detects small, medium and large objects
-sensitivity=2
+sensitivity=1
 resize_frame=true
 resize_dimension=1440
 noise_reduction=true
@@ -69,7 +70,7 @@ orphaned_track_threshold=20
 # Bounding Boxes setting
 #   fix the size of the bounding box
 bbox_fixed_size=true
-bbox_size=64
+bbox_size=32
 
 # Track Plotting
 track_plotting_enabled=true
@@ -97,6 +98,7 @@ overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
 camera_mode='rtsp'
 camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
+camera_uri='rtsp://sky360:Sky360Sky!@192.168.0.43:554/cam/realmonitor?channel=1&subtype=2'
 
 [MOTSTF]
 write_original=true

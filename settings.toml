@@ -98,7 +98,6 @@ overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 camera_mode='rtsp'
 camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
-camera_uri='rtsp://sky360:Sky360Sky!@192.168.0.43:554/cam/realmonitor?channel=1&subtype=0'
 
 [MOTSTF]
 write_original=true
