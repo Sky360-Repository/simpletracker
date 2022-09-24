@@ -140,7 +140,5 @@ class BackgroundSubtractorFactory():
 
         if background_subtractor is None:
             raise Exception(f"Unknown background subtractor type ({type}).")
-        else:
-            background_subtractor.setHistory(1)  # large gets many detections
 
         return background_subtractor
