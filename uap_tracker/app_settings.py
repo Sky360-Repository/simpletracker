@@ -133,7 +133,14 @@ class AppSettings():
             app_settings['track_plotting_type'] = 'line'
 
         background_subtractor_type = app_settings['background_subtractor_type']
-        supported_bgsubtractors = {'KNN': 'MOG2_CUDA', 'MOG': 'MOG_CUDA', 'MOG2': 'MOG2_CUDA'}
-        cuda_bgsubtractor = supported_bgsubtractors[background_subtractor_type]
+        supported_bgsubtractors = {'KNN', 'MOG', 'MOG2', 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2', 'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'}
+        supported_cuda_bgsubtractors = {'MOG2_CUDA', 'MOG_CUDA'}
+        supported = False
         if app_settings['enable_cuda']:
-            app_settings['background_subtractor_type'] = cuda_bgsubtractor
+            supported = background_subtractor_type in supported_cuda_bgsubtractors
+        else:
+            supported = background_subtractor_type in supported_bgsubtractors
+        if not supported:
+            print(
+                f"Unknown background subtractor type ({background_subtractor_type}) when cuda-enabled: {app_settings['enable_cuda']}.")
+            sys.exit(1)            

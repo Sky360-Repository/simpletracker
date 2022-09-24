@@ -136,7 +136,7 @@ class BackgroundSubtractorFactory():
         if type == 'BGS_VB':
             background_subtractor = bgs.ViBe()
         if type == 'BGS_CB':
-            background_subtractor = bgs.CodeBook()                                                
+            background_subtractor = bgs.CodeBook()
 
         if background_subtractor is None:
             raise Exception(f"Unknown background subtractor type ({type}).")
