@@ -11,6 +11,8 @@
 # all copies or substantial portions of the Software.
 
 import cv2
+import time
+import math
 from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.mask import Mask
@@ -27,6 +29,7 @@ class FrameProcessor():
         self.settings = settings
         self.dense_optical_flow = dense_optical_flow
         self.background_subtractor = background_subtractor
+        self.background_subtractor_learning_rate = settings['background_subtractor_learning_rate']
         self.resize_frame = settings['resize_frame']
         self.resize_dimension = (settings['resize_dimension'], settings['resize_dimension'])
         self.noise_reduction = settings['noise_reduction']
@@ -36,6 +39,8 @@ class FrameProcessor():
         self.original_frame_w = 0
         self.original_frame_h = 0
         self.mask = Mask.Select(settings)
+        self.start = time.time()
+        self.tracker_wait_seconds_threshold = settings['tracker_wait_seconds_threshold']
 
     # Static select method, used as a factory method for selecting the appropriate implementation based on configuration
     @staticmethod
@@ -140,7 +145,7 @@ class CpuFrameProcessor(FrameProcessor):
         #print('CPU.keypoints_from_bg_subtraction')
 
         # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        foreground_mask = self.background_subtractor.apply(frame_grey)
+        foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
         frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
         # Detect new objects of interest to pass to tracker
@@ -192,7 +197,9 @@ class CpuFrameProcessor(FrameProcessor):
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
-        video_tracker.update_trackers(bboxes, frame)
+        # Mike: Allow cameta to focus and deal with light conditions etc
+        if math.floor((time.time() - self.start)) > self.tracker_wait_seconds_threshold:
+            video_tracker.update_trackers(bboxes, frame)
 
         frame_count + 1
 
@@ -245,7 +252,7 @@ class GpuFrameProcessor(FrameProcessor):
     def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
         # Overload this for a GPU specific implementation
         # print('GPU.keypoints_from_bg_subtraction')
-        gpu_foreground_mask = self.background_subtractor.apply(gpu_frame_grey, learningRate=0.05, stream=stream)
+        gpu_foreground_mask = self.background_subtractor.apply(gpu_frame_grey, learningRate=self.background_subtractor_learning_rate, stream=stream)
         gpu_frame_masked_background = cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask, stream=stream)
         frame_masked_background = gpu_frame_masked_background.download()
         # Detect new objects of interest to pass to tracker
@@ -308,7 +315,9 @@ class GpuFrameProcessor(FrameProcessor):
                 optical_flow_thread.start()
                 worker_threads.append(optical_flow_thread)
 
-        video_tracker.update_trackers(bboxes, frame)
+        # Mike: Allow frame delivery to settle before we start tracking
+        if math.floor((time.time() - self.start)) > self.tracker_wait_seconds_threshold:
+            video_tracker.update_trackers(bboxes, frame)
 
         frame_count + 1
 

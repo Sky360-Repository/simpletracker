@@ -13,7 +13,7 @@
 import cv2
 import os
 import sys
-from app_settings import AppSettings
+from uap_tracker.app_settings import AppSettings
 
 def get_camera(settings: AppSettings):
     camera_mode = settings['camera_mode']

@@ -47,6 +47,9 @@ class AppSettings():
         app_settings['calculate_optical_flow'] = settings.VideoTracker.get('calculate_optical_flow', False)
         app_settings['max_active_trackers'] = settings.VideoTracker.get('max_active_trackers', 10)
         app_settings['tracker_type'] = settings.VideoTracker.get('tracker_type', 'CSRT')
+        app_settings['background_subtractor_type'] = settings.VideoTracker.get('background_subtractor_type', 'KNN')
+        app_settings['background_subtractor_learning_rate'] = settings.VideoTracker.get('background_subtractor_learning_rate', 0.05)
+        app_settings['tracker_wait_seconds_threshold'] = 0
 
         # Tracker section
         app_settings['enable_track_validation'] = settings.VideoTracker.get('enable_track_validation', True)
@@ -67,11 +70,16 @@ class AppSettings():
         # Mask section
         app_settings['mask_type'] = settings.Mask.get('type', 'fish_eye')
         app_settings['mask_pct'] = settings.Mask.get('mask_pct', 10)
-        app_settings['overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
+        app_settings['mask_overlay_image_path'] = settings.Mask.get('overlay_image_path', None)
 
         # Dense optical flow
         app_settings['dense_optical_flow_height'] = 480
         app_settings['dense_optical_flow_width'] = 480
+
+        # MOT_STF section
+        app_settings['motstf_write_original'] = settings.MOTSTF.get('write_original', True)
+        app_settings['motstf_write_annotated'] = settings.MOTSTF.get('write_annotated', True)
+        app_settings['motstf_write_images'] = settings.MOTSTF.get('write_images', False)
 
         return app_settings
 
@@ -86,6 +94,10 @@ class AppSettings():
             if app_settings['camera_uri'] == None:
                 print(f"Controller is set to Camera but camera_uri is None")
                 sys.exit(2)
+        
+        # Mike: The tracker threshold does not apply to video files
+        if controller == 'video':
+            app_settings['tracker_wait_seconds_threshold'] = 0
 
         detection_mode = app_settings['detection_mode']
         detection_modes = ['background_subtraction', 'optical_flow', 'none']
@@ -110,7 +122,7 @@ class AppSettings():
                 print(f"You have selected a Fish Eye mask type but the mask_pct = {mask_pct}, a no op mask will be used.")
 
         if mask_type == 'overlay' or mask_type == 'overlay_inverse':
-            overlay_image_path = app_settings['overlay_image_path']
+            overlay_image_path = app_settings['mask_overlay_image_path']
             if overlay_image_path == None or os.path.exists(overlay_image_path) == False:
                 app_settings['mask_type'] = 'no_op'                
                 print(f"You have selected an {mask_type} mask type but the masking image '{overlay_image_path}' can't be found, a no_op mask will be used.")
@@ -119,3 +131,16 @@ class AppSettings():
         if not track_plotting_type == 'line' or track_plotting_type == 'dot':
             print(f"You have selected an unsupported track plotting type {track_plotting_type}, it will be reset to line.")
             app_settings['track_plotting_type'] = 'line'
+
+        background_subtractor_type = app_settings['background_subtractor_type']
+        supported_bgsubtractors = {'KNN', 'MOG', 'MOG2', 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2', 'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'}
+        supported_cuda_bgsubtractors = {'MOG2_CUDA', 'MOG_CUDA'}
+        supported = False
+        if app_settings['enable_cuda']:
+            supported = background_subtractor_type in supported_cuda_bgsubtractors
+        else:
+            supported = background_subtractor_type in supported_bgsubtractors
+        if not supported:
+            print(
+                f"Unknown background subtractor type ({background_subtractor_type}) when cuda-enabled: {app_settings['enable_cuda']}.")
+            sys.exit(1)            

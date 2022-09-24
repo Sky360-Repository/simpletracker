@@ -14,7 +14,7 @@ import os
 import cv2
 from datetime import datetime
 
-from tracker_listener_stf import STFWriter
+from uap_tracker.tracker_listener_stf import STFWriter
 
 
 class VideoFormatter():

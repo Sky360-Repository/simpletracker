@@ -80,10 +80,15 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             for tracker in filter(lambda x: x.is_tracking(), alive_trackers):
                 self.stf_writer.add_bbox(frame_id, tracker)
 
-            self.stf_writer.write_original_frame(frame)
-            self.stf_writer.write_annotated_frame(annotated_frame)
-            self.stf_writer.write_images(
-                video_tracker.get_images(), frame_id)
+            if video_tracker.settings['motstf_write_original']:
+                self.stf_writer.write_original_frame(frame)
+
+            if video_tracker.settings['motstf_write_annotated']:
+                self.stf_writer.write_annotated_frame(annotated_frame)
+
+            if video_tracker.settings['motstf_write_images']:
+                self.stf_writer.write_images(
+                    video_tracker.get_images(), frame_id)
 
         else:
             self._close_segment()

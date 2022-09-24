@@ -54,11 +54,13 @@ class CameraController(Controller):
             sys.exit()
 
         self.running = True
+        interation_count = 1
 
         while self.running:
+            print(f"Starting camera iteration count: {interation_count}")
             iteration_period = timedelta(minutes=self.minute_interval)
-            self.process_iteration((datetime.datetime.now(
-            ) + iteration_period), init_frame)
+            self.process_iteration((datetime.datetime.now() + iteration_period), init_frame)
+            interation_count += 1
 
     # To avoid the camera from getting 'stuck' we process in intervals specified by configuration parameter.
     def process_iteration(self, iteration_period, init_frame):
