@@ -11,6 +11,7 @@
 # all copies or substantial portions of the Software.
 
 import cv2
+import pybgs as bgs
 
 ####################################################################################################################
 # This class provides a factory implimentation for selecting which background subtraction algorithm should be used #
@@ -23,10 +24,11 @@ class BackgroundSubtractorFactory():
     @staticmethod
     def Select(settings):
         enable_cuda = settings['enable_cuda']
+        bs_type = settings['background_subtractor_type']
         if enable_cuda:
             return BackgroundSubtractorFactory.create('MOG2_CUDA', settings)
 
-        return BackgroundSubtractorFactory.create('KNN', settings)
+        return BackgroundSubtractorFactory.create(bs_type, settings)
 
     # Static create method, used to instantiate the selected background subtraction algorithm along with
     # whatever parameters that have been configured
@@ -104,6 +106,37 @@ class BackgroundSubtractorFactory():
                 background_subtractor = cv2.cuda.createBackgroundSubtractorMOG2(history=1, varThreshold=2000, detectShadows=False)
             else:
                 raise Exception(f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
+
+        if type == 'BGS_FD':
+            background_subtractor = bgs.FrameDifference()
+        if type == 'BGS_SFD':
+            background_subtractor = bgs.StaticFrameDifference()
+        if type == 'BGS_WMM':
+            background_subtractor = bgs.WeightedMovingMean()
+        if type == 'BGS_WMV':
+            background_subtractor = bgs.WeightedMovingVariance()
+        if type == 'BGS_ABL':
+            background_subtractor = bgs.AdaptiveBackgroundLearning()
+        if type == 'BGS_ASBL':
+            background_subtractor = bgs.AdaptiveSelectiveBackgroundLearning()
+        if type == 'BGS_MOG2':
+            background_subtractor = bgs.MixtureOfGaussianV2()
+        if type == 'BGS_PBAS':            
+            background_subtractor = bgs.PixelBasedAdaptiveSegmenter()                                                                                                
+        if type == 'BGS_SD':            
+            background_subtractor = bgs.SigmaDelta()                                                                                    
+        if type == 'BGS_SuBSENSE':
+            background_subtractor = bgs.SuBSENSE()
+        if type == 'BGS_LOBSTER':
+            background_subtractor = bgs.LOBSTER()
+        if type == 'BGS_PAWCS':
+            background_subtractor = bgs.PAWCS()
+        if type == 'BGS_TP':
+            background_subtractor = bgs.TwoPoints()
+        if type == 'BGS_VB':
+            background_subtractor = bgs.ViBe()
+        if type == 'BGS_CB':
+            background_subtractor = bgs.CodeBook()                                                
 
         if background_subtractor is None:
             raise Exception(f"Unknown background subtractor type ({type}).")
