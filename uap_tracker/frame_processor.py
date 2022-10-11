@@ -154,39 +154,27 @@ class CpuFrameProcessor(FrameProcessor):
         if segmentation:
 
             (h, w) = frame_grey.shape[:2]
-
             cx, cy = (w//2), (h//2)
-
             tl = frame_grey[0:cy, 0:cx]
             tr = frame_grey[0:cy, cx:w]
             bl = frame_grey[cy:h, 0:cx]
             br = frame_grey[cy:h, cx:w]
-
             segmented_frames = [tl, tr, bl, br]
             frame_length = len(segmented_frames)
             threads = [None] * frame_length
             results = [None] * frame_length
 
             for i in range(frame_length):
-                threads[i] = Thread(target=self._keypoints_from_bg_subtraction_task, args=(segmented_frames[i], results, i, None))
+                threads[i] = Thread(target=self._keypoints_from_bg_subtraction_task, args=(segmented_frames[i], results, i, cx, cy, None))
                 threads[i].start()
 
             for i in range(frame_length):
                 threads[i].join()
             
             key_points = []
-
             for i in range(frame_length):
                 (s_kps, _) = results[i]
-                for s_kp in s_kps:
-                    if i == 0:
-                        key_points.append(self._create_kp(s_kp.pt[0], s_kp.pt[1], s_kp))
-                    if i == 1:
-                        key_points.append(self._create_kp(s_kp.pt[0] + cx, s_kp.pt[1], s_kp))
-                    elif i == 2:
-                        key_points.append(self._create_kp(s_kp.pt[0], s_kp.pt[1] + cy, s_kp))
-                    elif i == 3:
-                        key_points.append(self._create_kp(s_kp.pt[0] + cx, s_kp.pt[1] + cy, s_kp))
+                key_points.extend(s_kps)
 
             top = numpy.concatenate((results[0][1], results[1][1]), axis=1)
             bottom = numpy.concatenate((results[2][1], results[3][1]), axis=1)
@@ -204,14 +192,25 @@ class CpuFrameProcessor(FrameProcessor):
             return key_points, frame_masked_background
 
 
-    def _keypoints_from_bg_subtraction_task(self, segment_grey, results, index, stream):
+    def _keypoints_from_bg_subtraction_task(self, segment_grey, results, index, cx, cy, stream):
 
         # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
         foreground_mask = self.background_subtractor.apply(segment_grey) #, learningRate=self.background_subtractor_learning_rate)
         segment_masked_background = cv2.bitwise_and(segment_grey, segment_grey, mask=foreground_mask)
 
         # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+        kps = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+
+        key_points = []
+        for kp in kps:
+            if index == 0:
+                key_points.append(self._create_kp(kp.pt[0], kp.pt[1], kp))
+            elif index == 1:
+                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1], kp))
+            elif index == 2:
+                key_points.append(self._create_kp(kp.pt[0], kp.pt[1] + cy, kp))
+            elif index == 3:
+                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1] + cy, kp))
 
         results[index] = (key_points, segment_masked_background)
 
