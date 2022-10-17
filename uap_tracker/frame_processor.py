@@ -11,6 +11,7 @@
 # all copies or substantial portions of the Software.
 
 import cv2
+import numpy
 import time
 import math
 from threading import Thread
@@ -144,13 +145,76 @@ class CpuFrameProcessor(FrameProcessor):
         # Overload this for a CPU specific implementation
         #print('CPU.keypoints_from_bg_subtraction')
 
+        # Mike: we split the frame into 4 parts in the hope that we can improve performance with background subtraction as it should 
+        # operate faster when the frame is smaller. However I am not seeing this in my testing nbut that could also mean my code is
+        # is not the most efficient way of doing this
+        # This does not work due to the GIL, need to split this using a different approach
+        segmentation = False
+        if segmentation:
+
+            (h, w) = frame_grey.shape[:2]
+            cx, cy = (w//2), (h//2)
+            tl = frame_grey[0:cy, 0:cx]
+            tr = frame_grey[0:cy, cx:w]
+            bl = frame_grey[cy:h, 0:cx]
+            br = frame_grey[cy:h, cx:w]
+            segmented_frames = [tl, tr, bl, br]
+            frame_length = len(segmented_frames)
+            threads = [None] * frame_length
+            results = [None] * frame_length
+
+            for i in range(frame_length):
+                threads[i] = Thread(target=self._keypoints_from_bg_subtraction_task, args=(segmented_frames[i], results, i, cx, cy, None))
+                threads[i].start()
+
+            for i in range(frame_length):
+                threads[i].join()
+            
+            key_points = []
+            for i in range(frame_length):
+                (s_kps, _) = results[i]
+                key_points.extend(s_kps)
+
+            top = numpy.concatenate((results[0][1], results[1][1]), axis=1)
+            bottom = numpy.concatenate((results[2][1], results[3][1]), axis=1)
+            return key_points, numpy.concatenate((top, bottom), axis=0)
+
+        else:
+
+            # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
+            foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
+            frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
+
+            # Detect new objects of interest to pass to tracker
+            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+
+            return key_points, frame_masked_background
+
+
+    def _keypoints_from_bg_subtraction_task(self, segment_grey, results, index, cx, cy, stream):
+
         # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
-        frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
+        foreground_mask = self.background_subtractor.apply(segment_grey) #, learningRate=self.background_subtractor_learning_rate)
+        segment_masked_background = cv2.bitwise_and(segment_grey, segment_grey, mask=foreground_mask)
 
         # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
-        return key_points, frame_masked_background
+        kps = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+
+        key_points = []
+        for kp in kps:
+            if index == 0:
+                key_points.append(self._create_kp(kp.pt[0], kp.pt[1], kp))
+            elif index == 1:
+                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1], kp))
+            elif index == 2:
+                key_points.append(self._create_kp(kp.pt[0], kp.pt[1] + cy, kp))
+            elif index == 3:
+                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1] + cy, kp))
+
+        results[index] = (key_points, segment_masked_background)
+
+    def _create_kp(self, x, y, kp):
+        return cv2.KeyPoint(x, y, kp.size, kp.angle, kp.response, kp.octave, kp.class_id)
 
     def process_optical_flow(self, frame_grey, frame_w, frame_h, stream):
         # Overload this for a CPU specific implementation
