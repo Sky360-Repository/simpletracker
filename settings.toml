@@ -34,8 +34,9 @@ font_thickness=2
 tracker_type='CSRT'
 
 # Background Subtractor Type
-#   one of: 'KNN', 'MOG', MOG2, 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2',
+#   one of: 'KNN', 'MOG', 'MOG2', 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2',
 #           'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'
+#   If CUDA is enabled then one if: 'MOG_CUDA', 'MOG2_CUDA'
 background_subtractor_type='KNN'
 background_subtractor_learning_rate=0.1
 

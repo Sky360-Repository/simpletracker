@@ -92,6 +92,7 @@ class VideoTracker():
         results = [None] * tracker_count
 
         # Mike: We can do the tracker updates in parallel
+        # This will not work due to the GIL, need to split this processing using a different approach
         for i in range(tracker_count):
             tracker = self.live_trackers[i]
             threads[i] = Thread(target=self.update_tracker_task, args=(tracker, frame, results, i))

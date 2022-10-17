@@ -148,9 +148,8 @@ class CpuFrameProcessor(FrameProcessor):
         # Mike: we split the frame into 4 parts in the hope that we can improve performance with background subtraction as it should 
         # operate faster when the frame is smaller. However I am not seeing this in my testing nbut that could also mean my code is
         # is not the most efficient way of doing this
-
-        segmentation = True
-
+        # This does not work due to the GIL, need to split this using a different approach
+        segmentation = False
         if segmentation:
 
             (h, w) = frame_grey.shape[:2]
