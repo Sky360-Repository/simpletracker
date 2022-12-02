@@ -24,8 +24,8 @@ controller='video'
 #    are also in console output
 format='simple'
 max_display_dim=960
-font_size=0.75
-font_thickness=2
+font_size=0.5
+font_thickness=1
 
 [VideoTracker]
 
@@ -37,14 +37,14 @@ tracker_type='CSRT'
 #   one of: 'KNN', 'MOG', 'MOG2', 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2',
 #           'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'
 #   If CUDA is enabled then one if: 'MOG_CUDA', 'MOG2_CUDA'
-background_subtractor_type='KNN'
-background_subtractor_learning_rate=0.1
+background_subtractor_type='BGS_WMV'
+background_subtractor_learning_rate=0.05
 
 enable_cuda=false
 enable_stopwatch=false
 
 # Detects small, medium and large objects
-sensitivity=2
+sensitivity=1
 resize_frame=true
 resize_dimension=1440
 noise_reduction=true
@@ -88,10 +88,10 @@ track_prediction_enabled=false
 
 #type='fish_eye'
 #mask_pct=20
+
 #type='no_op'
 #type='overlay'
 type='overlay_inverse'
-#overlay_image_path='masks/mikes-camera-mask-overlay.jpg'
 overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 
 [Camera]
@@ -99,6 +99,7 @@ overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
 camera_mode='rtsp'
 camera_iteration_interval=10
 # N.B. place camera_uri in secrets.toml
+camera_uri='rtsp://sky360:Sky360Sky!@192.168.0.43:554/cam/realmonitor?channel=1&subtype=2'
 
 [MOTSTF]
 write_original=true
