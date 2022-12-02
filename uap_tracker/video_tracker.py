@@ -112,9 +112,8 @@ class VideoTracker():
             # Try to match the new detections with this tracker
             for new_bbox in bboxes:
                 if new_bbox in unmatched_bboxes:
-                    overlap = utils.bbox_overlap(bbox, new_bbox)
-                    # print(f'Overlap: {overlap}; bbox:{bbox}, new_bbox:{new_bbox}')
-                    if overlap > 0.2:
+                    # ensure the centre 
+                    if utils.calc_centre_point_distance(bbox, new_bbox) < self.settings['min_centre_point_distance_between_bboxes']:
                         unmatched_bboxes.remove(new_bbox)
 
         # remove failed trackers from live tracking

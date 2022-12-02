@@ -130,6 +130,15 @@ def is_bbox_being_tracked(live_trackers, bbox):
 
     return False
 
+def calc_centre_point_distance(bbox1, bbox2):
+    x1, y1, w1, h1 = bbox1
+    c1 = (int(x1+(w1/2)), int(y1+(h1/2)))
+    x2, y2, w2, h2 = bbox2
+    c2 = (int(x2+(w2/2)), int(y2+(h2/2)))
+    #euclidean = math.sqrt((x2-x1)**2+(y2-y1)**2)
+    res = cv2.norm(c1, c2)
+    return int(res)
+
 # Utility function to detect blobs in a background subtracted frame
 def perform_blob_detection(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()

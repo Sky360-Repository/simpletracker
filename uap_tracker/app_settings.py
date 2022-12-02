@@ -52,6 +52,7 @@ class AppSettings():
         app_settings['tracker_wait_seconds_threshold'] = 0
 
         # Tracker section
+        app_settings['min_centre_point_distance_between_bboxes'] = settings.VideoTracker.get('min_centre_point_distance_between_bboxes', 64)
         app_settings['enable_track_validation'] = settings.VideoTracker.get('enable_track_validation', True)
         app_settings['stationary_track_threshold'] = settings.VideoTracker.get('stationary_track_threshold', 5)
         app_settings['orphaned_track_threshold'] = settings.VideoTracker.get('orphaned_track_threshold', 20)        

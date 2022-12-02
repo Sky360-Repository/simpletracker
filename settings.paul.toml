@@ -64,6 +64,7 @@ calculate_optical_flow=true
 #   generally I have found that stationary tracks are false positives and not good targets
 #
 #   Enable this by by setting the validation flag to true, its highly encouraged that this option is enabled
+min_centre_point_distance_between_bboxes=64
 enable_track_validation=true
 stationary_track_threshold=5
 orphaned_track_threshold=20

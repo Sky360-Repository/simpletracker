@@ -37,7 +37,7 @@ tracker_type='CSRT'
 #   one of: 'KNN', 'MOG', 'MOG2', 'BGS_FD', 'BGS_SFD', 'BGS_WMM', 'BGS_WMV', 'BGS_ABL', 'BGS_ASBL', 'BGS_MOG2',
 #           'BGS_PBAS', 'BGS_SD', 'BGS_SuBSENSE', 'BGS_LOBSTER', 'BGS_PAWCS', 'BGS_TP', 'BGS_VB', 'BGS_CB'
 #   If CUDA is enabled then one if: 'MOG_CUDA', 'MOG2_CUDA'
-background_subtractor_type='BGS_WMV'
+background_subtractor_type='KNN'
 background_subtractor_learning_rate=0.05
 
 enable_cuda=false
@@ -45,7 +45,7 @@ enable_stopwatch=false
 
 # Detects small, medium and large objects
 sensitivity=1
-resize_frame=true
+resize_frame=false
 resize_dimension=1440
 noise_reduction=true
 blur_radius=3
@@ -64,6 +64,7 @@ calculate_optical_flow=false
 #   generally I have found that stationary tracks are false positives and not good targets
 #
 #   Enable this by by setting the validation flag to true, its highly encouraged that this option is enabled
+min_centre_point_distance_between_bboxes=64
 enable_track_validation=true
 stationary_track_threshold=5
 orphaned_track_threshold=20
@@ -92,7 +93,7 @@ track_prediction_enabled=false
 #type='no_op'
 #type='overlay'
 type='overlay_inverse'
-overlay_image_path='masks/mask-shrubs-inverse-overlay.jpg'
+overlay_image_path='masks/mask-shrubs-inverse-overlay-2.jpg'
 
 [Camera]
 
