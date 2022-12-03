@@ -35,7 +35,7 @@ Step 1 - 7 can be performed on both the CPU or GPU, however from Step 7 onwards 
 
 ## Install
 
-We recommend using VSCode and runnning the application using the DevContainer. From the VSCode terminal type ```./run.sh`` to launch the application. Using the Dev Container there is no need to install dependencies as they are all in the container.
+We recommend using VSCode and runnning the application using the DevContainer. From the VSCode terminal type ```./run.sh``` to launch the application. Using the Dev Container there is no need to install dependencies as they are all in the container.
 
 ## Running
 
