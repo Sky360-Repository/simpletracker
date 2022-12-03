@@ -35,17 +35,15 @@ Step 1 - 7 can be performed on both the CPU or GPU, however from Step 7 onwards 
 
 ## Install
 
-We recommend installing a conda environment and then running:
-
-```./install.sh <location of conda> simpletracker```
+We recommend using VSCode and runnning the application using the DevContainer. From the VSCode terminal type ```./run.sh`` to launch the application. Using the Dev Container there is no need to install dependencies as they are all in the container.
 
 ## Running
 
 You can run a test which will create an outputvideo.mp4 with bounding boxes rendered into the video of the given input video.
 
+Use the run file to launch the application
 ```
-PYTHONPATH="${PYTHONPATH}:." \
-python uap_tracker/main.py -f [input.mkv|input.mp4]
+./run.sh
 ```
 
 The full stage 1 capturing froma camera can be run using the following command:
@@ -78,6 +76,7 @@ The output for the STF formatter is in this directory structure
    annotations.json                    # Annotations file
    video.mp4                           # Original video transcoded to mp4 and split for this section
    images/       
+   training/                           # This will output traning images in incremnents of 32 pixels in size
      <frame_id:06>.{image_name>.jpg    # Images generated during detection such as 'original', 'grey', 'background_subtraction', 'optical_flow'
 ```
 
