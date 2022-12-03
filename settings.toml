@@ -106,3 +106,4 @@ camera_uri='rtsp://sky360:Sky360Sky!@192.168.0.43:554/cam/realmonitor?channel=1&
 write_original=true
 write_annotated=true
 write_images=false
+write_training_images=false

@@ -80,6 +80,10 @@ class TrackerListenerMOTStf(TrackerListenerStf):
             for tracker in filter(lambda x: x.is_tracking(), alive_trackers):
                 self.stf_writer.add_bbox(frame_id, tracker)
 
+            if video_tracker.settings['motstf_write_training_images']:
+                for tracker in filter(lambda x: x.is_tracking(), alive_trackers):
+                    self.stf_writer.write_training(frame, frame_id, tracker)
+
             if video_tracker.settings['motstf_write_original']:
                 self.stf_writer.write_original_frame(frame)
 

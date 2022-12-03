@@ -20,11 +20,18 @@ import time
 class STFWriter():
 
     video_count = 0
+    training_count = 0
 
     @classmethod
     def _get_and_increment_video_count(cls):
         ret = cls.video_count
         cls.video_count += 1
+        return ret
+
+    @classmethod
+    def _get_and_increment_training_count(cls):
+        ret = cls.training_count
+        cls.training_count += 1
         return ret
 
     def __init__(self,
@@ -69,6 +76,7 @@ class STFWriter():
         ###
 
         self.images_dir = os.path.join(self.final_video_dir, 'images')
+        self.training_dir = os.path.join(self.final_video_dir, 'training')
         self.video_filename = os.path.join(self.final_video_dir, video_name)
         self.annotated_video_filename = os.path.join(self.final_video_dir, "annotated_{0}".format(video_name))
 
@@ -108,6 +116,36 @@ class STFWriter():
             self.annotations['frames'].append(last_frame)
 
         last_frame['annotations'].append(self._create_stf_annotation(tracker))
+
+    def write_training(self, frame, frame_id, tracker):
+        size_increment = 32
+
+        if not os.path.isdir(self.training_dir):
+            os.mkdir(self.training_dir)
+
+        if tracker.is_tracking():
+            x, y, w, h = tracker.get_bbox()
+
+            # ensure we are dealing with even numbers
+            if x % 2 != 0: x = x+1
+            if y % 2 != 0: y = y+1
+
+            # most training images will be 32 x 32 but just in case tracked objects are larger, account for that
+            for i in range(1, 10):
+
+                loop_increment = size_increment * i
+
+                margin_w_tot = loop_increment - w
+                margin_h_tot = loop_increment - h                
+
+                if margin_w_tot > 0 and margin_h_tot > 0:
+                    margin_w = int(margin_w_tot/2)
+                    margin_h = int(margin_h_tot/2)
+                    filename = os.path.join(self.training_dir, f"{frame_id:06}.{tracker.id}.{self._get_and_increment_training_count():}.{loop_increment}x{loop_increment}.jpg")
+                    #print(f"write training image: {filename} - ({x},{y},{w},{h}) -> ({x},{y},{loop_increment},{loop_increment})")
+                    training_img = frame[y-margin_h:y+h+margin_h, x-margin_w:x+w+margin_w]
+                    cv2.imwrite(filename, training_img)
+                    break
 
     def write_original_frame(self, frame):
         height = frame.shape[0]

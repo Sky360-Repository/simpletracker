@@ -104,3 +104,4 @@ camera_iteration_interval=10
 write_original=true
 write_annotated=true
 write_images=true
+write_training_images=true

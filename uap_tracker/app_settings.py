@@ -78,6 +78,7 @@ class AppSettings():
         app_settings['dense_optical_flow_width'] = 480
 
         # MOT_STF section
+        app_settings['motstf_write_training_images'] = settings.MOTSTF.get('write_training_images', False)
         app_settings['motstf_write_original'] = settings.MOTSTF.get('write_original', True)
         app_settings['motstf_write_annotated'] = settings.MOTSTF.get('write_annotated', True)
         app_settings['motstf_write_images'] = settings.MOTSTF.get('write_images', False)
