@@ -14,6 +14,7 @@ import os
 import cv2
 import json
 import shutil
+from datetime import datetime
 import uap_tracker.utils as utils
 import time
 
@@ -93,7 +94,7 @@ class STFWriter():
 
     def _create_stf_annotation(self, tracker):
         x1, y1, w, h = utils.get_sized_bbox_from_tracker(tracker)
-        print(f"{tracker.id}, {(x1, y1, w, h)}")
+        #print(f"{tracker.id}, {(x1, y1, w, h)}")
         self._add_trackid_label(tracker.id, 'unknown')
         return {
             'bbox': (x1, y1, w, h),
@@ -141,7 +142,8 @@ class STFWriter():
                 if margin_w_tot > 0 and margin_h_tot > 0:
                     margin_w = int(margin_w_tot/2)
                     margin_h = int(margin_h_tot/2)
-                    filename = os.path.join(self.training_dir, f"{frame_id:06}.{tracker.id}.{self._get_and_increment_training_count():}.{loop_increment}x{loop_increment}.jpg")
+                    time_based_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+                    filename = os.path.join(self.training_dir, f"{time_based_str}.{frame_id}.{tracker.id}.{self._get_and_increment_training_count():}.{loop_increment}x{loop_increment}.jpg")
                     #print(f"write training image: {filename} - ({x},{y},{w},{h}) -> ({x},{y},{loop_increment},{loop_increment})")
                     training_img = frame[y-margin_h:y+h+margin_h, x-margin_w:x+w+margin_w]
                     cv2.imwrite(filename, training_img)
@@ -177,15 +179,14 @@ class STFWriter():
             json.dump(self.annotations, outfile, indent=2)
 
     def close(self, min_annotations=25):
-        print(
-            f"close segment called on {self.final_video_dir} {self.writer}, min_annotations:{min_annotations}")
         if self.writer:
             self._close_video_writers()
 
             if self.annotate:
                 # only save if >= 5 frames
-                print(self.annotations)
+                #print(self.annotations)
                 if len(self.annotations['frames']) >= min_annotations:
+                    print(f"close segment called on {self.final_video_dir} {self.writer}, min_annotations:{min_annotations}")                    
                     self._close_annotations()
                 else:
                     shutil.rmtree(self.final_video_dir)
