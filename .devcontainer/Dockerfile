@@ -1,4 +1,4 @@
-FROM sky360/bgslibrary:opencv4.6.0
+FROM sky360/sky360lib:1.0.0
 
 # ** [Optional] Uncomment this section to install additional packages. **
 #
