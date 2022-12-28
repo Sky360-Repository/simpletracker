@@ -47,12 +47,17 @@ def get_writer(output_filename, width, height):
 # Utility function to convert jey points in to a bounding box
 # The bounding box is used for track validation (if enabled) and will be displayed by the visualiser
 # as it tracks a point of interest (blob) on the frame
-def kp_to_bbox(kp):
+def kp_to_bboxOld(kp):
     (x, y) = kp.pt
     size = kp.size
     scale = 6
     #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
     return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
+
+# Since the new blob detector already returns the bounding box, this just return the same
+# it is just kept here so we don't need to edit the whole code
+def kp_to_bbox(kp):
+    return kp
 
 # Utility function to determine if 2 bounding boxes overlap each other. In order to make tracking more efficient
 # we try not to track sections of the same point of interest (blob)
@@ -140,7 +145,7 @@ def calc_centre_point_distance(bbox1, bbox2):
     return int(res)
 
 # Utility function to detect blobs in a background subtracted frame
-def perform_blob_detection(frame, sensitivity):
+def perform_blob_detectionOld(frame, sensitivity):
     params = cv2.SimpleBlobDetector_Params()
     # print(f"original sbd params:{params}")
 

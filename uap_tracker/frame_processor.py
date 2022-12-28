@@ -14,6 +14,7 @@ import cv2
 import numpy
 import time
 import math
+import pysky360 as sky360
 from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.mask import Mask
@@ -42,6 +43,7 @@ class FrameProcessor():
         self.mask = Mask.Select(settings)
         self.start = time.time()
         self.tracker_wait_seconds_threshold = settings['tracker_wait_seconds_threshold']
+        self.blob_detector = sky360.ConnectedBlobDetection()
 
     # Static select method, used as a factory method for selecting the appropriate implementation based on configuration
     @staticmethod
@@ -186,7 +188,8 @@ class CpuFrameProcessor(FrameProcessor):
             frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
             # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+            # key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+            key_points = self.blob_detector.detectBB(frame_masked_background)
 
             return key_points, frame_masked_background
 
@@ -198,7 +201,8 @@ class CpuFrameProcessor(FrameProcessor):
         segment_masked_background = cv2.bitwise_and(segment_grey, segment_grey, mask=foreground_mask)
 
         # Detect new objects of interest to pass to tracker
-        kps = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+        #kps = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+        kps = self.blob_detector.detectBB(segment_masked_background)
 
         key_points = []
         for kp in kps:
@@ -320,7 +324,8 @@ class GpuFrameProcessor(FrameProcessor):
         gpu_frame_masked_background = cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask, stream=stream)
         frame_masked_background = gpu_frame_masked_background.download()
         # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+        #key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
+        key_points = self.blob_detector.detectBB(frame_masked_background)
         return key_points, frame_masked_background
 
     def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
