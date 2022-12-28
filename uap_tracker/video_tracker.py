@@ -59,11 +59,8 @@ class VideoTracker():
             return trackers
 
     # function to create trackers from extracted keypoints
-    def create_trackers_from_keypoints(self, tracker_type, key_points, frame):
-        for kp in key_points:
-            bbox = utils.kp_to_bbox(kp)
-            # print(bbox)
-
+    def create_trackers_from_keypoints(self, tracker_type, bboxes, frame):
+        for bbox in bboxes:
             # Initialize tracker with first frame and bounding box
             if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
                 self.create_and_add_tracker(tracker_type, frame, bbox)
