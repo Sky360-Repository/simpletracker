@@ -1,4 +1,5 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
+// https://www.technicalfeeder.com/2022/12/fails-to-start-devcontainer-in-vscode-due-to-lack-of-mounted-device/
 {
 	"dockerFile": "Dockerfile",
 	"build": {
@@ -13,7 +14,7 @@
 		//"all",
 		//"--privileged",
 		//"-v /dev:/dev",
-		"--device=/dev/video0:/dev/video0",
+		//"--device=/dev/video0:/dev/video0",
 		"--network=host",
 		"--cap-add=SYS_PTRACE",
 		"--security-opt=seccomp:unconfined",
