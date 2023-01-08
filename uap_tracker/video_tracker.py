@@ -70,11 +70,14 @@ class VideoTracker():
         if not bbox:
             raise Exception("null bbox")
 
-        self.total_trackers_started += 1
+        min_size_thold = self.settings['bbox_minimum_size_threshold']
 
-        tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
-        tracker.update(frame)
-        self.live_trackers.append(tracker)
+        (x, y, w, h) = bbox
+        if w > min_size_thold and h > min_size_thold:
+            self.total_trackers_started += 1
+            tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
+            tracker.update(frame)
+            self.live_trackers.append(tracker)
 
     # function to update existing trackers and and it a target is not tracked then create a new tracker to track the target
     #

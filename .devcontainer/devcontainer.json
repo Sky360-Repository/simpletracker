@@ -13,7 +13,7 @@
 		//"all",
 		//"--privileged",
 		//"-v /dev:/dev",
-		"--device=/dev/video0:/dev/video0",
+		//"--device=/dev/video0:/dev/video0",
 		"--network=host",
 		"--cap-add=SYS_PTRACE",
 		"--security-opt=seccomp:unconfined",

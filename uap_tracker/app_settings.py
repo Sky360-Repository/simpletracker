@@ -58,6 +58,7 @@ class AppSettings():
         app_settings['orphaned_track_threshold'] = settings.VideoTracker.get('orphaned_track_threshold', 20)        
 
         # BBox section
+        app_settings['bbox_minimum_size_threshold'] = settings.VideoTracker.get('bbox_minimum_size_threshold', 5)
         app_settings['bbox_fixed_size'] = settings.VideoTracker.get('bbox_fixed_size', False)
         app_settings['bbox_size'] = settings.VideoTracker.get('bbox_size', 64)
 

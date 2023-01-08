@@ -72,6 +72,7 @@ orphaned_track_threshold=20
 
 # Bounding Boxes setting
 #   fix the size of the bounding box
+bbox_minimum_size_threshold=7
 bbox_fixed_size=true
 bbox_size=64
 

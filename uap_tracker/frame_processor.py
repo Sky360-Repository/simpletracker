@@ -77,6 +77,8 @@ class FrameProcessor():
         self.original_frame_w = shape[0]
         self.original_frame_h = shape[1]
 
+        print(f"  source frame size h x w = {self.original_frame_h} x {self.original_frame_w}")        
+
         if self.resize_frame:
             scale, scaled_width, scaled_height = utils.calc_image_scale(self.original_frame_w, self.original_frame_h, self.resize_dimension[0], self.resize_dimension[1])
             self.resize_frame = scale
