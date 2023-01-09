@@ -69,21 +69,10 @@ class VideoTracker():
         if not bbox:
             raise Exception("null bbox")
 
-        (x, y, w, h) = bbox
-        if w > 5 and h > 5:
-
-            if self.settings['detection_sensitivity'] == 1:  # Detects small, medium and large objects
-                areaThreshold = 5
-            elif self.settings['detection_sensitivity'] == 2:  # Detects medium and large objects
-                areaThreshold = 10
-            elif self.settings['detection_sensitivity'] == 3:  # Detects large objects
-                areaThreshold = 25
-
-            if (w * h) > areaThreshold:
-                self.total_trackers_started += 1
-                tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
-                tracker.update(frame)
-                self.live_trackers.append(tracker)
+        self.total_trackers_started += 1
+        tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
+        tracker.update(frame)
+        self.live_trackers.append(tracker)
 
     # function to update existing trackers and and it a target is not tracked then create a new tracker to track the target
     #

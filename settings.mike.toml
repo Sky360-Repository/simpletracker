@@ -45,7 +45,7 @@ enable_cuda=false
 enable_stopwatch=false
 
 # Detects small, medium and large objects
-sensitivity=1
+sensitivity=3
 resize_frame=true
 resize_dimension=1440
 noise_reduction=true
