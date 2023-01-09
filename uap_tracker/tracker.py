@@ -35,6 +35,7 @@ class Tracker():
         self.settings = settings
         self.id = id
         self.cv2_tracker = TrackerFactory.create(settings)
+        # print(f"--> bbox:{bbox}")
         self.cv2_tracker.init(frame, bbox)
         self.bboxes = [bbox]
         self.stationary_track_counter = 0

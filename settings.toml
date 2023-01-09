@@ -58,6 +58,10 @@ max_active_trackers=10
 #   one of: 'background_subtraction'
 detection_mode='background_subtraction'
 
+# Blob Detector Type
+#   one of: 'simple', 'sky360'
+blob_detector_type='sky360'
+
 calculate_optical_flow=false
 
 # Tracker settings
@@ -72,7 +76,6 @@ orphaned_track_threshold=20
 
 # Bounding Boxes setting
 #   fix the size of the bounding box
-bbox_minimum_size_threshold=7
 bbox_fixed_size=true
 bbox_size=64
 

@@ -38,6 +38,7 @@ class AppSettings():
         # Video Tracker section
         app_settings['enable_stopwatch'] = settings.VideoTracker.get('enable_stopwatch', False)
         app_settings['enable_cuda'] = settings.VideoTracker.get('enable_cuda', False)
+        app_settings['blob_detector_type'] = settings.VideoTracker.get('blob_detector_type', 'sky360')        
         app_settings['detection_mode'] = settings.VideoTracker.get('detection_mode', None)
         app_settings['detection_sensitivity'] = settings.VideoTracker.get('sensitivity', 2)
         app_settings['noise_reduction'] = settings.VideoTracker.get('noise_reduction', False)
@@ -58,7 +59,6 @@ class AppSettings():
         app_settings['orphaned_track_threshold'] = settings.VideoTracker.get('orphaned_track_threshold', 20)        
 
         # BBox section
-        app_settings['bbox_minimum_size_threshold'] = settings.VideoTracker.get('bbox_minimum_size_threshold', 5)
         app_settings['bbox_fixed_size'] = settings.VideoTracker.get('bbox_fixed_size', False)
         app_settings['bbox_size'] = settings.VideoTracker.get('bbox_size', 64)
 
@@ -110,6 +110,15 @@ class AppSettings():
             sys.exit(1)
         else:
             print(f"Detection Mode: {detection_mode}")
+
+        blob_detector_type = app_settings['blob_detector_type']
+        supported_blob_detector_types = ['simple', 'sky360']
+        if not blob_detector_type in supported_blob_detector_types:
+            print(
+                f"Unknown blob detector type ({blob_detector_type}). 'simple' an 'sky360' are supported not {blob_detector_type}.")
+            sys.exit(1)
+        else:
+            print(f"Blob Detector Type: {blob_detector_type}")
 
         detection_sensitivity = app_settings['detection_sensitivity']
         if detection_sensitivity < 1 or detection_sensitivity > 3:

@@ -42,10 +42,9 @@ class VideoTracker():
         self.frame_output = None
         self.frame_masked_background = None
         self.frames = {}
-        self.keypoints = []
 
         print(
-            f"Initializing Tracker:\n  resize_frame:{self.settings['resize_frame']}\n  resize_dimension:{self.settings['resize_dimension']}\n  noise_reduction: {self.settings['noise_reduction']}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.settings['detection_sensitivity']}\n  max_active_trackers:{self.settings['max_active_trackers']}\n  tracker_type:{self.settings['tracker_type']}")
+            f"Initializing Tracker:\n  resize_frame:{self.settings['resize_frame']}\n  resize_dimension:{self.settings['resize_dimension']}\n  noise_reduction: {self.settings['noise_reduction']}\n  mask_type:{self.settings['mask_type']}\n  mask_pct:{self.settings['mask_pct']}\n  sensitivity:{self.settings['detection_sensitivity']}\n  max_active_trackers:{self.settings['max_active_trackers']}\n  tracker_type:{self.settings['tracker_type']}\n  blob_detector_type:{self.settings['blob_detector_type']}")
 
     @property
     def is_tracking(self):
@@ -58,8 +57,8 @@ class VideoTracker():
         else:
             return trackers
 
-    # function to create trackers from extracted keypoints
-    def create_trackers_from_keypoints(self, tracker_type, bboxes, frame):
+    # function to create trackers from extracted bboxes
+    def create_trackers_from_bboxes(self, tracker_type, bboxes, frame):
         for bbox in bboxes:
             # Initialize tracker with first frame and bounding box
             if not utils.is_bbox_being_tracked(self.live_trackers, bbox):
@@ -70,14 +69,21 @@ class VideoTracker():
         if not bbox:
             raise Exception("null bbox")
 
-        min_size_thold = self.settings['bbox_minimum_size_threshold']
-
         (x, y, w, h) = bbox
-        if w > min_size_thold and h > min_size_thold:
-            self.total_trackers_started += 1
-            tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
-            tracker.update(frame)
-            self.live_trackers.append(tracker)
+        if w > 5 and h > 5:
+
+            if self.settings['detection_sensitivity'] == 1:  # Detects small, medium and large objects
+                areaThreshold = 5
+            elif self.settings['detection_sensitivity'] == 2:  # Detects medium and large objects
+                areaThreshold = 10
+            elif self.settings['detection_sensitivity'] == 3:  # Detects large objects
+                areaThreshold = 25
+
+            if (w * h) > areaThreshold:
+                self.total_trackers_started += 1
+                tracker = Tracker(self.settings, self.total_trackers_started, frame, bbox)
+                tracker.update(frame)
+                self.live_trackers.append(tracker)
 
     # function to update existing trackers and and it a target is not tracked then create a new tracker to track the target
     #
@@ -156,7 +162,7 @@ class VideoTracker():
 
         with Stopwatch(mask='Frame '+str(frame_count)+': Took {s:0.4f} seconds to process', enable=self.settings['enable_stopwatch']):
 
-            self.keypoints = frame_proc.process_frame(self, frame, frame_count, fps, stream)
+            bboxes = frame_proc.process_frame(self, frame, frame_count, fps, stream)
 
             if self.events is not None:
                 self.events.publish_process_frame(self)
@@ -221,9 +227,6 @@ class VideoTracker():
 
     def get_live_trackers(self):
         return self.live_trackers
-
-    def get_keypoints(self):
-        return self.keypoints
 
     # Mike: Identifying tasks that can be called on seperate threads to try and speed this sucker up
     def update_tracker_task(self, tracker, frame, results, index):

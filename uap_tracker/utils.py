@@ -44,6 +44,16 @@ def get_writer(output_filename, width, height):
     print(f'source w,h:{(width, height)}')
     return cv2.VideoWriter(output_filename, cv2.VideoWriter_fourcc(*"AVC1"), 30, (width, height))
 
+# Utility function to convert jey points in to a bounding box
+# The bounding box is used for track validation (if enabled) and will be displayed by the visualiser
+# as it tracks a point of interest (blob) on the frame
+def kp_to_bbox(kp):
+    (x, y) = kp.pt
+    size = kp.size
+    scale = 6
+    #print(f'kp_to_bbox x, y:{(x, y)}, size:{size}, scale:{scale}, new size:{scale * size}')
+    return (int(x - scale * size / 2), int(y - scale * size / 2), int(scale * size), int(scale * size))
+
 # Utility function to determine if 2 bounding boxes overlap each other. In order to make tracking more efficient
 # we try not to track sections of the same point of interest (blob)
 def bbox_overlap(bbox1, bbox2):
@@ -128,38 +138,6 @@ def calc_centre_point_distance(bbox1, bbox2):
     #euclidean = math.sqrt((x2-x1)**2+(y2-y1)**2)
     res = cv2.norm(c1, c2)
     return int(res)
-
-# Utility function to detect blobs in a background subtracted frame
-def perform_blob_detectionOld(frame, sensitivity):
-    params = cv2.SimpleBlobDetector_Params()
-    # print(f"original sbd params:{params}")
-
-    params.minRepeatability = 2
-    # 5% of the width of the image
-    params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)
-    params.minThreshold = 3
-    params.filterByArea = 1
-    params.filterByColor = 0
-    # params.blobColor=255
-
-    if sensitivity == 1:  # Detects small, medium and large objects
-        params.minArea = 3
-    elif sensitivity == 2:  # Detects medium and large objects
-        params.minArea = 5
-    elif sensitivity == 3:  # Detects large objects
-        params.minArea = 25
-    else:
-        raise Exception(
-            f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
-
-    detector = cv2.SimpleBlobDetector_create(params)
-    # params.write('params.json')
-    # print("created detector")
-    # blobframe=cv2.convertScaleAbs(frame)
-    # print("blobframe")
-    keypoints = detector.detect(frame)
-    # print("ran detect")
-    return keypoints
 
 # Check to see if an image needs to be scaled down
 def calc_image_scale(frame_w, frame_h, to_w, to_h):
