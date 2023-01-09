@@ -69,7 +69,6 @@ class TwoByTwoVisualiser(Visualizer):
         frame_masked_background = video_tracker.get_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND)
         frame_output = video_tracker.get_annotated_image(active_trackers_only=False)
 
-        key_points = video_tracker.get_keypoints()
         fps = video_tracker.get_fps()
 
         utils.stamp_original_frame(
@@ -80,12 +79,9 @@ class TwoByTwoVisualiser(Visualizer):
 
         # Create a copy as we need to put text on it and also turn it into a 24 bit image
         frame_masked_background_copy = cv2.cvtColor(frame_masked_background, cv2.COLOR_GRAY2BGR)
-
-        frame_masked_background_with_key_points = cv2.drawKeypoints(
-            frame_masked_background_copy, key_points, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        msg = f"Detected {len(key_points)} Key Points (Sky360)"
-        cv2.putText(frame_masked_background_with_key_points, msg, (25, 25),
-                    cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, self.font_thickness)
+        frame_masked_background_with_key_points = frame_masked_background_copy.copy()
+        msg = f"Key Points Frame No Longer Supported (Sky360)"
+        cv2.putText(frame_masked_background_with_key_points, msg, (25, 25), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, self.font_thickness)
 
         cv2.putText(frame_masked_background_copy, "Masked Background (Sky360)",
                     (25, 50), cv2.FONT_HERSHEY_SIMPLEX, self.font_size, self.font_colour, self.font_thickness)

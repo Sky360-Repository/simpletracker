@@ -139,38 +139,6 @@ def calc_centre_point_distance(bbox1, bbox2):
     res = cv2.norm(c1, c2)
     return int(res)
 
-# Utility function to detect blobs in a background subtracted frame
-def perform_blob_detection(frame, sensitivity):
-    params = cv2.SimpleBlobDetector_Params()
-    # print(f"original sbd params:{params}")
-
-    params.minRepeatability = 2
-    # 5% of the width of the image
-    params.minDistBetweenBlobs = int(frame.shape[1] * 0.05)
-    params.minThreshold = 3
-    params.filterByArea = 1
-    params.filterByColor = 0
-    # params.blobColor=255
-
-    if sensitivity == 1:  # Detects small, medium and large objects
-        params.minArea = 3
-    elif sensitivity == 2:  # Detects medium and large objects
-        params.minArea = 5
-    elif sensitivity == 3:  # Detects large objects
-        params.minArea = 25
-    else:
-        raise Exception(
-            f"Unknown sensitivity option ({sensitivity}). 1, 2 and 3 is supported not {sensitivity}.")
-
-    detector = cv2.SimpleBlobDetector_create(params)
-    # params.write('params.json')
-    # print("created detector")
-    # blobframe=cv2.convertScaleAbs(frame)
-    # print("blobframe")
-    keypoints = detector.detect(frame)
-    # print("ran detect")
-    return keypoints
-
 # Check to see if an image needs to be scaled down
 def calc_image_scale(frame_w, frame_h, to_w, to_h):
     if frame_h > to_h or frame_w > to_w:

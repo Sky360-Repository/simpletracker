@@ -45,7 +45,7 @@ enable_cuda=false
 enable_stopwatch=false
 
 # Detects small, medium and large objects
-sensitivity=1
+sensitivity=3
 resize_frame=true
 resize_dimension=1440
 noise_reduction=true
@@ -57,6 +57,10 @@ max_active_trackers=10
 # Detection Mode
 #   one of: 'background_subtraction'
 detection_mode='background_subtraction'
+
+# Blob Detector Type
+#   one of: 'simple', 'sky360'
+blob_detector_type='sky360'
 
 calculate_optical_flow=false
 

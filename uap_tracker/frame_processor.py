@@ -17,6 +17,7 @@ import math
 from threading import Thread
 import uap_tracker.utils as utils
 from uap_tracker.mask import Mask
+from uap_tracker.blob_detector import BlobDetector
 
 ####################################################################################################################################
 # Base class for various frame processor implementations. The idea here is that we have a standardised frame processing interface  #
@@ -35,13 +36,13 @@ class FrameProcessor():
         self.resize_dimension = (settings['resize_dimension'], settings['resize_dimension'])
         self.noise_reduction = settings['noise_reduction']
         self.detection_mode = settings['detection_mode']
-        self.detection_sensitivity = settings['detection_sensitivity']
         self.blur_radius = settings['blur_radius']
         self.original_frame_w = 0
         self.original_frame_h = 0
         self.mask = Mask.Select(settings)
         self.start = time.time()
         self.tracker_wait_seconds_threshold = settings['tracker_wait_seconds_threshold']
+        self.blob_detector = BlobDetector.Select(settings)
 
     # Static select method, used as a factory method for selecting the appropriate implementation based on configuration
     @staticmethod
@@ -71,9 +72,12 @@ class FrameProcessor():
     def initialise(self, init_frame):
 
         shape = self.mask.initialise(init_frame)
+        self.blob_detector.initialise(init_frame)
 
         self.original_frame_w = shape[0]
         self.original_frame_h = shape[1]
+
+        print(f"  source frame size h x w = {self.original_frame_h} x {self.original_frame_w}")        
 
         if self.resize_frame:
             scale, scaled_width, scaled_height = utils.calc_image_scale(self.original_frame_w, self.original_frame_h, self.resize_dimension[0], self.resize_dimension[1])
@@ -96,8 +100,8 @@ class FrameProcessor():
     def convert_to_grey(self, frame, stream):
         pass
 
-    # interface specification for extracting keypoints from background subtracted frame
-    def keypoints_from_bg_subtraction(self, frame_grey, stream):
+    # interface specification for extracting bboxes from background subtracted frame
+    def bboxes_from_bg_subtraction(self, frame_grey, stream):
         pass
 
     # interface specification for processing optical flow
@@ -141,80 +145,17 @@ class CpuFrameProcessor(FrameProcessor):
         #print('CPU.convert_to_grey')
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    def keypoints_from_bg_subtraction(self, frame_grey, stream):
+    def bboxes_from_bg_subtraction(self, frame_grey, stream):
         # Overload this for a CPU specific implementation
-        #print('CPU.keypoints_from_bg_subtraction')
-
-        # Mike: we split the frame into 4 parts in the hope that we can improve performance with background subtraction as it should 
-        # operate faster when the frame is smaller. However I am not seeing this in my testing nbut that could also mean my code is
-        # is not the most efficient way of doing this
-        # This does not work due to the GIL, need to split this using a different approach
-        segmentation = False
-        if segmentation:
-
-            (h, w) = frame_grey.shape[:2]
-            cx, cy = (w//2), (h//2)
-            tl = frame_grey[0:cy, 0:cx]
-            tr = frame_grey[0:cy, cx:w]
-            bl = frame_grey[cy:h, 0:cx]
-            br = frame_grey[cy:h, cx:w]
-            segmented_frames = [tl, tr, bl, br]
-            frame_length = len(segmented_frames)
-            threads = [None] * frame_length
-            results = [None] * frame_length
-
-            for i in range(frame_length):
-                threads[i] = Thread(target=self._keypoints_from_bg_subtraction_task, args=(segmented_frames[i], results, i, cx, cy, None))
-                threads[i].start()
-
-            for i in range(frame_length):
-                threads[i].join()
-            
-            key_points = []
-            for i in range(frame_length):
-                (s_kps, _) = results[i]
-                key_points.extend(s_kps)
-
-            top = numpy.concatenate((results[0][1], results[1][1]), axis=1)
-            bottom = numpy.concatenate((results[2][1], results[3][1]), axis=1)
-            return key_points, numpy.concatenate((top, bottom), axis=0)
-
-        else:
-
-            # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-            foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
-            frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
-
-            # Detect new objects of interest to pass to tracker
-            key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
-
-            return key_points, frame_masked_background
-
-
-    def _keypoints_from_bg_subtraction_task(self, segment_grey, results, index, cx, cy, stream):
+        #print('CPU.bboxes_from_bg_subtraction')
 
         # Mike: This needs to be done on an 8 bit grey scale image, the colour image is causing a detection cluster
-        foreground_mask = self.background_subtractor.apply(segment_grey) #, learningRate=self.background_subtractor_learning_rate)
-        segment_masked_background = cv2.bitwise_and(segment_grey, segment_grey, mask=foreground_mask)
+        foreground_mask = self.background_subtractor.apply(frame_grey) #, learningRate=self.background_subtractor_learning_rate)
+        frame_masked_background = cv2.bitwise_and(frame_grey, frame_grey, mask=foreground_mask)
 
-        # Detect new objects of interest to pass to tracker
-        kps = utils.perform_blob_detection(segment_masked_background, self.detection_sensitivity)
+        bboxes = self.blob_detector.detect(frame_masked_background)
 
-        key_points = []
-        for kp in kps:
-            if index == 0:
-                key_points.append(self._create_kp(kp.pt[0], kp.pt[1], kp))
-            elif index == 1:
-                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1], kp))
-            elif index == 2:
-                key_points.append(self._create_kp(kp.pt[0], kp.pt[1] + cy, kp))
-            elif index == 3:
-                key_points.append(self._create_kp(kp.pt[0] + cx, kp.pt[1] + cy, kp))
-
-        results[index] = (key_points, segment_masked_background)
-
-    def _create_kp(self, x, y, kp):
-        return cv2.KeyPoint(x, y, kp.size, kp.angle, kp.response, kp.octave, kp.class_id)
+        return bboxes, frame_masked_background
 
     def process_optical_flow(self, frame_grey, frame_w, frame_h, stream):
         # Overload this for a CPU specific implementation
@@ -228,7 +169,6 @@ class CpuFrameProcessor(FrameProcessor):
 
         worker_threads = []
         bboxes = []
-        keypoints = []
 
         frame = self.mask.apply(frame)
 
@@ -246,14 +186,12 @@ class CpuFrameProcessor(FrameProcessor):
 
         if self.detection_mode == 'background_subtraction':
 
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(frame_grey, stream)
+            bboxes, frame_masked_background = self.bboxes_from_bg_subtraction(frame_grey, stream)
             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
 
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
-                return keypoints
-
-            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+                return bboxes
 
             if self.dense_optical_flow is not None:
                 optical_flow_thread = Thread(target=self.perform_optical_flow_task,
@@ -271,7 +209,7 @@ class CpuFrameProcessor(FrameProcessor):
         for worker_thread in worker_threads:
             worker_thread.join()
 
-        return keypoints
+        return bboxes
 
     def perform_optical_flow_task(self, video_tracker, frame_count, frame_grey, frame_w, frame_h, stream):
         optical_flow_frame = self.process_optical_flow(frame_grey, frame_w, frame_h, stream)
@@ -313,15 +251,15 @@ class GpuFrameProcessor(FrameProcessor):
         #print('GPU.convert_to_grey')
         return cv2.cuda.cvtColor(gpu_frame, cv2.COLOR_BGR2GRAY, stream=stream)
 
-    def keypoints_from_bg_subtraction(self, gpu_frame_grey, stream):
+    def bboxes_from_bg_subtraction(self, gpu_frame_grey, stream):
         # Overload this for a GPU specific implementation
-        # print('GPU.keypoints_from_bg_subtraction')
+        # print('GPU.bboxes_from_bg_subtraction')
         gpu_foreground_mask = self.background_subtractor.apply(gpu_frame_grey, learningRate=self.background_subtractor_learning_rate, stream=stream)
         gpu_frame_masked_background = cv2.cuda.bitwise_and(gpu_frame_grey, gpu_frame_grey, mask=gpu_foreground_mask, stream=stream)
         frame_masked_background = gpu_frame_masked_background.download()
         # Detect new objects of interest to pass to tracker
-        key_points = utils.perform_blob_detection(frame_masked_background, self.detection_sensitivity)
-        return key_points, frame_masked_background
+        bboxes = self.blob_detector.detect(frame_masked_background)
+        return bboxes, frame_masked_background
 
     def process_optical_flow(self, gpu_frame_grey, frame_w, frame_h, stream):
         # Overload this for a GPU specific implementation
@@ -336,7 +274,6 @@ class GpuFrameProcessor(FrameProcessor):
 
         worker_threads = []
         bboxes = []
-        keypoints = []
 
         # Mike: We need to upload the frame to GPU memory so that we can process it on the GPU
         # We try and limit as much as we can the upload and download of the frae 
@@ -363,14 +300,12 @@ class GpuFrameProcessor(FrameProcessor):
 
         if self.detection_mode == 'background_subtraction':
 
-            keypoints, frame_masked_background = self.keypoints_from_bg_subtraction(gpu_frame_grey, stream)
+            bboxes, frame_masked_background = self.bboxes_from_bg_subtraction(gpu_frame_grey, stream)
             video_tracker.add_image(video_tracker.FRAME_TYPE_MASKED_BACKGROUND, frame_masked_background)
 
             if frame_count < 5:
                 # Need 5 frames to get the background subtractor initialised
-                return keypoints
-
-            bboxes = [utils.kp_to_bbox(x) for x in keypoints]
+                return bboxes
 
             if self.dense_optical_flow is not None:
                 #self.perform_optical_flow_task(video_tracker, frame_count, gpu_frame_grey, self.resize_dimension[0], self.resize_dimension[1], stream)
@@ -389,7 +324,7 @@ class GpuFrameProcessor(FrameProcessor):
         for worker_thread in worker_threads:
             worker_thread.join()
 
-        return keypoints
+        return bboxes
 
     def perform_optical_flow_task(self, video_tracker, frame_count, gpu_frame_grey, frame_w, frame_h, stream):
         gpu_dof_frame = self.process_optical_flow(gpu_frame_grey, frame_w, frame_h, stream)
