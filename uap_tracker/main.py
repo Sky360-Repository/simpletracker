@@ -19,6 +19,7 @@ import getopt
 import sys
 import cv2
 import shutil
+from pathlib import Path
 
 from uap_tracker.event_publisher import EventPublisher
 from uap_tracker.visualizer import NoOpVisualiser, SimpleVisualiser, TwoByTwoVisualiser, TwoByTwoOpticalFlowVisualiser
@@ -106,7 +107,7 @@ def _setup_listener(video, root_name, output_dir):
         return formatter_clz(video, root_name, output_dir)
 
 
-def _setup_dumpers(video, root_name, output_dir):
+def _setup_dumpers(video, root_name, output_dir, source_filename):
     dumpers = {
         'none': None,
         'dump_original': OriginalFrameVideoWriter,
@@ -117,15 +118,15 @@ def _setup_dumpers(video, root_name, output_dir):
     }
     print(f"Dumpers {settings.frame_dumpers}")
     if settings.frame_dumpers == 'all':
-        return [OriginalFrameVideoWriter(video, root_name, output_dir),
-                GreyFrameVideoWriter(video, root_name, output_dir),
-                OpticalFlowFrameVideoWriter(video, root_name, output_dir),
-                AnnotatedFrameVideoWriter(video, root_name, output_dir),
-                MaskedBackgroundFrameVideoWriter(video, root_name, output_dir)]
+        return [OriginalFrameVideoWriter(video, root_name, output_dir, source_filename),
+                GreyFrameVideoWriter(video, root_name, output_dir, source_filename),
+                OpticalFlowFrameVideoWriter(video, root_name, output_dir, source_filename),
+                AnnotatedFrameVideoWriter(video, root_name, output_dir, source_filename),
+                MaskedBackgroundFrameVideoWriter(video, root_name, output_dir, source_filename)]
     else:
         dumper_clz = dumpers[settings.frame_dumpers]
         if dumper_clz:
-            return [dumper_clz(video, root_name, output_dir)]
+            return [dumper_clz(video, root_name, output_dir, source_filename)]
 
 
 def main(argv):
@@ -208,6 +209,7 @@ def _create_output_dir():
 def process_file(controller, visualizer, full_path, output_dir, app_settings):
     base = os.path.basename(full_path)
     root_name = os.path.splitext(base)[0]
+    source_filename = Path(full_path).stem
 
     print(f"Opening {full_path}")
     video = cv2.VideoCapture(full_path)
@@ -218,7 +220,7 @@ def process_file(controller, visualizer, full_path, output_dir, app_settings):
 
     events = EventPublisher()
     listener = _setup_listener(video, root_name, output_dir)
-    dumpers = _setup_dumpers(video, root_name, output_dir)
+    dumpers = _setup_dumpers(video, root_name, output_dir, source_filename)
     if dumpers is not None:
         _run(controller, [listener] + dumpers, visualizer, video, app_settings)
     else:

@@ -100,14 +100,19 @@ class Sky360BlobDetector(BlobDetector):
         super().initialise(init_frame)
 
         self.blob_detector = sky360.ConnectedBlobDetection()
-        self.blob_detector.setSizeThreshold(5)
+        
+        if self.settings['bbox_fixed_size']:
+            s = self.settings['bbox_size']          
+            self.blob_detector.setMinDistance(int(s/2))
+
+        self.blob_detector.setSizeThreshold(2)
 
         if self.sensitivity == 1:  # Detects small, medium and large objects
             self.blob_detector.setAreaThreshold(5)
         elif self.sensitivity == 2:  # Detects medium and large objects
             self.blob_detector.setAreaThreshold(10)
         elif self.sensitivity == 3:  # Detects large objects
-            self.blob_detector.setAreaThreshold(25)
+            self.blob_detector.setAreaThreshold(15)
         else:
             raise Exception(
                 f"Unknown sensitivity option ({self.sensitivity}). 1, 2 and 3 is supported not {self.sensitivity}.")

@@ -20,9 +20,13 @@ from uap_tracker.video_formatter import VideoFormatter
 ###################################################################################################
 class OriginalFrameVideoWriter(VideoFormatter):
 
+    def __init__(self, source, file_name, output_dir, source_filename):
+        super().__init__(source, file_name, output_dir)
+        self.source_filename = source_filename
+
     def _create_stf_writer(self):
         width, height = self._source_video_width_height()
-        return STFWriter(self.output_dir, self.file_name, width, height, video_name='original_frames.mp4',
+        return STFWriter(self.output_dir, self.file_name, width, height, video_name=f'{self.source_filename}_original_frames.mp4',
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
@@ -34,9 +38,13 @@ class OriginalFrameVideoWriter(VideoFormatter):
 ###############################################################################################
 class GreyFrameVideoWriter(VideoFormatter):
 
+    def __init__(self, source, file_name, output_dir, source_filename):
+        super().__init__(source, file_name, output_dir)
+        self.source_filename = source_filename
+
     def _create_stf_writer(self):
         width, height = self._source_video_width_height()
-        return STFWriter(self.output_dir, self.file_name, width, height, video_name='grey_frames.mp4',
+        return STFWriter(self.output_dir, self.file_name, width, height, video_name=f'{self.source_filename}_grey_frames.mp4',
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
@@ -51,9 +59,13 @@ class GreyFrameVideoWriter(VideoFormatter):
 #######################################################################################################
 class OpticalFlowFrameVideoWriter(VideoFormatter):
 
+    def __init__(self, source, file_name, output_dir, source_filename):
+        super().__init__(source, file_name, output_dir)
+        self.source_filename = source_filename
+
     def _create_stf_writer(self):
         width, height = self._source_video_width_height()
-        return STFWriter(self.output_dir, self.file_name, width, height, video_name='optical_flow_frames.mp4',
+        return STFWriter(self.output_dir, self.file_name, width, height, video_name=f'{self.source_filename}_optical_flow_frames.mp4',
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
@@ -65,9 +77,13 @@ class OpticalFlowFrameVideoWriter(VideoFormatter):
 ####################################################################################################
 class AnnotatedFrameVideoWriter(VideoFormatter):
 
+    def __init__(self, source, file_name, output_dir, source_filename):
+        super().__init__(source, file_name, output_dir)
+        self.source_filename = source_filename
+
     def _create_stf_writer(self):
         width, height = self._source_video_width_height()
-        return STFWriter(self.output_dir, self.file_name, width, height, video_name='annotated_frames.mp4',
+        return STFWriter(self.output_dir, self.file_name, width, height, video_name=f'{self.source_filename}_annotated_frames.mp4',
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
@@ -79,9 +95,13 @@ class AnnotatedFrameVideoWriter(VideoFormatter):
 ############################################################################################################
 class MaskedBackgroundFrameVideoWriter(VideoFormatter):
 
+    def __init__(self, source, file_name, output_dir, source_filename):
+        super().__init__(source, file_name, output_dir)
+        self.source_filename = source_filename
+
     def _create_stf_writer(self):
         width, height = self._source_video_width_height()
-        return STFWriter(self.output_dir, self.file_name, width, height, video_name='masked_background_frames.mp4',
+        return STFWriter(self.output_dir, self.file_name, width, height, video_name=f'{self.source_filename}_masked_background_frames.mp4',
                            movement_alpha=False, annotate=False)
 
     def _get_frame_to_write(self, video_tracker):
