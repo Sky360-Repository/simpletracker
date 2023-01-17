@@ -108,11 +108,11 @@ class Sky360BlobDetector(BlobDetector):
         self.blob_detector.setSizeThreshold(2)
 
         if self.sensitivity == 1:  # Detects small, medium and large objects
-            self.blob_detector.setAreaThreshold(5)
+            self.blob_detector.setAreaThreshold(2)
         elif self.sensitivity == 2:  # Detects medium and large objects
             self.blob_detector.setAreaThreshold(10)
         elif self.sensitivity == 3:  # Detects large objects
-            self.blob_detector.setAreaThreshold(15)
+            self.blob_detector.setAreaThreshold(25)
         else:
             raise Exception(
                 f"Unknown sensitivity option ({self.sensitivity}). 1, 2 and 3 is supported not {self.sensitivity}.")

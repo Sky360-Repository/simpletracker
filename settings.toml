@@ -45,7 +45,7 @@ enable_cuda=false
 enable_stopwatch=false
 
 # Detects small, medium and large objects
-sensitivity=3
+sensitivity=1
 resize_frame=false
 resize_dimension=1440
 noise_reduction=true
@@ -80,7 +80,7 @@ bbox_fixed_size=true
 bbox_size=64
 
 # Track Plotting
-track_plotting_enabled=true
+track_plotting_enabled=false
 
 # Track Predicting
 track_prediction_enabled=false
@@ -95,9 +95,9 @@ track_prediction_enabled=false
 #type='fish_eye'
 #mask_pct=20
 
-#type='no_op'
+type='no_op'
 #type='overlay'
-type='overlay_inverse'
+#type='overlay_inverse'
 overlay_image_path='masks/mask-shrubs-inverse-overlay-2.jpg'
 
 [Camera]
